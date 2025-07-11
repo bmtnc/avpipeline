@@ -1,2 +1,5 @@
+^renv$
+^renv\.lock$
 ^avpipeline\.Rproj$
 ^\.Rproj\.user$
+^LICENSE\.md$
