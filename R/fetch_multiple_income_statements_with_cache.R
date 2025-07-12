@@ -1,32 +1,28 @@
-#' Fetch Multiple Tickers with Caching
+#' Fetch Multiple Income Statements with Caching
 #'
-#' Fetches daily adjusted price data for multiple tickers with intelligent caching
+#' Fetches quarterly income statement data for multiple tickers with intelligent caching
 #' to avoid redundant API calls. Checks cache file for existing data and only
 #' fetches data for tickers not already cached.
 #'
 #' @param tickers Character vector of ticker symbols to fetch
 #' @param cache_file Path to cache file (CSV format)
-#' @param outputsize Character, either "compact" (latest 100 days) or "full" (20+ years)
-#' @param datatype Character, data format ("json" or "csv")
 #' @param as_of_date Date, timestamp for when data was pulled (defaults to current date)
 #'
-#' @return A tibble with price data for all requested tickers
+#' @return A tibble with quarterly income statement data for all requested tickers
 #'
 #' @examples
 #' \dontrun{
 #' tickers <- c("AAPL", "GOOGL", "MSFT")
-#' price_data <- fetch_multiple_tickers_with_cache(
+#' income_data <- fetch_multiple_income_statements_with_cache(
 #'   tickers = tickers,
-#'   cache_file = "cache/price_data.csv"
+#'   cache_file = "cache/income_statement_data.csv"
 #' )
 #' }
 #'
 #' @export
-fetch_multiple_tickers_with_cache <- function(tickers, 
-                                              cache_file,
-                                              outputsize = "full",
-                                              datatype = "json",
-                                              as_of_date = Sys.Date()) {
+fetch_multiple_income_statements_with_cache <- function(tickers, 
+                                                        cache_file,
+                                                        as_of_date = Sys.Date()) {
   
   # Validate inputs
   if (length(tickers) == 0) {
@@ -46,10 +42,10 @@ fetch_multiple_tickers_with_cache <- function(tickers,
     cat("Cache file found. Reading existing data...\n")
     
     # Read existing cached data
-    existing_data <- read_cached_price_data(cache_file)
+    existing_data <- read_cached_income_statement_data(cache_file)
     
-    # Get tickers that need to be fetched
-    tickers_to_fetch <- get_symbols_to_fetch(tickers, existing_data)
+    # Get tickers that need to be fetched (using ticker column)
+    tickers_to_fetch <- get_symbols_to_fetch(tickers, existing_data, "ticker")
     
     # Get distinct tickers from existing data for reporting
     cached_tickers <- existing_data %>% 
@@ -73,12 +69,10 @@ fetch_multiple_tickers_with_cache <- function(tickers,
       dir.create(cache_dir, recursive = TRUE)
     }
     
-    # Fetch daily adjusted price data for remaining tickers with incremental caching
-    fetch_multiple_tickers_with_incremental_cache(
+    # Fetch income statement data for remaining tickers with incremental caching
+    fetch_multiple_income_statements_with_incremental_cache(
       tickers = tickers_to_fetch,
       cache_file = cache_file,
-      outputsize = outputsize,
-      datatype = datatype,
       as_of_date = as_of_date
     )
     
@@ -88,10 +82,10 @@ fetch_multiple_tickers_with_cache <- function(tickers,
   
   # Read the final cache file to return complete dataset
   cat("Reading final dataset from cache...\n")
-  price_object <- read_cached_price_data(cache_file)
+  income_object <- read_cached_income_statement_data(cache_file)
   
-  cat("Process complete. Total tickers in dataset:", length(unique(price_object$ticker)), "\n")
-  cat("Total rows in dataset:", nrow(price_object), "\n")
+  cat("Process complete. Total tickers in dataset:", length(unique(income_object$ticker)), "\n")
+  cat("Total quarterly reports in dataset:", nrow(income_object), "\n")
   
-  return(price_object)
+  return(income_object)
 }

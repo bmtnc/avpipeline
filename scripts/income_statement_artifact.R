@@ -1,5 +1,5 @@
-# Alpha Vantage Daily Adjusted Price Data Fetcher
-# Fetches daily price data for multiple tickers and returns long-format dataframe
+# Alpha Vantage Income Statement Data Fetcher
+# Fetches quarterly income statement data for multiple tickers and returns long-format dataframe
 # Uses new caching helper functions for cleaner, more maintainable code
 # Now dynamically fetches tickers from ETF holdings via Alpha Vantage API
 
@@ -14,15 +14,13 @@ cat("Fetching holdings for ETF:", etf_symbol, "\n")
 tickers <- fetch_etf_holdings(etf_symbol)
 
 # Alternative: Use manually curated tickers if needed
-tickers <- c("ASML", "ENTG")
+tickers <- c("ENTG", "ASML")
 
 # Define cache file path
-cache_file <- "cache/price_artifact.csv"
+cache_file <- "cache/income_statement_artifact.csv"
 
 # Fetch data with intelligent caching
-price_object <- fetch_multiple_tickers_with_cache(
+income_statement_object <- fetch_multiple_income_statements_with_cache(
   tickers = tickers,
-  cache_file = cache_file,
-  outputsize = "full",  # "compact" for latest 100 days, "full" for 20+ years
-  datatype = "json"
+  cache_file = cache_file
 )
