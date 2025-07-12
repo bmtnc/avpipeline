@@ -67,31 +67,28 @@ fetch_multiple_tickers_with_cache <- function(tickers,
   if (length(tickers_to_fetch) > 0) {
     cat("Fetching data from Alpha Vantage for", length(tickers_to_fetch), "tickers...\n")
     
-    # Fetch daily adjusted price data for remaining tickers
-    new_price_data <- fetch_multiple_tickers(
-      tickers = tickers_to_fetch,
-      outputsize = outputsize,
-      datatype = datatype
-    )
+    # Create cache directory if it doesn't exist
+    cache_dir <- dirname(cache_file)
+    if (!dir.exists(cache_dir)) {
+      dir.create(cache_dir, recursive = TRUE)
+    }
     
-    # Process and combine data
-    price_object <- combine_and_process_price_data(existing_data, new_price_data, as_of_date)
+    # Fetch daily adjusted price data for remaining tickers with incremental caching
+    fetch_multiple_tickers_with_incremental_cache(
+      tickers = tickers_to_fetch,
+      cache_file = cache_file,
+      outputsize = outputsize,
+      datatype = datatype,
+      as_of_date = as_of_date
+    )
     
   } else {
     cat("All requested tickers already in cache. No API calls needed.\n")
-    price_object <- existing_data
   }
   
-  # Save updated data to cache
-  cat("Saving updated data to cache...\n")
-  
-  # Create cache directory if it doesn't exist
-  cache_dir <- dirname(cache_file)
-  if (!dir.exists(cache_dir)) {
-    dir.create(cache_dir, recursive = TRUE)
-  }
-  
-  write.csv(price_object, cache_file, row.names = FALSE)
+  # Read the final cache file to return complete dataset
+  cat("Reading final dataset from cache...\n")
+  price_object <- read_cached_price_data(cache_file)
   
   cat("Process complete. Total tickers in dataset:", length(unique(price_object$ticker)), "\n")
   cat("Total rows in dataset:", nrow(price_object), "\n")

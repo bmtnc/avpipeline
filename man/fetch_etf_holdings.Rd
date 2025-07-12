@@ -19,15 +19,3 @@ This function retrieves the holdings/constituents of an ETF from Alpha Vantage
 and returns a character vector of ticker symbols that can be used with other
 price fetching functions.
 }
-\examples{
-\dontrun{
-# Fetch QQQ holdings
-qqq_holdings <- fetch_etf_holdings("QQQ")
-
-# Use with existing price fetching functions
-price_data <- fetch_multiple_tickers_with_cache(
-  tickers = qqq_holdings,
-  cache_file = "cache/qqq_holdings.csv"
-)
-}
-}

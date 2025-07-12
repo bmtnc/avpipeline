@@ -7,7 +7,7 @@
 devtools::load_all()
 
 # Define ETF symbol to fetch holdings from
-etf_symbol <- "QQQ"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
+etf_symbol <- "XLK"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
 
 # Fetch tickers from ETF holdings
 cat("Fetching holdings for ETF:", etf_symbol, "\n")
