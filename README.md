@@ -6,7 +6,7 @@
 [![Version](https://img.shields.io/badge/version-0.0.0.9000-blue.svg)](https://github.com/bmtnc/avpipeline)
 <!-- badges: end -->
 
-An R package that provides utilities and tools for working with Alpha Vantage API data. The package focuses on making it easier to access, validate, and process financial data from the Alpha Vantage service with intelligent caching and robust error handling.
+An R package that provides utilities and tools for working with Alpha Vantage API data. The package focuses on making it easier to access, validate, and process financial data from the Alpha Vantage service with caching and robust error handling.
 
 ## Features
 
@@ -15,7 +15,7 @@ An R package that provides utilities and tools for working with Alpha Vantage AP
 - **Batch Processing**: Process multiple tickers with progress tracking and error handling
 - **Income Statement Data**: Fetch quarterly income statement data from Alpha Vantage
 - **ETF Holdings**: Retrieve ETF holdings and convert to ticker lists
-- **Intelligent Caching**: Avoid redundant API calls with smart cache management
+- **Caching**: Avoid redundant API calls with smart cache management
 - **Incremental Caching**: Resilient data fetching that saves progress incrementally
 
 ### 🛡️ Robust Infrastructure
@@ -67,7 +67,7 @@ head(apple_data)
 # Define tickers to fetch
 tickers <- c("AAPL", "GOOGL", "MSFT", "AMZN")
 
-# Fetch with intelligent caching
+# Fetch with caching
 price_data <- fetch_multiple_with_cache_generic(
   tickers = tickers,
   output_dir = "cache",
@@ -149,7 +149,7 @@ nrow(results)
 head(results)
 ```
 
-### Intelligent Caching Example
+### Caching Example
 
 ```r
 # First run - fetches from API and caches
@@ -244,7 +244,7 @@ validate_df_cols(df, c("ticker", "date", "close"))
 
 ## Caching Strategy
 
-The package implements intelligent caching to minimize API calls:
+The package implements caching to minimize API calls:
 
 1. **Cache Detection**: Automatically detects existing cached data
 2. **Incremental Updates**: Only fetches missing tickers
@@ -265,7 +265,7 @@ This package is currently in development (version 0.0.0.9000). Features implemen
 
 - ✅ Single ticker price data fetching
 - ✅ Multiple ticker batch processing
-- ✅ Intelligent caching system
+- ✅ caching system
 - ✅ Incremental caching for resilience
 - ✅ Income statement data fetching
 - ✅ ETF holdings integration
