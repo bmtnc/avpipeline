@@ -4,10 +4,10 @@
 \alias{make_api_request}
 \title{Make API request to Alpha Vantage for daily adjusted price data}
 \usage{
-make_api_request(symbol, outputsize, datatype, api_key)
+make_api_request(ticker, outputsize, datatype, api_key)
 }
 \arguments{
-\item{symbol}{Character. The equity symbol}
+\item{ticker}{Character. The equity ticker}
 
 \item{outputsize}{Character. Either "compact" or "full"}
 

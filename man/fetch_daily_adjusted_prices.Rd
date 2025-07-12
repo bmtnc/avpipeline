@@ -5,14 +5,14 @@
 \title{Fetch Daily Adjusted Price Data from Alpha Vantage}
 \usage{
 fetch_daily_adjusted_prices(
-  symbol,
+  ticker,
   outputsize = "compact",
   datatype = "json",
   api_key = NULL
 )
 }
 \arguments{
-\item{symbol}{Character. The equity symbol (e.g., "IBM", "TSCO.LON")}
+\item{ticker}{Character. The equity ticker (e.g., "IBM", "TSCO.LON")}
 
 \item{outputsize}{Character. Either "compact" (latest 100 data points) or
 "full" (20+ years of data). Default is "compact".}
@@ -27,5 +27,5 @@ A tibble with daily adjusted price data
 }
 \description{
 Fetches daily OHLCV data with adjusted close values and dividend/split events
-for a specified equity symbol using the Alpha Vantage API.
+for a specified equity ticker using the Alpha Vantage API.
 }

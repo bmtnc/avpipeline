@@ -7,14 +7,14 @@
 devtools::load_all()
 
 # Define ETF symbol to fetch holdings from
-etf_symbol <- "XLK"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
+etf_symbol <- "QQQ"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
 
 # Fetch tickers from ETF holdings
 cat("Fetching holdings for ETF:", etf_symbol, "\n")
 tickers <- fetch_etf_holdings(etf_symbol)
 
 # Alternative: Use manually curated tickers if needed
-tickers <- c("ENTG", "ASML")
+# tickers <- c("ENTG", "ASML")
 
 # Define cache file path
 cache_file <- "cache/income_statement_artifact.csv"

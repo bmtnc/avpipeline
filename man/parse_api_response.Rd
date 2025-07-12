@@ -4,12 +4,12 @@
 \alias{parse_api_response}
 \title{Parse API response to tibble}
 \usage{
-parse_api_response(response, symbol, datatype)
+parse_api_response(response, ticker, datatype)
 }
 \arguments{
 \item{response}{Raw httr response object}
 
-\item{symbol}{Character. The equity symbol}
+\item{ticker}{Character. The equity ticker}
 
 \item{datatype}{Character. Either "json" or "csv"}
 }

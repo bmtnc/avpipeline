@@ -2,9 +2,9 @@
 #' Fetch Daily Adjusted Price Data from Alpha Vantage
 #'
 #' Fetches daily OHLCV data with adjusted close values and dividend/split events
-#' for a specified equity symbol using the Alpha Vantage API.
+#' for a specified equity ticker using the Alpha Vantage API.
 #'
-#' @param symbol Character. The equity symbol (e.g., "IBM", "TSCO.LON")
+#' @param ticker Character. The equity ticker (e.g., "IBM", "TSCO.LON")
 #' @param outputsize Character. Either "compact" (latest 100 data points) or 
 #'   "full" (20+ years of data). Default is "compact".
 #' @param datatype Character. Either "json" or "csv". Default is "json".
@@ -13,14 +13,14 @@
 #'
 #' @return A tibble with daily adjusted price data
 #' @export
-fetch_daily_adjusted_prices <- function(symbol, 
+fetch_daily_adjusted_prices <- function(ticker, 
                                        outputsize = "compact", 
                                        datatype = "json",
                                        api_key = NULL) {
   
   # Step 1: Validate inputs
-  if (missing(symbol) || !is.character(symbol) || length(symbol) != 1) {
-    stop("symbol must be a single character string")
+  if (missing(ticker) || !is.character(ticker) || length(ticker) != 1) {
+    stop("ticker must be a single character string")
   }
   
   if (!outputsize %in% c("compact", "full")) {
@@ -32,8 +32,8 @@ fetch_daily_adjusted_prices <- function(symbol,
   }
   
   # Step 2: Make API request
-  response <- make_api_request(symbol, outputsize, datatype, api_key)
+  response <- make_api_request(ticker, outputsize, datatype, api_key)
   
   # Step 3: Parse response to tibble
-  parse_api_response(response, symbol, datatype)
+  parse_api_response(response, ticker, datatype)
 }

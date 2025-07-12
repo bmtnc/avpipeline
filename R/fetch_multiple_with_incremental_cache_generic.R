@@ -86,14 +86,8 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
       # Build arguments for single fetch function
       fetch_args <- list(...)
       
-      # Add the ticker as first argument (different parameter names for different functions)
-      if (grepl("income", data_type_name, ignore.case = TRUE)) {
-        # Income statement functions use 'ticker' parameter
-        ticker_data <- single_fetch_func(ticker = ticker)
-      } else {
-        # Price functions use 'symbol' parameter
-        ticker_data <- single_fetch_func(symbol = ticker, ...)
-      }
+      # Both price and income statement functions now use 'ticker' parameter
+      ticker_data <- single_fetch_func(ticker = ticker, ...)
       
       # Add as_of_date metadata
       if (nrow(ticker_data) > 0) {

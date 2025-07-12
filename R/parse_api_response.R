@@ -1,12 +1,12 @@
 #' Parse API response to tibble
 #'
 #' @param response Raw httr response object
-#' @param symbol Character. The equity symbol
+#' @param ticker Character. The equity ticker
 #' @param datatype Character. Either "json" or "csv"
 #'
 #' @return A tibble with daily adjusted price data
 #' @keywords internal
-parse_api_response <- function(response, symbol, datatype) {
+parse_api_response <- function(response, ticker, datatype) {
   if (datatype == "json") {
     # Parse JSON response
     content <- httr::content(response, as = "text", encoding = "UTF-8")
@@ -34,7 +34,7 @@ parse_api_response <- function(response, symbol, datatype) {
     prices_list <- lapply(dates, function(date) {
       price_data <- time_series[[date]]
       data.frame(
-        ticker = symbol,
+        ticker = ticker,
         date = as.Date(date),
         open = as.numeric(price_data$`1. open`),
         high = as.numeric(price_data$`2. high`),
@@ -60,7 +60,7 @@ parse_api_response <- function(response, symbol, datatype) {
     # Read CSV data using base R
     prices_df <- read.csv(text = content, stringsAsFactors = FALSE) %>%
       dplyr::mutate(
-        ticker = symbol,
+        ticker = ticker,
         date = as.Date(timestamp)
       ) %>%
       dplyr::select(-timestamp) %>%

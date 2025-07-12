@@ -4,11 +4,11 @@
 #' Only returns quarterly data to avoid mixing annual and quarterly numbers.
 #'
 #' @param response Raw httr response object from Alpha Vantage API
-#' @param symbol Character. The equity symbol for metadata
+#' @param ticker Character. The equity ticker for metadata
 #'
 #' @return A tibble with quarterly income statement data
 #' @keywords internal
-parse_income_statement_response <- function(response, symbol) {
+parse_income_statement_response <- function(response, ticker) {
   
   # Parse JSON response
   content <- httr::content(response, "text", encoding = "UTF-8")
@@ -25,14 +25,14 @@ parse_income_statement_response <- function(response, symbol) {
   
   # Extract quarterly reports only
   if (!"quarterlyReports" %in% names(parsed_data)) {
-    stop("No quarterly reports found in API response for symbol: ", symbol)
+    stop("No quarterly reports found in API response for ticker: ", ticker)
   }
   
   quarterly_data <- parsed_data$quarterlyReports
   
   # Check if we have any quarterly data
   if (is.null(quarterly_data) || nrow(quarterly_data) == 0) {
-    warning("No quarterly income statement data found for symbol: ", symbol)
+    warning("No quarterly income statement data found for ticker: ", ticker)
     return(tibble::tibble())
   }
   
@@ -40,7 +40,7 @@ parse_income_statement_response <- function(response, symbol) {
   result <- quarterly_data %>%
     tibble::as_tibble() %>%
     # Add ticker column
-    dplyr::mutate(ticker = symbol, .before = 1) %>%
+    dplyr::mutate(ticker = ticker, .before = 1) %>%
     # Convert fiscal date to proper date format
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding)) %>%
     # Convert "None" strings to NA across all columns
@@ -50,7 +50,7 @@ parse_income_statement_response <- function(response, symbol) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
   
-  cat("Parsed", nrow(result), "quarterly reports for", symbol, "\n")
+  cat("Parsed", nrow(result), "quarterly reports for", ticker, "\n")
   
   return(result)
 }

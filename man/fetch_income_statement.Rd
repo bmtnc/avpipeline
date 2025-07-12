@@ -4,10 +4,10 @@
 \alias{fetch_income_statement}
 \title{Fetch Income Statement Data from Alpha Vantage}
 \usage{
-fetch_income_statement(symbol, api_key = NULL)
+fetch_income_statement(ticker, api_key = NULL)
 }
 \arguments{
-\item{symbol}{Character. The equity symbol (e.g., "IBM", "AAPL")}
+\item{ticker}{Character. The equity ticker (e.g., "IBM", "AAPL")}
 
 \item{api_key}{Character. Alpha Vantage API key. If NULL, will use
 get_api_key() function.}
@@ -16,7 +16,7 @@ get_api_key() function.}
 A tibble with quarterly income statement data
 }
 \description{
-Fetches quarterly income statement data for a specified equity symbol using
+Fetches quarterly income statement data for a specified equity ticker using
 the Alpha Vantage API. Returns only quarterly data to avoid mixing annual
 and quarterly numbers in time series analysis.
 }

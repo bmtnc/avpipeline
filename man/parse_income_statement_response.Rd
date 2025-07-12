@@ -4,12 +4,12 @@
 \alias{parse_income_statement_response}
 \title{Parse Income Statement API Response}
 \usage{
-parse_income_statement_response(response, symbol)
+parse_income_statement_response(response, ticker)
 }
 \arguments{
 \item{response}{Raw httr response object from Alpha Vantage API}
 
-\item{symbol}{Character. The equity symbol for metadata}
+\item{ticker}{Character. The equity ticker for metadata}
 }
 \value{
 A tibble with quarterly income statement data
