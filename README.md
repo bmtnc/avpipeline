@@ -296,7 +296,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Getting Help
 
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/bmtnc/avpipeline/issues)
 - **Documentation**: All functions include comprehensive help documentation
 - **Examples**: See function documentation for usage examples
 
