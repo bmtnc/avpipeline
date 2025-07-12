@@ -14,8 +14,8 @@ A data frame with properly formatted date columns
 }
 \description{
 Reads cached price data from a CSV file and converts date columns to proper Date types.
-This function handles the common issue of date columns being stored as character strings
-in CSV files and needing conversion back to Date objects.
+This function is a wrapper around the generic read_cached_data() function with
+price-specific date columns specified.
 }
 \examples{
 \dontrun{

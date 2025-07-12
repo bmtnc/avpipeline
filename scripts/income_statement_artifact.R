@@ -19,8 +19,21 @@ tickers <- c("ENTG", "ASML")
 # Define cache file path
 cache_file <- "cache/income_statement_artifact.csv"
 
-# Fetch data with intelligent caching
-income_statement_object <- fetch_multiple_income_statements_with_cache(
+# Fetch data with intelligent caching using generic function
+income_statement_object <- fetch_multiple_with_cache_generic(
   tickers = tickers,
-  cache_file = cache_file
+  cache_file = cache_file,
+  cache_reader_func = read_cached_income_statement_data,
+  incremental_cache_func = function(tickers, cache_file, ...) {
+    fetch_multiple_with_incremental_cache_generic(
+      tickers = tickers,
+      cache_file = cache_file,
+      single_fetch_func = fetch_income_statement,
+      cache_reader_func = read_cached_income_statement_data,
+      data_type_name = "income statement",
+      delay_seconds = 12,  # 5 requests per minute limit
+      ...
+    )
+  },
+  data_type_name = "income statement"
 )

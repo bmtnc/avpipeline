@@ -1,8 +1,8 @@
 #' Read Cached Income Statement Data
 #'
 #' Reads cached income statement data from a CSV file and converts date columns to proper Date types.
-#' This function handles the common issue of date columns being stored as character strings
-#' in CSV files and needing conversion back to Date objects.
+#' This function is a wrapper around the generic read_cached_data() function with
+#' income statement-specific date columns specified.
 #'
 #' @param cache_file Path to the cache file (CSV format)
 #'
@@ -16,22 +16,9 @@
 #' @export
 read_cached_income_statement_data <- function(cache_file) {
   
-  # Validate input
-  if (!file.exists(cache_file)) {
-    stop("Cache file does not exist: ", cache_file)
-  }
-  
-  # Read the CSV file
-  data <- read.csv(cache_file, stringsAsFactors = FALSE)
-  
-  # Convert date columns to Date type
-  date_columns <- c("fiscalDateEnding", "as_of_date")
-  
-  for (col in date_columns) {
-    if (col %in% names(data)) {
-      data[[col]] <- as.Date(data[[col]])
-    }
-  }
-  
-  return(data)
+  # Use the generic function with income statement-specific date columns
+  read_cached_data(
+    cache_file = cache_file,
+    date_columns = c("fiscalDateEnding", "as_of_date")
+  )
 }

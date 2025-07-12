@@ -19,10 +19,23 @@ tickers <- c("ASML", "ENTG")
 # Define cache file path
 cache_file <- "cache/price_artifact.csv"
 
-# Fetch data with intelligent caching
-price_object <- fetch_multiple_tickers_with_cache(
+# Fetch data with intelligent caching using generic function
+price_object <- fetch_multiple_with_cache_generic(
   tickers = tickers,
   cache_file = cache_file,
+  cache_reader_func = read_cached_price_data,
+  incremental_cache_func = function(tickers, cache_file, ...) {
+    fetch_multiple_with_incremental_cache_generic(
+      tickers = tickers,
+      cache_file = cache_file,
+      single_fetch_func = fetch_daily_adjusted_prices,
+      cache_reader_func = read_cached_price_data,
+      data_type_name = "price",
+      delay_seconds = 1,
+      ...
+    )
+  },
+  data_type_name = "price",
   outputsize = "full",  # "compact" for latest 100 days, "full" for 20+ years
   datatype = "json"
 )
