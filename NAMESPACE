@@ -2,6 +2,7 @@
 
 export(combine_and_process_price_data)
 export(fetch_daily_adjusted_prices)
+export(fetch_etf_holdings)
 export(fetch_multiple_tickers)
 export(fetch_multiple_tickers_with_cache)
 export(get_api_key)
