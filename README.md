@@ -11,10 +11,10 @@ An R package that provides a revolutionary configuration-based API for working w
 
 This package implements a groundbreaking configuration-based design that achieves **60% code reduction** while providing **consistent behavior across all data types**:
 
-- **5 Configuration Objects** define data-type-specific behavior
+- **6 Configuration Objects** define data-type-specific behavior
 - **6 Generic Functions** work with any configuration object  
-- **5 Parser Functions** handle data-type-specific parsing
-- **Total: 16 components** instead of 20+ individual functions
+- **6 Parser Functions** handle data-type-specific parsing
+- **Total: 18 components** instead of 20+ individual functions
 
 ### Universal API Pattern
 
@@ -26,6 +26,7 @@ price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG)
 income_data <- fetch_alpha_vantage_data("AAPL", INCOME_STATEMENT_CONFIG)
 balance_data <- fetch_alpha_vantage_data("AAPL", BALANCE_SHEET_CONFIG)
 cash_flow_data <- fetch_alpha_vantage_data("AAPL", CASH_FLOW_CONFIG)
+earnings_data <- fetch_alpha_vantage_data("AAPL", EARNINGS_CONFIG)
 etf_profile <- fetch_alpha_vantage_data("SPY", ETF_PROFILE_CONFIG)
 ```
 
@@ -49,6 +50,7 @@ etf_profile <- fetch_alpha_vantage_data("SPY", ETF_PROFILE_CONFIG)
 - **`INCOME_STATEMENT_CONFIG`**: Quarterly income statement configuration  
 - **`BALANCE_SHEET_CONFIG`**: Quarterly balance sheet configuration
 - **`CASH_FLOW_CONFIG`**: Quarterly cash flow configuration
+- **`EARNINGS_CONFIG`**: Quarterly earnings timing metadata configuration
 - **`ETF_PROFILE_CONFIG`**: ETF profile and holdings configuration
 
 ## Installation
@@ -124,11 +126,12 @@ etf_prices <- fetch_multiple_alpha_vantage_data(etf_holdings, PRICE_CONFIG)
 
 ## Core Functions
 
-### Configuration Objects (5 total)
+### Configuration Objects (6 total)
 - **`PRICE_CONFIG`**: Daily adjusted price data configuration
 - **`INCOME_STATEMENT_CONFIG`**: Quarterly income statement configuration
 - **`BALANCE_SHEET_CONFIG`**: Quarterly balance sheet configuration
 - **`CASH_FLOW_CONFIG`**: Quarterly cash flow configuration
+- **`EARNINGS_CONFIG`**: Quarterly earnings timing metadata configuration
 - **`ETF_PROFILE_CONFIG`**: ETF profile data configuration
 
 ### Generic Functions (6 total)
@@ -139,11 +142,12 @@ etf_prices <- fetch_multiple_alpha_vantage_data(etf_holdings, PRICE_CONFIG)
 - **`combine_results_generic()`**: Universal result combination
 - **`fetch_multiple_with_incremental_cache_generic()`**: Universal batch caching
 
-### Parser Functions (5 total)
+### Parser Functions (6 total)
 - **`parse_api_response()`**: Price data parsing
 - **`parse_income_statement_response()`**: Income statement parsing
 - **`parse_balance_sheet_response()`**: Balance sheet parsing
 - **`parse_cash_flow_response()`**: Cash flow parsing
+- **`parse_earnings_response()`**: Earnings timing metadata parsing
 - **`parse_etf_profile_response()`**: ETF profile parsing
 
 ### Utility Functions
@@ -361,14 +365,15 @@ new_data <- fetch_alpha_vantage_data("AAPL", NEW_DATA_CONFIG)
 ### ✅ Implemented Features
 - Configuration-based architecture (complete)
 - Universal API interface (complete)
-- All configuration objects (5 total)
+- All configuration objects (6 total)
 - All generic functions (6 total)
-- All parser functions (5 total)
+- All parser functions (6 total)
 - Comprehensive retry logic and error handling
 - Universal caching with batch processing
 - API key management
 - Data validation utilities
 - ETF holdings integration
+- Earnings timing metadata support
 
 ### 🔄 Next Steps
 - Comprehensive test suite for configuration architecture
@@ -405,6 +410,7 @@ This package requires an Alpha Vantage API key. Get your free API key at [Alpha 
 - `INCOME_STATEMENT` - Quarterly income statement data  
 - `BALANCE_SHEET` - Quarterly balance sheet data
 - `CASH_FLOW` - Quarterly cash flow data
+- `EARNINGS` - Quarterly earnings timing metadata
 - `ETF_PROFILE` - ETF holdings and profile data
 
 ---
