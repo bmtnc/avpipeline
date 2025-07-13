@@ -119,7 +119,7 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
     # If successful, add to results
     if (success) {
       successful_results[[ticker]] <- ticker_data
-      cat("✓ Data for", ticker, "collected (", nrow(ticker_data), "rows)\n")
+      cat("Success: Data for", ticker, "collected (", nrow(ticker_data), "rows)\n")
     }
     
     # Add delay between requests (except for the last one)
@@ -173,7 +173,7 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
     # Write combined data to cache
     write.csv(combined_data, cache_file, row.names = FALSE)
     
-    cat("✓ All data written to cache:", cache_file, "\n")
+    cat("Success: All data written to cache:", cache_file, "\n")
     cat("Total rows in cache:", nrow(combined_data), "\n")
     
   } else {

@@ -2,7 +2,7 @@
 % Please edit documentation in R/fetch_multiple_with_incremental_cache_generic.R
 \name{fetch_multiple_with_incremental_cache_generic}
 \alias{fetch_multiple_with_incremental_cache_generic}
-\title{Generic Multiple Fetch with Incremental Caching}
+\title{Generic Multiple Fetch with Batch Caching}
 \usage{
 fetch_multiple_with_incremental_cache_generic(
   tickers,
@@ -11,6 +11,7 @@ fetch_multiple_with_incremental_cache_generic(
   cache_reader_func,
   data_type_name = "data",
   delay_seconds = 1,
+  max_retries = 3,
   as_of_date = Sys.Date(),
   ...
 )
@@ -28,6 +29,8 @@ fetch_multiple_with_incremental_cache_generic(
 
 \item{delay_seconds}{Numeric. Delay between API calls in seconds}
 
+\item{max_retries}{Numeric. Maximum number of retry attempts per ticker (default 3)}
+
 \item{as_of_date}{Date, timestamp for when data was pulled (defaults to current date)}
 
 \item{...}{Additional parameters passed to single_fetch_func}
@@ -36,10 +39,10 @@ fetch_multiple_with_incremental_cache_generic(
 Invisible NULL (data is written to cache file)
 }
 \description{
-Generic function that handles the incremental caching pattern used across different
+Generic function that handles the batch caching pattern used across different
 data types (price, income statement, etc.). This function processes each ticker
-individually and writes to cache immediately after each successful API call
-to prevent data loss if the process is interrupted.
+individually, collects all successful results in memory, and writes all data
+to cache at once at the end.
 }
 \examples{
 \dontrun{
@@ -51,6 +54,7 @@ fetch_multiple_with_incremental_cache_generic(
   cache_reader_func = read_cached_price_data,
   data_type_name = "price",
   delay_seconds = 1,
+  max_retries = 3,
   outputsize = "full",
   datatype = "json"
 )
@@ -62,7 +66,8 @@ fetch_multiple_with_incremental_cache_generic(
   single_fetch_func = fetch_income_statement,
   cache_reader_func = read_cached_income_statement_data,
   data_type_name = "income statement",
-  delay_seconds = 12
+  delay_seconds = 12,
+  max_retries = 3
 )
 }
 
