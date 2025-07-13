@@ -34,3 +34,6 @@ price_object <- fetch_multiple_with_incremental_cache_generic(
   outputsize = "full",  # "compact" for latest 100 days, "full" for 20+ years
   datatype = "json"
 )
+
+
+prices <- read_cached_data(cache_file, date_columns = PRICE_CONFIG$cache_date_columns)

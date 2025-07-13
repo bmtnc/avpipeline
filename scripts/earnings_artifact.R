@@ -33,3 +33,6 @@ earnings_object <- fetch_multiple_with_incremental_cache_generic(
   data_type_name = EARNINGS_CONFIG$data_type_name,
   delay_seconds = EARNINGS_CONFIG$default_delay
 )
+
+
+meta <- read_cached_data(cache_file, date_columns = EARNINGS_CONFIG$cache_date_columns)

@@ -34,5 +34,4 @@ balance_sheet_object <- fetch_multiple_with_incremental_cache_generic(
 )
 
 
-cat("Reading cached cash flow data...\n")
 bs <- read_cached_data(cache_file, date_columns = BALANCE_SHEET_CONFIG$cache_date_columns)
