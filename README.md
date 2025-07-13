@@ -15,7 +15,7 @@ An R package that provides utilities and tools for working with Alpha Vantage AP
 - **Income Statement Data**: Fetch quarterly income statement data from Alpha Vantage
 - **ETF Holdings**: Retrieve ETF holdings and convert to ticker lists
 - **Caching**: Avoid redundant API calls with smart cache management
-- **Incremental Caching**: Resilient data fetching that saves progress incrementally
+- **Batch Caching**: Resilient data fetching with retry logic and comprehensive error handling
 
 ### 🛡️ Robust Infrastructure
 - **API Key Management**: Secure and flexible API key handling
@@ -105,7 +105,7 @@ head(qqq_holdings)
 
 ### Caching Functions
 - `fetch_multiple_with_cache_generic()` - Generic caching orchestration
-- `fetch_multiple_with_incremental_cache_generic()` - Incremental caching implementation
+- `fetch_multiple_with_incremental_cache_generic()` - Batch caching with retry logic and comprehensive error handling
 - `read_cached_data()` - Generic cache reading with date conversion
 - `read_cached_price_data()` - Read cached price data
 - `read_cached_income_statement_data()` - Read cached income statement data
@@ -248,7 +248,9 @@ The package implements caching to minimize API calls:
 1. **Cache Detection**: Automatically detects existing cached data
 2. **Incremental Updates**: Only fetches missing tickers
 3. **Data Integrity**: Validates cached data before use
-4. **Resilient Writes**: Incremental caching prevents data loss during interruptions
+4. **Resilient Writes**: Batch caching with retry logic and comprehensive failure tracking
+5. **Retry Logic**: Up to 3 attempts per ticker with escalating delays (5s, 10s)
+6. **Failure Reporting**: Detailed error messages for failed tickers
 
 ## Rate Limiting
 
