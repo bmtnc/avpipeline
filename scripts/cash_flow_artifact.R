@@ -14,7 +14,7 @@ cat("Fetching holdings for ETF:", etf_symbol, "\n")
 tickers <- fetch_etf_holdings(etf_symbol)
 
 # Alternative: Use manually curated tickers if needed
-tickers <- c("URI", "XOM")
+# tickers <- c("URI", "XOM")
 
 # Define cache file path
 cache_file <- "cache/cash_flow_artifact.csv"
