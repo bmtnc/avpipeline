@@ -160,8 +160,8 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
     }
     
     # Remove duplicates based on appropriate columns
-    if (grepl("income", data_type_name, ignore.case = TRUE)) {
-      # For income statements, deduplicate on ticker and fiscalDateEnding
+    if (grepl("income|balance|cash|earnings", data_type_name, ignore.case = TRUE)) {
+      # For financial statements, deduplicate on ticker and fiscalDateEnding
       combined_data <- combined_data %>%
         dplyr::distinct(ticker, fiscalDateEnding, .keep_all = TRUE)
     } else {

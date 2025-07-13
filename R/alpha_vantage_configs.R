@@ -76,6 +76,25 @@ CASH_FLOW_CONFIG <- list(
   sort_desc = TRUE
 )
 
+#' Earnings Data Configuration
+#'
+#' Configuration object for fetching quarterly earnings data from Alpha Vantage.
+#' This data provides timing metadata for when financial statements were reported.
+#'
+#' @format A list containing configuration parameters for earnings data fetching.
+#' @export
+EARNINGS_CONFIG <- list(
+  api_function = "EARNINGS",
+  parser_func = "parse_earnings_response",
+  additional_params = c(),
+  default_delay = 12,
+  data_type_name = "earnings",
+  primary_date_column = "fiscalDateEnding",
+  cache_date_columns = c("fiscalDateEnding", "reportedDate", "as_of_date"),
+  result_sort_columns = c("ticker", "fiscalDateEnding"),
+  sort_desc = TRUE
+)
+
 #' ETF Profile Data Configuration
 #'
 #' Configuration object for fetching ETF profile data from Alpha Vantage.
