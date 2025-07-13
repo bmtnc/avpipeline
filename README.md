@@ -5,9 +5,9 @@
 [![Version](https://img.shields.io/badge/version-0.0.0.9000-blue.svg)](https://github.com/bmtnc/avpipeline)
 <!-- badges: end -->
 
-An R package that provides a revolutionary configuration-based API for working with Alpha Vantage financial data. The package eliminates code duplication through a unified architecture that works across all data types including stock prices, income statements, balance sheets, cash flows, and ETF profiles.
+An R package that provides a  configuration-based API for working with Alpha Vantage financial data. The package eliminates code duplication through a unified architecture that works across all data types including stock prices, income statements, balance sheets, cash flows, and ETF profiles.
 
-## 🚀 Revolutionary Configuration-Based Architecture
+## 🚀  Configuration-Based Architecture
 
 This package implements a groundbreaking configuration-based design that achieves **60% code reduction** while providing **consistent behavior across all data types**:
 
