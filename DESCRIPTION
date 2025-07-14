@@ -18,7 +18,10 @@ Imports:
     quadprog,
     roll,
     slider,
-    devtools
+    devtools,
+    ggplot2,
+    tidyr,
+    lubridate
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
