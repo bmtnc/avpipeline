@@ -112,3 +112,21 @@ ETF_PROFILE_CONFIG <- list(
   result_sort_columns = c("symbol"),
   sort_desc = FALSE
 )
+
+#' Corporate Actions - Splits Data Configuration
+#'
+#' Configuration object for fetching historical stock split events from Alpha Vantage.
+#'
+#' @format A list containing configuration parameters for splits data fetching.
+#' @export
+SPLITS_CONFIG <- list(
+  api_function = "SPLITS",
+  parser_func = "parse_splits_response",
+  additional_params = c(),
+  default_delay = 1,
+  data_type_name = "splits",
+  primary_date_column = "effective_date",
+  cache_date_columns = c("effective_date", "as_of_date"),
+  result_sort_columns = c("ticker", "effective_date"),
+  sort_desc = FALSE
+)

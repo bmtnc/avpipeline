@@ -72,6 +72,16 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
     stop("cache_reader_func parameter is required")
   }
   
+  # Check cache and filter tickers
+  if (file.exists(cache_file)) {
+    existing_data <- cache_reader_func(cache_file)
+    tickers <- get_symbols_to_fetch(tickers, existing_data, symbol_column = "ticker")
+    if (length(tickers) == 0) {
+      cat("All tickers already in cache\n")
+      return(invisible(TRUE))
+    }
+  }
+
   # Initialize progress tracking
   total_tickers <- length(tickers)
   successful_results <- list()
@@ -164,6 +174,10 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
       # For financial statements, deduplicate on ticker and fiscalDateEnding
       combined_data <- combined_data %>%
         dplyr::distinct(ticker, fiscalDateEnding, .keep_all = TRUE)
+    } else if (grepl("splits", data_type_name, ignore.case = TRUE)) {
+      # For splits data, deduplicate on ticker and effective_date
+      combined_data <- combined_data %>%
+        dplyr::distinct(ticker, effective_date, .keep_all = TRUE)
     } else {
       # For price data, deduplicate on ticker and date
       combined_data <- combined_data %>%
