@@ -10,7 +10,7 @@ devtools::load_all()
 # ==============================================================================
 # CONFIGURATION - Change this to fetch holdings from different ETFs
 # ==============================================================================
-etf_symbol <- "XLK"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
+etf_symbol <- "SOXX"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
 
 # ==============================================================================
 # FETCH ETF HOLDINGS
@@ -32,87 +32,71 @@ income_statement_cache <- "cache/income_statement_artifact.csv"
 earnings_cache <- "cache/earnings_artifact.csv"
 
 # ==============================================================================
-# HELPER FUNCTION: FETCH WITH SMART CACHING
-# ==============================================================================
-fetch_with_smart_caching <- function(data_type_name, cache_file, config, tickers) {
-  cat("\n=== Processing", data_type_name, "Data ===\n")
-  
-  # Step 1: Read existing cache if it exists
-  existing_data <- NULL
-  if (file.exists(cache_file)) {
-    existing_data <- read_cached_data(cache_file, date_columns = config$cache_date_columns)
-    cat("Existing cache found with", nrow(existing_data), "rows\n")
-  } else {
-    cat("No existing cache found\n")
-  }
-  
-  # Step 2: Determine which tickers need to be fetched
-  tickers_to_fetch <- get_symbols_to_fetch(tickers, existing_data, symbol_column = "ticker")
-  
-  cat("Tickers already in cache:", length(tickers) - length(tickers_to_fetch), "\n")
-  cat("Tickers to fetch:", length(tickers_to_fetch), "\n")
-  
-  # Step 3: Only fetch if there are missing tickers
-  if (length(tickers_to_fetch) > 0) {
-    cat("Fetching data for", length(tickers_to_fetch), "missing tickers...\n")
-    
-    fetch_multiple_with_incremental_cache_generic(
-      tickers = tickers_to_fetch,
-      cache_file = cache_file,
-      single_fetch_func = function(ticker, ...) {
-        fetch_alpha_vantage_data(ticker, config, ...)
-      },
-      cache_reader_func = function(cache_file) {
-        read_cached_data(cache_file, date_columns = config$cache_date_columns)
-      },
-      data_type_name = config$data_type_name,
-      delay_seconds = config$default_delay
-    )
-  } else {
-    cat("All tickers already in cache - skipping API calls\n")
-  }
-  
-  return(invisible(TRUE))
-}
-
-# ==============================================================================
 # FETCH BALANCE SHEET DATA
 # ==============================================================================
-fetch_with_smart_caching(
-  data_type_name = "Balance Sheet",
+cat("\n=== Processing Balance Sheet Data ===\n")
+fetch_multiple_with_incremental_cache_generic(
+  tickers = tickers,
   cache_file = balance_sheet_cache,
-  config = BALANCE_SHEET_CONFIG,
-  tickers = tickers
+  single_fetch_func = function(ticker, ...) {
+    fetch_alpha_vantage_data(ticker, BALANCE_SHEET_CONFIG, ...)
+  },
+  cache_reader_func = function(cache_file) {
+    read_cached_data(cache_file, date_columns = BALANCE_SHEET_CONFIG$cache_date_columns)
+  },
+  data_type_name = BALANCE_SHEET_CONFIG$data_type_name,
+  delay_seconds = BALANCE_SHEET_CONFIG$default_delay
 )
 
 # ==============================================================================
 # FETCH CASH FLOW DATA
 # ==============================================================================
-fetch_with_smart_caching(
-  data_type_name = "Cash Flow",
+cat("\n=== Processing Cash Flow Data ===\n")
+fetch_multiple_with_incremental_cache_generic(
+  tickers = tickers,
   cache_file = cash_flow_cache,
-  config = CASH_FLOW_CONFIG,
-  tickers = tickers
+  single_fetch_func = function(ticker, ...) {
+    fetch_alpha_vantage_data(ticker, CASH_FLOW_CONFIG, ...)
+  },
+  cache_reader_func = function(cache_file) {
+    read_cached_data(cache_file, date_columns = CASH_FLOW_CONFIG$cache_date_columns)
+  },
+  data_type_name = CASH_FLOW_CONFIG$data_type_name,
+  delay_seconds = CASH_FLOW_CONFIG$default_delay
 )
 
 # ==============================================================================
 # FETCH INCOME STATEMENT DATA
 # ==============================================================================
-fetch_with_smart_caching(
-  data_type_name = "Income Statement",
+cat("\n=== Processing Income Statement Data ===\n")
+fetch_multiple_with_incremental_cache_generic(
+  tickers = tickers,
   cache_file = income_statement_cache,
-  config = INCOME_STATEMENT_CONFIG,
-  tickers = tickers
+  single_fetch_func = function(ticker, ...) {
+    fetch_alpha_vantage_data(ticker, INCOME_STATEMENT_CONFIG, ...)
+  },
+  cache_reader_func = function(cache_file) {
+    read_cached_data(cache_file, date_columns = INCOME_STATEMENT_CONFIG$cache_date_columns)
+  },
+  data_type_name = INCOME_STATEMENT_CONFIG$data_type_name,
+  delay_seconds = INCOME_STATEMENT_CONFIG$default_delay
 )
 
 # ==============================================================================
 # FETCH EARNINGS DATA
 # ==============================================================================
-fetch_with_smart_caching(
-  data_type_name = "Earnings",
+cat("\n=== Processing Earnings Data ===\n")
+fetch_multiple_with_incremental_cache_generic(
+  tickers = tickers,
   cache_file = earnings_cache,
-  config = EARNINGS_CONFIG,
-  tickers = tickers
+  single_fetch_func = function(ticker, ...) {
+    fetch_alpha_vantage_data(ticker, EARNINGS_CONFIG, ...)
+  },
+  cache_reader_func = function(cache_file) {
+    read_cached_data(cache_file, date_columns = EARNINGS_CONFIG$cache_date_columns)
+  },
+  data_type_name = EARNINGS_CONFIG$data_type_name,
+  delay_seconds = EARNINGS_CONFIG$default_delay
 )
 
 # ==============================================================================
