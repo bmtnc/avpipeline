@@ -20,11 +20,11 @@ tickers <- fetch_etf_holdings(etf_symbol)
 cache_file <- "cache/cash_flow_artifact.csv"
 
 # Fetch data with intelligent caching using configuration-based approach
-cash_flow_object <- fetch_multiple_with_incremental_cache_generic(
+cash_flow_object <- fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = cache_file,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, CASH_FLOW_CONFIG, ...)
+    fetch_single_ticker_data(ticker, CASH_FLOW_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = CASH_FLOW_CONFIG$cache_date_columns)

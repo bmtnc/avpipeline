@@ -16,7 +16,7 @@ Configuration object for fetching daily adjusted price data from Alpha Vantage.
 \examples{
 \dontrun{
 # Fetch price data
-price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG)
+price_data <- fetch_single_ticker_data("AAPL", PRICE_CONFIG)
 }
 }
 \keyword{datasets}

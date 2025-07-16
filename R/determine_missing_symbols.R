@@ -1,4 +1,4 @@
-#' Get Symbols to Fetch
+#' Determine Missing Symbols
 #'
 #' Determines which symbols need to be fetched by comparing requested symbols
 #' against symbols already present in cached data. Returns only the symbols
@@ -15,11 +15,11 @@
 #' \dontrun{
 #' requested <- c("AAPL", "GOOGL", "MSFT", "TSLA")
 #' cached_data <- read_cached_price_data("cache/price_data.csv")
-#' symbols_to_fetch <- get_symbols_to_fetch(requested, cached_data)
+#' symbols_to_fetch <- determine_missing_symbols(requested, cached_data)
 #' }
 #'
 #' @export
-get_symbols_to_fetch <- function(requested_symbols, cached_data, symbol_column = NULL) {
+determine_missing_symbols <- function(requested_symbols, cached_data, symbol_column = NULL) {
   
   # Validate inputs
   if (length(requested_symbols) == 0) {

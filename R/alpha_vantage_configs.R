@@ -7,11 +7,11 @@
 #' @examples
 #' \dontrun{
 #' # Fetch price data
-#' price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG)
+#' price_data <- fetch_single_ticker_data("AAPL", PRICE_CONFIG)
 #' }
 PRICE_CONFIG <- list(
   api_function = "TIME_SERIES_DAILY_ADJUSTED",
-  parser_func = "parse_api_response",
+  parser_func = "parse_price_response",
   additional_params = c("outputsize", "datatype"),
   default_delay = 1,
   data_type_name = "price",

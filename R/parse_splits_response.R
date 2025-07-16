@@ -8,7 +8,7 @@
 #' @export
 #' @examples
 #' \dontrun{
-#' # This function is called internally by fetch_alpha_vantage_data
+#' # This function is called internally by fetch_single_ticker_data
 #' response <- make_alpha_vantage_request("IBM", SPLITS_CONFIG)
 #' result <- parse_splits_response(response, "IBM")
 #' }

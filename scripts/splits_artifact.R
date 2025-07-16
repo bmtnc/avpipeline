@@ -42,11 +42,11 @@ if (length(target_tickers) == 0) {
 # Fetch splits data with intelligent caching using configuration-based approach
 cat("Fetching splits data with intelligent caching...\n")
 
-splits_data <- fetch_multiple_with_incremental_cache_generic(
+splits_data <- fetch_multiple_tickers_with_cache(
   tickers = target_tickers,
   cache_file = cache_file,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, SPLITS_CONFIG, ...)
+    fetch_single_ticker_data(ticker, SPLITS_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = SPLITS_CONFIG$cache_date_columns)

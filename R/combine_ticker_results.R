@@ -1,4 +1,4 @@
-#' Generic Result Combination Function
+#' Combine Ticker Results
 #'
 #' Combines results from multiple tickers into a single dataframe with proper
 #' column ordering and metadata. This function replaces all individual result
@@ -16,12 +16,12 @@
 #' @examples
 #' \dontrun{
 #' # Combine price data results
-#' combined_data <- combine_results_generic(results_list, tickers, PRICE_CONFIG)
+#' combined_data <- combine_ticker_results(results_list, tickers, PRICE_CONFIG)
 #' 
 #' # Combine income statement results
-#' combined_data <- combine_results_generic(results_list, tickers, INCOME_STATEMENT_CONFIG)
+#' combined_data <- combine_ticker_results(results_list, tickers, INCOME_STATEMENT_CONFIG)
 #' }
-combine_results_generic <- function(results_list, tickers, config) {
+combine_ticker_results <- function(results_list, tickers, config) {
   
   # Validate inputs
   if (missing(results_list) || !is.list(results_list)) {

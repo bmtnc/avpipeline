@@ -21,11 +21,11 @@ tickers <- fetch_etf_holdings(etf_symbol)
 cache_file <- "cache/earnings_artifact.csv"
 
 # Fetch data with intelligent caching using configuration-based approach
-earnings_object <- fetch_multiple_with_incremental_cache_generic(
+earnings_object <- fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = cache_file,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, EARNINGS_CONFIG, ...)
+    fetch_single_ticker_data(ticker, EARNINGS_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = EARNINGS_CONFIG$cache_date_columns)

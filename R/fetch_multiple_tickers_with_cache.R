@@ -20,7 +20,7 @@
 #' @examples
 #' \dontrun{
 #' # For price data
-#' fetch_multiple_with_incremental_cache_generic(
+#' fetch_multiple_tickers_with_cache(
 #'   tickers = c("AAPL", "GOOGL"),
 #'   cache_file = "cache/price_data.csv",
 #'   single_fetch_func = fetch_daily_adjusted_prices,
@@ -33,7 +33,7 @@
 #' )
 #' 
 #' # For income statement data
-#' fetch_multiple_with_incremental_cache_generic(
+#' fetch_multiple_tickers_with_cache(
 #'   tickers = c("AAPL", "GOOGL"),
 #'   cache_file = "cache/income_statement_data.csv",
 #'   single_fetch_func = fetch_income_statement,
@@ -45,7 +45,7 @@
 #' }
 #'
 #' @export
-fetch_multiple_with_incremental_cache_generic <- function(tickers,
+fetch_multiple_tickers_with_cache <- function(tickers,
                                                           cache_file,
                                                           single_fetch_func,
                                                           cache_reader_func,
@@ -75,7 +75,7 @@ fetch_multiple_with_incremental_cache_generic <- function(tickers,
   # Check cache and filter tickers
   if (file.exists(cache_file)) {
     existing_data <- cache_reader_func(cache_file)
-    tickers <- get_symbols_to_fetch(tickers, existing_data, symbol_column = "ticker")
+    tickers <- determine_missing_symbols(tickers, existing_data, symbol_column = "ticker")
     if (length(tickers) == 0) {
       cat("All tickers already in cache\n")
       return(invisible(TRUE))

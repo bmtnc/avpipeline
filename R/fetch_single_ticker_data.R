@@ -1,4 +1,4 @@
-#' Generic Alpha Vantage Data Fetcher
+#' Single Ticker Data Fetcher
 #'
 #' Fetches data from Alpha Vantage API for any supported data type using
 #' configuration objects. This function replaces all individual single-ticker
@@ -15,18 +15,18 @@
 #' @examples
 #' \dontrun{
 #' # Fetch price data
-#' price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG, outputsize = "full")
+#' price_data <- fetch_single_ticker_data("AAPL", PRICE_CONFIG, outputsize = "full")
 #' 
 #' # Fetch income statement data
-#' income_data <- fetch_alpha_vantage_data("AAPL", INCOME_STATEMENT_CONFIG)
+#' income_data <- fetch_single_ticker_data("AAPL", INCOME_STATEMENT_CONFIG)
 #' 
 #' # Fetch balance sheet data
-#' balance_data <- fetch_alpha_vantage_data("AAPL", BALANCE_SHEET_CONFIG)
+#' balance_data <- fetch_single_ticker_data("AAPL", BALANCE_SHEET_CONFIG)
 #' 
 #' # Fetch cash flow data
-#' cash_flow_data <- fetch_alpha_vantage_data("AAPL", CASH_FLOW_CONFIG)
+#' cash_flow_data <- fetch_single_ticker_data("AAPL", CASH_FLOW_CONFIG)
 #' }
-fetch_alpha_vantage_data <- function(ticker, config, api_key = NULL, ...) {
+fetch_single_ticker_data <- function(ticker, config, api_key = NULL, ...) {
   
   # Validate inputs
   if (missing(ticker) || !is.character(ticker) || length(ticker) != 1) {

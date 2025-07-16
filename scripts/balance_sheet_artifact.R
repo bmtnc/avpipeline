@@ -20,11 +20,11 @@ tickers <- fetch_etf_holdings(etf_symbol)
 cache_file <- "cache/balance_sheet_artifact.csv"
 
 # Fetch data with intelligent caching using configuration-based approach
-balance_sheet_object <- fetch_multiple_with_incremental_cache_generic(
+balance_sheet_object <- fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = cache_file,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, BALANCE_SHEET_CONFIG, ...)
+    fetch_single_ticker_data(ticker, BALANCE_SHEET_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = BALANCE_SHEET_CONFIG$cache_date_columns)

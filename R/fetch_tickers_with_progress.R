@@ -1,4 +1,4 @@
-#' Generic Progress Processing for Multiple Tickers
+#' Fetch Tickers with Progress
 #'
 #' Processes multiple tickers with progress tracking, error handling, and rate limiting.
 #' This function replaces all individual progress processing functions by using
@@ -17,19 +17,19 @@
 #' @examples
 #' \dontrun{
 #' # Process price data for multiple tickers
-#' results <- process_tickers_with_progress_generic(
+#' results <- fetch_tickers_with_progress(
 #'   c("AAPL", "GOOGL"), 
 #'   PRICE_CONFIG, 
 #'   outputsize = "full"
 #' )
 #' 
 #' # Process income statement data for multiple tickers
-#' results <- process_tickers_with_progress_generic(
+#' results <- fetch_tickers_with_progress(
 #'   c("AAPL", "GOOGL"), 
 #'   INCOME_STATEMENT_CONFIG
 #' )
 #' }
-process_tickers_with_progress_generic <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
+fetch_tickers_with_progress <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
   
   # Validate inputs
   if (missing(tickers) || !is.character(tickers) || length(tickers) == 0) {
@@ -71,7 +71,7 @@ process_tickers_with_progress_generic <- function(tickers, config, api_key = NUL
     
     # Try to fetch data for this ticker
     tryCatch({
-      ticker_data <- fetch_alpha_vantage_data(
+      ticker_data <- fetch_single_ticker_data(
         ticker = ticker,
         config = config,
         api_key = api_key,

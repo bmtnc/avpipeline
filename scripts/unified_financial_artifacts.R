@@ -10,7 +10,7 @@ devtools::load_all()
 # ==============================================================================
 # CONFIGURATION - Change this to fetch holdings from different ETFs
 # ==============================================================================
-etf_symbol <- "SOXX"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
+etf_symbol <- "XLY"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
 
 # ==============================================================================
 # FETCH ETF HOLDINGS
@@ -35,11 +35,11 @@ earnings_cache <- "cache/earnings_artifact.csv"
 # FETCH BALANCE SHEET DATA
 # ==============================================================================
 cat("\n=== Processing Balance Sheet Data ===\n")
-fetch_multiple_with_incremental_cache_generic(
+fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = balance_sheet_cache,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, BALANCE_SHEET_CONFIG, ...)
+    fetch_single_ticker_data(ticker, BALANCE_SHEET_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = BALANCE_SHEET_CONFIG$cache_date_columns)
@@ -52,11 +52,11 @@ fetch_multiple_with_incremental_cache_generic(
 # FETCH CASH FLOW DATA
 # ==============================================================================
 cat("\n=== Processing Cash Flow Data ===\n")
-fetch_multiple_with_incremental_cache_generic(
+fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = cash_flow_cache,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, CASH_FLOW_CONFIG, ...)
+    fetch_single_ticker_data(ticker, CASH_FLOW_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = CASH_FLOW_CONFIG$cache_date_columns)
@@ -69,11 +69,11 @@ fetch_multiple_with_incremental_cache_generic(
 # FETCH INCOME STATEMENT DATA
 # ==============================================================================
 cat("\n=== Processing Income Statement Data ===\n")
-fetch_multiple_with_incremental_cache_generic(
+fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = income_statement_cache,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, INCOME_STATEMENT_CONFIG, ...)
+    fetch_single_ticker_data(ticker, INCOME_STATEMENT_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = INCOME_STATEMENT_CONFIG$cache_date_columns)
@@ -86,11 +86,11 @@ fetch_multiple_with_incremental_cache_generic(
 # FETCH EARNINGS DATA
 # ==============================================================================
 cat("\n=== Processing Earnings Data ===\n")
-fetch_multiple_with_incremental_cache_generic(
+fetch_multiple_tickers_with_cache(
   tickers = tickers,
   cache_file = earnings_cache,
   single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, EARNINGS_CONFIG, ...)
+    fetch_single_ticker_data(ticker, EARNINGS_CONFIG, ...)
   },
   cache_reader_func = function(cache_file) {
     read_cached_data(cache_file, date_columns = EARNINGS_CONFIG$cache_date_columns)

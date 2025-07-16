@@ -1,4 +1,4 @@
-#' Parse API response to tibble
+#' Parse Price Response to Tibble
 #'
 #' @param response Raw httr response object
 #' @param ticker Character. The equity ticker
@@ -6,7 +6,7 @@
 #'
 #' @return A tibble with daily adjusted price data
 #' @keywords internal
-parse_api_response <- function(response, ticker, datatype) {
+parse_price_response <- function(response, ticker, datatype) {
   if (datatype == "json") {
     # Parse JSON response
     content <- httr::content(response, as = "text", encoding = "UTF-8")

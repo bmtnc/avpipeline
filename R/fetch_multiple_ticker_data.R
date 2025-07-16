@@ -1,4 +1,4 @@
-#' Generic Multiple Ticker Data Fetcher
+#' Multiple Ticker Data Fetcher
 #'
 #' Fetches data from Alpha Vantage API for multiple tickers using configuration
 #' objects. This function replaces all individual multiple-ticker fetch functions
@@ -16,31 +16,31 @@
 #' @examples
 #' \dontrun{
 #' # Fetch price data for multiple tickers
-#' price_data <- fetch_multiple_alpha_vantage_data(
+#' price_data <- fetch_multiple_ticker_data(
 #'   c("AAPL", "GOOGL"), 
 #'   PRICE_CONFIG, 
 #'   outputsize = "full"
 #' )
 #' 
 #' # Fetch income statement data for multiple tickers
-#' income_data <- fetch_multiple_alpha_vantage_data(
+#' income_data <- fetch_multiple_ticker_data(
 #'   c("AAPL", "GOOGL"), 
 #'   INCOME_STATEMENT_CONFIG
 #' )
 #' 
 #' # Fetch balance sheet data for multiple tickers
-#' balance_data <- fetch_multiple_alpha_vantage_data(
+#' balance_data <- fetch_multiple_ticker_data(
 #'   c("AAPL", "GOOGL"), 
 #'   BALANCE_SHEET_CONFIG
 #' )
 #' 
 #' # Fetch cash flow data for multiple tickers
-#' cash_flow_data <- fetch_multiple_alpha_vantage_data(
+#' cash_flow_data <- fetch_multiple_ticker_data(
 #'   c("AAPL", "GOOGL"), 
 #'   CASH_FLOW_CONFIG
 #' )
 #' }
-fetch_multiple_alpha_vantage_data <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
+fetch_multiple_ticker_data <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
   
   # Step 1: Validate inputs
   if (missing(tickers) || !is.character(tickers) || length(tickers) == 0) {
@@ -66,7 +66,7 @@ fetch_multiple_alpha_vantage_data <- function(tickers, config, api_key = NULL, d
   }
   
   # Step 3: Process all tickers with progress tracking
-  results_list <- process_tickers_with_progress_generic(
+  results_list <- fetch_tickers_with_progress(
     tickers = tickers,
     config = config,
     api_key = api_key,
@@ -75,7 +75,7 @@ fetch_multiple_alpha_vantage_data <- function(tickers, config, api_key = NULL, d
   )
   
   # Step 4: Combine and process results
-  combined_data <- combine_results_generic(results_list, tickers, config)
+  combined_data <- combine_ticker_results(results_list, tickers, config)
   
   return(combined_data)
 }
