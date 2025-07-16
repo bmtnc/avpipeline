@@ -305,7 +305,7 @@ if (sum(market_data$post_filing_split_multiplier != 1, na.rm = TRUE) > 0) {
 cat("Creating market cap visualization …\n")
 
 # Configuration
-target_ticker <- "AVGO"  # Change this to any ticker in your dataset
+target_ticker <- "CTAS"  # Change this to any ticker in your dataset
 
 # Verify ticker exists
 if (!target_ticker %in% market_data$ticker) {
