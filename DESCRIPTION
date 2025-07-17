@@ -22,7 +22,8 @@ Imports:
     ggplot2,
     tidyr,
     lubridate,
-    stringr
+    stringr,
+    zoo
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
