@@ -5,67 +5,30 @@
 # CLEANING METHOD RATIONALE:
 # Alpha Vantage financial data contains significant quality issues, particularly
 # temporary spikes and drops in key financial metrics like shares outstanding,
-# earnings, and revenue. These anomalies appear as multi-quarter sequences where
-# values temporarily deviate from normal levels before reverting - for example,
-# share counts that inexplicably drop 70% for several quarters then return to
-# baseline levels. Such data corruption renders financial analysis unreliable and
+# earnings, and revenue. These anomalies appear as single or multi-quarter
+# sequences where values temporarily deviate from normal levels before reverting
+# E.g., share counts that inexplicably drop 70% for ~4 quarters then return to
+# baseline levels. Such data corruption renders financial analysis unreliable &
 # creates misleading per-share calculations and valuation ratios.
 #
-# Traditional percentage-change anomaly detection fails because it only flags the
+# Traditional percentage-change anomaly detection fails because it flags the
 # initial extreme change, leaving subsequent anomalous quarters uncleaned. This
 # creates interpolation problems where linear interpolation bridges from normal
-# data to persistent anomalies, resulting in unrealistic flat plateaus. Our solution
-# uses a lookback/lookahead baseline approach: for each quarter, we establish a
+# data to persistent anomalies, resulting in unrealistic flat plateaus. The fix:
+# use a lookback/lookahead baseline approach: for each quarter, we establish a
 # "normal" baseline using surrounding quarters (typically 4 before and 4 after),
 # excluding immediate neighbors to prevent contamination. Any quarter deviating
 # significantly from this baseline (using MAD threshold) is flagged as anomalous,
 # capturing entire sequences of temporary anomalies. After flagging, we replace
-# anomalous values with NA and interpolate smoothly between normal values, producing
-# clean, analytically reliable quarterly data suitable for financial modeling.
+# anomalous values with NA and interpolate smoothly between normal values,
+# producing clean, analytically reliable quarterly data.
 #
 # =============================================================================
 
-# Detect temporary anomalies using lookback/lookahead baseline
-detect_temporary_anomalies <- function(values, lookback = 4, lookahead = 4, threshold = 3) {
-  n <- length(values)
-  anomaly_flags <- rep(FALSE, n)
-
-  # Calculate centered moving average for each point
-  for(i in 1:n) {
-    # Define window around current point
-    window_start <- max(1, i - lookback)
-    window_end <- min(n, i + lookahead)
-
-    # Exclude current point and surrounding points to avoid contamination
-    baseline_indices <- c(window_start:(i-2), (i+2):window_end)
-    baseline_indices <- baseline_indices[baseline_indices > 0 & baseline_indices <= n]
-
-    if(length(baseline_indices) >= 6) {  # Need minimum baseline points
-      baseline_values <- values[baseline_indices]
-      baseline_median <- median(baseline_values, na.rm = TRUE)
-      baseline_mad <- mad(baseline_values, na.rm = TRUE)
-
-      # Flag if current value is extreme relative to baseline
-      if(baseline_mad > 0) {
-        anomaly_flags[i] <- abs(values[i] - baseline_median) > threshold * baseline_mad
-      }
-    }
-  }
-
-  anomaly_flags
-}
-
-# Helper function to filter groups with sufficient observations
-filter_sufficient_observations <- function(data, group_col, min_obs) {
-  group_sym <- rlang::sym(group_col)
-
-  data %>%
-    dplyr::group_by(!!group_sym) %>%
-    dplyr::add_count() %>%
-    dplyr::ungroup() %>%
-    dplyr::filter(n >= min_obs) %>%
-    dplyr::select(-n)
-}
+# ---- SECTION 0: Load required functions -------------------------------------
+source("R/detect_temporary_anomalies.R")
+source("R/filter_sufficient_observations.R")
+source("R/read_cached_data.R")
 
 # Add anomaly flag columns using temporary anomaly detection
 add_anomaly_flag_columns <- function(data, metric_cols, threshold = 3, lookback = 4, lookahead = 4) {
@@ -121,8 +84,8 @@ clean_quarterly_metrics <- function(data, metric_cols, date_col, ticker_col,
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "TSLA"                    # Ticker symbol to analyze
-METRIC <- "netIncome"         # Metric column name to clean and plot
+TICKER <- "CTAS"                    # Ticker symbol to analyze
+METRIC <- "commonStockSharesOutstanding"         # Metric column name to clean and plot
 ANOMALY_THRESHOLD <- 3               # MAD threshold for anomaly detection
 LOOKBACK <- 5                        # Quarters to look back for baseline
 LOOKAHEAD <- 5                       # Quarters to look ahead for baseline
@@ -278,3 +241,100 @@ quarterly_comparison_table <- df_quarterly_original %>%
 print(quarterly_comparison_table)
 
 cat("\nQuarterly cleaning test completed!\n")
+
+# ---- SECTION 7: Compare daily before and after (forward-filled) -------------
+cat("Creating daily before/after comparison for ", TICKER, " ", METRIC, " ...\n")
+
+# Original DAILY data (from unified_final)
+df_daily_original <- unified_final %>%
+  dplyr::filter(
+    ticker == TICKER,
+    has_complete_financial_data,
+    !is.na(!!rlang::sym(METRIC))
+  ) %>%
+  dplyr::mutate(data_type = "Original")
+
+# Cleaned DAILY data (from unified_cleaned)
+df_daily_cleaned <- unified_cleaned %>%
+  dplyr::filter(
+    ticker == TICKER,
+    has_complete_financial_data,
+    !is.na(!!rlang::sym(METRIC))
+  ) %>%
+  dplyr::mutate(data_type = "Cleaned")
+
+# Combine daily data for comparison
+df_daily_combined <- dplyr::bind_rows(df_daily_original, df_daily_cleaned)
+
+# Create daily comparison plot
+daily_comparison_plot <- df_daily_combined %>%
+  ggplot2::ggplot(ggplot2::aes(x = date, y = !!rlang::sym(METRIC), fill = data_type)) +
+  ggplot2::geom_col(alpha = 0.7) +
+  ggplot2::facet_wrap(~data_type, ncol = 1) +
+  ggplot2::labs(
+    title = if(is.null(PLOT_TITLE)) {
+      paste0(TICKER, " ", stringr::str_to_title(gsub("_", " ", METRIC)),
+             ": Daily Before vs After Cleaning")
+    } else {
+      paste0(PLOT_TITLE, " (Daily)")
+    },
+    x = "Date (Daily)",
+    y = stringr::str_to_title(gsub("_", " ", METRIC)),
+    fill = "Data Type"
+  ) +
+  ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(
+    plot.title = ggplot2::element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1)
+  )
+
+print(daily_comparison_plot)
+
+# ---- SECTION 8: Daily summary statistics ------------------------------------
+cat("\nDaily summary statistics comparison:\n")
+cat("Original daily ", TICKER, " ", METRIC, ":\n")
+print(summary(df_daily_original[[METRIC]]))
+
+cat("\nCleaned daily ", TICKER, " ", METRIC, ":\n")
+print(summary(df_daily_cleaned[[METRIC]]))
+
+# Show improvement metrics
+original_daily_negatives <- sum(df_daily_original[[METRIC]] < 0, na.rm = TRUE)
+cleaned_daily_negatives <- sum(df_daily_cleaned[[METRIC]] < 0, na.rm = TRUE)
+
+cat("\nDaily negative values:\n")
+cat("Original: ", original_daily_negatives, "\n")
+cat("Cleaned: ", cleaned_daily_negatives, "\n")
+
+if (original_daily_negatives > cleaned_daily_negatives) {
+  cat("✓ Successfully removed ", original_daily_negatives - cleaned_daily_negatives,
+      " negative daily values!\n")
+} else if (original_daily_negatives == 0 && cleaned_daily_negatives == 0) {
+  cat("ℹ No negative values found in either daily dataset\n")
+} else {
+  cat("⚠ No improvement in negative daily values\n")
+}
+
+# Show the range of dates where changes occurred
+date_changes <- df_daily_original %>%
+  dplyr::select(date, original = !!rlang::sym(METRIC)) %>%
+  dplyr::left_join(
+    df_daily_cleaned %>% dplyr::select(date, cleaned = !!rlang::sym(METRIC)),
+    by = "date"
+  ) %>%
+  dplyr::filter(original != cleaned) %>%
+  dplyr::summarise(
+    first_change = min(date),
+    last_change = max(date),
+    total_days_changed = dplyr::n()
+  )
+
+if (nrow(date_changes) > 0) {
+  cat("\nDaily data changes summary:\n")
+  cat("First change: ", as.character(date_changes$first_change), "\n")
+  cat("Last change: ", as.character(date_changes$last_change), "\n")
+  cat("Total days with changes: ", date_changes$total_days_changed, "\n")
+} else {
+  cat("\nNo changes detected in daily data\n")
+}

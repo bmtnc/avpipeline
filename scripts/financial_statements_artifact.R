@@ -9,7 +9,7 @@
 # Check if all required files exist
 required_files <- c(
   "cache/earnings_artifact.csv",
-  "cache/cash_flow_artifact.csv", 
+  "cache/cash_flow_artifact.csv",
   "cache/income_statement_artifact.csv",
   "cache/balance_sheet_artifact.csv"
 )
@@ -22,19 +22,19 @@ if (length(missing_files) > 0) {
 # Load all financial statement data and filter to dates >= Dec 31, 2004
 cat("Loading financial statement data...\n")
 
-earnings <- read_cached_data("cache/earnings_artifact.csv", 
+earnings <- read_cached_data("cache/earnings_artifact.csv",
                             date_columns = c("fiscalDateEnding", "reportedDate", "as_of_date")) %>%
   dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
 
-cash_flow <- read_cached_data("cache/cash_flow_artifact.csv", 
+cash_flow <- read_cached_data("cache/cash_flow_artifact.csv",
                              date_columns = c("fiscalDateEnding", "as_of_date")) %>%
   dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
 
-income_statement <- read_cached_data("cache/income_statement_artifact.csv", 
+income_statement <- read_cached_data("cache/income_statement_artifact.csv",
                                     date_columns = c("fiscalDateEnding", "as_of_date")) %>%
   dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
 
-balance_sheet <- read_cached_data("cache/balance_sheet_artifact.csv", 
+balance_sheet <- read_cached_data("cache/balance_sheet_artifact.csv",
                                  date_columns = c("fiscalDateEnding", "as_of_date")) %>%
   dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
 
@@ -64,39 +64,39 @@ identify_all_na_rows <- function(data, financial_cols, statement_type) {
     cat("Warning: No financial columns found for", statement_type, "\n")
     return(data)
   }
-  
+
   original_count <- nrow(data)
-  
+
   # Check if all financial columns are NA for each row
   all_na_mask <- apply(data[financial_cols], 1, function(x) all(is.na(x)))
-  
+
   # Remove rows where all financial columns are NA
   cleaned_data <- data[!all_na_mask, ]
   removed_count <- original_count - nrow(cleaned_data)
-  
+
   if (removed_count > 0) {
-    cat("- Removed", removed_count, "observations from", statement_type, 
+    cat("- Removed", removed_count, "observations from", statement_type,
         "with all NA financial columns\n")
-    
+
     # Show sample of removed ticker-date combinations
     removed_observations <- data[all_na_mask, c("ticker", "fiscalDateEnding")]
     if (nrow(removed_observations) > 0) {
       removed_tickers <- unique(removed_observations$ticker)
-      cat("  Affected tickers:", length(removed_tickers), 
+      cat("  Affected tickers:", length(removed_tickers),
           "(", paste(head(removed_tickers, 5), collapse = ", "))
       if (length(removed_tickers) > 5) cat(", ...")
       cat(")\n")
     }
   }
-  
+
   return(cleaned_data)
 }
 
 # Clean each financial statement dataset
 cash_flow_cleaned <- identify_all_na_rows(cash_flow, cash_flow_financial_cols, "cash flow")
-income_statement_cleaned <- identify_all_na_rows(income_statement, income_statement_financial_cols, 
+income_statement_cleaned <- identify_all_na_rows(income_statement, income_statement_financial_cols,
                                                  "income statement")
-balance_sheet_cleaned <- identify_all_na_rows(balance_sheet, balance_sheet_financial_cols, 
+balance_sheet_cleaned <- identify_all_na_rows(balance_sheet, balance_sheet_financial_cols,
                                               "balance sheet")
 
 # Update the datasets
@@ -108,6 +108,120 @@ cat("Data after removing all-NA observations:\n")
 cat("- Cash flow:", nrow(cash_flow), "observations\n")
 cat("- Income statement:", nrow(income_statement), "observations\n")
 cat("- Balance sheet:", nrow(balance_sheet), "observations\n")
+
+
+# ============================================================================
+# SECTION 2.5: QUARTERLY ANOMALY CLEANING
+# ============================================================================
+
+#TODO this results in a mind boggling amount of warning messages. fix this.
+
+cat("Cleaning quarterly anomalies in financial metrics...\n")
+
+# Define optimal parameters
+THRESHOLD <- 4
+LOOKBACK <- 5
+LOOKAHEAD <- 5
+MIN_OBS <- 10
+
+# Define financial metric columns (exclude metadata)
+metadata_cols <- c("ticker", "fiscalDateEnding", "reportedCurrency", "as_of_date")
+
+income_statement_metrics <- setdiff(names(income_statement), metadata_cols)
+cash_flow_metrics <- setdiff(names(cash_flow), metadata_cols)
+balance_sheet_metrics <- setdiff(names(balance_sheet), metadata_cols)
+
+cat("Metrics to clean:\n")
+cat("- Income statement:", length(income_statement_metrics), "metrics\n")
+cat("- Cash flow:", length(cash_flow_metrics), "metrics\n")
+cat("- Balance sheet:", length(balance_sheet_metrics), "metrics\n")
+
+# Clean income statement
+cat("Cleaning income statement metrics...\n")
+income_statement_filtered <- filter_sufficient_observations(
+  income_statement, "ticker", MIN_OBS
+)
+
+if (nrow(income_statement_filtered) > 0) {
+  income_statement <- tryCatch({
+    clean_quarterly_metrics(
+      data = income_statement_filtered,
+      metric_cols = income_statement_metrics,
+      date_col = "fiscalDateEnding",
+      ticker_col = "ticker",
+      threshold = THRESHOLD,
+      lookback = LOOKBACK,
+      lookahead = LOOKAHEAD
+    )
+  }, error = function(e) {
+    cat("Income statement cleaning failed, keeping original data. Error:", e$message, "\n")
+    return(income_statement)
+  })
+  cat("✓ Income statement cleaned successfully\n")
+} else {
+  cat("⚠ No income statement data with sufficient observations\n")
+}
+
+# Clean cash flow
+cat("Cleaning cash flow metrics...\n")
+cash_flow_filtered <- filter_sufficient_observations(
+  cash_flow, "ticker", MIN_OBS
+)
+
+if (nrow(cash_flow_filtered) > 0) {
+  cash_flow <- tryCatch({
+    clean_quarterly_metrics(
+      data = cash_flow_filtered,
+      metric_cols = cash_flow_metrics,
+      date_col = "fiscalDateEnding",
+      ticker_col = "ticker",
+      threshold = THRESHOLD,
+      lookback = LOOKBACK,
+      lookahead = LOOKAHEAD
+    )
+  }, error = function(e) {
+    cat("Cash flow cleaning failed, keeping original data. Error:", e$message, "\n")
+    return(cash_flow)
+  })
+  cat("✓ Cash flow cleaned successfully\n")
+} else {
+  cat("⚠ No cash flow data with sufficient observations\n")
+}
+
+# Clean balance sheet
+cat("Cleaning balance sheet metrics...\n")
+balance_sheet_filtered <- filter_sufficient_observations(
+  balance_sheet, "ticker", MIN_OBS
+)
+
+if (nrow(balance_sheet_filtered) > 0) {
+  balance_sheet <- tryCatch({
+    clean_quarterly_metrics(
+      data = balance_sheet_filtered,
+      metric_cols = balance_sheet_metrics,
+      date_col = "fiscalDateEnding",
+      ticker_col = "ticker",
+      threshold = THRESHOLD,
+      lookback = LOOKBACK,
+      lookahead = LOOKAHEAD
+    )
+  }, error = function(e) {
+    cat("Balance sheet cleaning failed, keeping original data. Error:", e$message, "\n")
+    return(balance_sheet)
+  })
+  cat("✓ Balance sheet cleaned successfully\n")
+} else {
+  cat("⚠ No balance sheet data with sufficient observations\n")
+}
+
+# Report final data after cleaning
+cat("Data after anomaly cleaning:\n")
+cat("- Income statement:", nrow(income_statement), "observations\n")
+cat("- Cash flow:", nrow(cash_flow), "observations\n")
+cat("- Balance sheet:", nrow(balance_sheet), "observations\n")
+
+cat("Quarterly anomaly cleaning completed.\n")
+
 
 # ============================================================================
 # SECTION 3: TICKER ALIGNMENT VALIDATION
@@ -124,7 +238,7 @@ all_tickers <- list(earnings_tickers, cash_flow_tickers, income_statement_ticker
 common_tickers <- Reduce(intersect, all_tickers)
 
 # Identify and report removed tickers
-all_unique_tickers <- unique(c(earnings_tickers, cash_flow_tickers, 
+all_unique_tickers <- unique(c(earnings_tickers, cash_flow_tickers,
                               income_statement_tickers, balance_sheet_tickers))
 removed_tickers_step1 <- setdiff(all_unique_tickers, common_tickers)
 
@@ -187,7 +301,7 @@ valid_dates <- date_alignment %>%
 
 # Final list of tickers that have at least some valid data
 final_tickers <- unique(valid_dates$ticker)
-cat("Final dataset includes", length(final_tickers), "tickers with", 
+cat("Final dataset includes", length(final_tickers), "tickers with",
     nrow(valid_dates), "aligned observations\n")
 
 # ============================================================================
@@ -217,11 +331,11 @@ cash_flow_cols <- setdiff(names(cash_flow), common_cols)
 # Join all financial statements (left join earnings to allow for missing dates)
 financial_statements <- valid_dates %>%
   dplyr::left_join(earnings_final, by = c("ticker", "fiscalDateEnding")) %>%
-  dplyr::left_join(income_statement_final, by = c("ticker", "fiscalDateEnding"), 
+  dplyr::left_join(income_statement_final, by = c("ticker", "fiscalDateEnding"),
                    suffix = c("", ".is")) %>%
-  dplyr::left_join(balance_sheet_final, by = c("ticker", "fiscalDateEnding"), 
+  dplyr::left_join(balance_sheet_final, by = c("ticker", "fiscalDateEnding"),
                    suffix = c("", ".bs")) %>%
-  dplyr::left_join(cash_flow_final, by = c("ticker", "fiscalDateEnding"), 
+  dplyr::left_join(cash_flow_final, by = c("ticker", "fiscalDateEnding"),
                    suffix = c("", ".cf")) %>%
   dplyr::select(-dplyr::any_of(c("as_of_date.is", "as_of_date.bs", "as_of_date.cf"))) %>%
   dplyr::arrange(ticker, fiscalDateEnding)
@@ -240,7 +354,7 @@ financial_statements <- financial_statements %>%
   dplyr::mutate(
     # Check if ANY income statement columns have data
     has_income_statement = dplyr::if_any(dplyr::all_of(income_statement_cols), ~ !is.na(.x)),
-    # Check if ANY balance sheet columns have data  
+    # Check if ANY balance sheet columns have data
     has_balance_sheet = dplyr::if_any(dplyr::all_of(balance_sheet_cols), ~ !is.na(.x)),
     # Check if ANY cash flow columns have data
     has_cash_flow = dplyr::if_any(dplyr::all_of(cash_flow_cols), ~ !is.na(.x)),
@@ -286,14 +400,14 @@ quarterly_results <- lapply(quarterly_filtered_list, function(ticker_data) {
       continuous_start <- i
       break
     }
-    
+
     subsequent_gaps <- ticker_data$is_quarterly[(i+1):nrow(ticker_data)]
     if (all(subsequent_gaps, na.rm = TRUE)) {
       continuous_start <- i
       break
     }
   }
-  
+
   # Return data from continuous start point onward
   if (exists("continuous_start")) {
     ticker_data %>%
@@ -340,7 +454,7 @@ removed_obs <- original_obs - final_obs
 # Report detailed results
 if (removed_obs > 0) {
   cat("Removed", removed_obs, "observations to ensure continuous quarterly spacing\n")
-  
+
   if (nrow(removed_detail) > 0) {
     cat("\nDetailed breakdown by ticker:\n")
     for (i in seq_len(nrow(removed_detail))) {
@@ -348,7 +462,7 @@ if (removed_obs > 0) {
       count <- removed_detail$removed_count[i]
       earliest <- removed_detail$earliest_removed[i]
       latest <- removed_detail$latest_removed[i]
-      
+
       cat("  ", ticker, ":", count, "observations removed")
       cat(" (", as.character(earliest), "to", as.character(latest), ")\n")
     }
@@ -410,7 +524,7 @@ gap_stats <- financial_statements %>%
 cat("Gap statistics:\n")
 cat("- Total gaps analyzed:", gap_stats$total_gaps, "\n")
 cat("- Range:", gap_stats$min_days, "to", gap_stats$max_days, "days\n")
-cat("- Average gap:", gap_stats$avg_days, "days\n") 
+cat("- Average gap:", gap_stats$avg_days, "days\n")
 cat("- Median gap:", gap_stats$median_days, "days\n")
 cat("- Proper quarterly spacing:", gap_stats$proper_quarterly_pct, "%\n")
 
@@ -508,7 +622,7 @@ standardized_plot <- standardized_ticker_counts %>%
     panel.grid.minor = ggplot2::element_blank()
   ) +
   ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
-  ggplot2::scale_y_continuous(expand = c(0, 0), 
+  ggplot2::scale_y_continuous(expand = c(0, 0),
                               limits = c(0, max(standardized_ticker_counts$ticker_count) * 1.05))
 
 # Display the plot
