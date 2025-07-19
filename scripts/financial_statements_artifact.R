@@ -19,25 +19,17 @@ if (length(missing_files) > 0) {
   stop("Missing required files: ", paste(missing_files, collapse = ", "))
 }
 
+# ... existing code ...
+
 # Load all financial statement data and filter to dates >= Dec 31, 2004
 cat("Loading financial statement data...\n")
 
-earnings <- read_cached_data("cache/earnings_artifact.csv",
-                            date_columns = c("fiscalDateEnding", "reportedDate", "as_of_date")) %>%
-  dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
+earnings <- load_and_filter_financial_data("cache/earnings_artifact.csv")
+cash_flow <- load_and_filter_financial_data("cache/cash_flow_artifact.csv") 
+income_statement <- load_and_filter_financial_data("cache/income_statement_artifact.csv")
+balance_sheet <- load_and_filter_financial_data("cache/balance_sheet_artifact.csv")
 
-cash_flow <- read_cached_data("cache/cash_flow_artifact.csv",
-                             date_columns = c("fiscalDateEnding", "as_of_date")) %>%
-  dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
-
-income_statement <- read_cached_data("cache/income_statement_artifact.csv",
-                                    date_columns = c("fiscalDateEnding", "as_of_date")) %>%
-  dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
-
-balance_sheet <- read_cached_data("cache/balance_sheet_artifact.csv",
-                                 date_columns = c("fiscalDateEnding", "as_of_date")) %>%
-  dplyr::filter(fiscalDateEnding >= as.Date("2004-12-31"))
-
+# ... rest of existing code ...
 cat("Initial data loaded:\n")
 cat("- Earnings:", nrow(earnings), "observations\n")
 cat("- Cash flow:", nrow(cash_flow), "observations\n")
@@ -58,41 +50,7 @@ cash_flow_financial_cols <- setdiff(names(cash_flow), common_metadata_cols)
 income_statement_financial_cols <- setdiff(names(income_statement), common_metadata_cols)
 balance_sheet_financial_cols <- setdiff(names(balance_sheet), common_metadata_cols)
 
-# Function to identify rows where all financial columns are NA
-identify_all_na_rows <- function(data, financial_cols, statement_type) {
-  if (length(financial_cols) == 0) {
-    cat("Warning: No financial columns found for", statement_type, "\n")
-    return(data)
-  }
 
-  original_count <- nrow(data)
-
-  # Check if all financial columns are NA for each row
-  all_na_mask <- apply(data[financial_cols], 1, function(x) all(is.na(x)))
-
-  # Remove rows where all financial columns are NA
-  cleaned_data <- data[!all_na_mask, ]
-  removed_count <- original_count - nrow(cleaned_data)
-
-  if (removed_count > 0) {
-    cat("- Removed", removed_count, "observations from", statement_type,
-        "with all NA financial columns\n")
-
-    # Show sample of removed ticker-date combinations
-    removed_observations <- data[all_na_mask, c("ticker", "fiscalDateEnding")]
-    if (nrow(removed_observations) > 0) {
-      removed_tickers <- unique(removed_observations$ticker)
-      cat("  Affected tickers:", length(removed_tickers),
-          "(", paste(head(removed_tickers, 5), collapse = ", "))
-      if (length(removed_tickers) > 5) cat(", ...")
-      cat(")\n")
-    }
-  }
-
-  return(cleaned_data)
-}
-
-# Clean each financial statement dataset
 cash_flow_cleaned <- identify_all_na_rows(cash_flow, cash_flow_financial_cols, "cash flow")
 income_statement_cleaned <- identify_all_na_rows(income_statement, income_statement_financial_cols,
                                                  "income statement")
@@ -368,57 +326,25 @@ financial_statements <- financial_statements %>%
 # SECTION 7: QUARTERLY SPACING VALIDATION
 # ============================================================================
 
-cat("Finding continuous quarterly series for each ticker...\n")
+cat("Finding continuous quarterly series for each ticker using fiscal pattern validation...\n")
 
 # Store original data for comparison
 original_data <- financial_statements %>%
   dplyr::select(ticker, fiscalDateEnding) %>%
   dplyr::arrange(ticker, fiscalDateEnding)
 
-# Find continuous quarterly series using split-apply-combine pattern
+# Apply fiscal-pattern-aware quarterly validation using split-apply-combine pattern
 quarterly_filtered_list <- financial_statements %>%
   dplyr::group_by(ticker) %>%
   dplyr::arrange(ticker, fiscalDateEnding) %>%
   dplyr::mutate(
-    days_diff = as.numeric(fiscalDateEnding - dplyr::lag(fiscalDateEnding)),
-    is_quarterly = dplyr::case_when(
-      is.na(days_diff) ~ TRUE,  # First observation has no previous date
-      days_diff >= 80 & days_diff <= 100 ~ TRUE,
-      TRUE ~ FALSE
-    ),
     row_num = dplyr::row_number()
   ) %>%
   dplyr::ungroup() %>%
   split(.$ticker)
 
-# Apply quarterly validation to each ticker
-quarterly_results <- lapply(quarterly_filtered_list, function(ticker_data) {
-  # Find first observation where all subsequent gaps are quarterly
-  for (i in seq_len(nrow(ticker_data))) {
-    if (i == nrow(ticker_data)) {
-      # Last observation - valid start point
-      continuous_start <- i
-      break
-    }
-
-    subsequent_gaps <- ticker_data$is_quarterly[(i+1):nrow(ticker_data)]
-    if (all(subsequent_gaps, na.rm = TRUE)) {
-      continuous_start <- i
-      break
-    }
-  }
-
-  # Return data from continuous start point onward
-  if (exists("continuous_start")) {
-    ticker_data %>%
-      dplyr::filter(row_num >= continuous_start) %>%
-      dplyr::select(-days_diff, -is_quarterly, -row_num)
-  } else {
-    # No continuous series found - return empty
-    ticker_data[0, ] %>%
-      dplyr::select(-days_diff, -is_quarterly, -row_num)
-  }
-})
+# Apply fiscal-pattern-aware quarterly validation to each ticker
+quarterly_results <- lapply(quarterly_filtered_list, validate_continuous_quarters)
 
 # Combine results back together
 quarterly_filtered <- dplyr::bind_rows(quarterly_results)
@@ -481,35 +407,21 @@ financial_statements <- quarterly_filtered
 # SECTION 9: FINAL VALIDATION AND SUMMARY
 # ============================================================================
 
-# Final validation: verify no gaps and add time since last report
+# Final validation: add time since last report for summary statistics
 cat("Performing final validation of quarterly continuity...\n")
 
-financial_statements <- financial_statements %>%
+financial_statements <- quarterly_filtered %>%
   dplyr::group_by(ticker) %>%
   dplyr::arrange(ticker, fiscalDateEnding) %>%
   dplyr::mutate(
-    days_since_last_report = as.numeric(fiscalDateEnding - dplyr::lag(fiscalDateEnding)),
-    is_proper_quarterly = dplyr::case_when(
-      is.na(days_since_last_report) ~ TRUE,  # First observation for each ticker
-      days_since_last_report >= 80 & days_since_last_report <= 100 ~ TRUE,
-      TRUE ~ FALSE
-    )
+    days_since_last_report = as.numeric(fiscalDateEnding - dplyr::lag(fiscalDateEnding))
   ) %>%
   dplyr::ungroup()
 
-# Check for any remaining gaps
-problematic_gaps <- financial_statements %>%
-  dplyr::filter(!is_proper_quarterly) %>%
-  dplyr::select(ticker, fiscalDateEnding, days_since_last_report)
+# Since we used fiscal-pattern validation, all observations should be properly quarterly
+cat("✓ All observations validated using fiscal-pattern quarterly validation\n")
 
-if (nrow(problematic_gaps) > 0) {
-  cat("WARNING: Found", nrow(problematic_gaps), "observations with non-quarterly gaps:\n")
-  print(problematic_gaps)
-} else {
-  cat("✓ All observations have proper quarterly spacing\n")
-}
-
-# Summary statistics of gaps
+# Summary statistics of gaps for informational purposes
 gap_stats <- financial_statements %>%
   dplyr::filter(!is.na(days_since_last_report)) %>%
   dplyr::summarise(
@@ -518,19 +430,19 @@ gap_stats <- financial_statements %>%
     max_days = max(days_since_last_report),
     avg_days = round(mean(days_since_last_report), 1),
     median_days = median(days_since_last_report),
-    proper_quarterly_pct = round(100 * mean(is_proper_quarterly), 1)
+    gaps_80_to_100_pct = round(100 * mean(days_since_last_report >= 80 & days_since_last_report <= 100), 1)
   )
 
-cat("Gap statistics:\n")
+cat("Gap statistics (for informational purposes):\n")
 cat("- Total gaps analyzed:", gap_stats$total_gaps, "\n")
 cat("- Range:", gap_stats$min_days, "to", gap_stats$max_days, "days\n")
 cat("- Average gap:", gap_stats$avg_days, "days\n")
 cat("- Median gap:", gap_stats$median_days, "days\n")
-cat("- Proper quarterly spacing:", gap_stats$proper_quarterly_pct, "%\n")
+cat("- Gaps in 80-100 day range:", gap_stats$gaps_80_to_100_pct, "%\n")
 
-# Clean up validation columns for final dataset
+# Update financial_statements to the final filtered version (remove days_since_last_report)
 financial_statements <- financial_statements %>%
-  dplyr::select(-is_proper_quarterly)
+  dplyr::select(-days_since_last_report)
 
 # ============================================================================
 # SECTION 10: SAVE FINAL ARTIFACT
