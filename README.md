@@ -424,3 +424,34 @@ This package requires an Alpha Vantage API key. Get your free API key at [Alpha 
 **Disclaimer**: This package is not affiliated with Alpha Vantage. Please review Alpha Vantage's terms of service before using their API.
 
 **Technical Note**: This package demonstrates how configuration-based architecture can reduce code complexity while improving functionality and maintainability - a pattern that can serve as a model for other API wrapper packages.
+
+
+Yes, this greatly clarifies the design and purpose! Here's a refined description:
+
+## ttm_per_share_financial_artifact.csv
+
+**Daily frequency dataset** that bridges quarterly financial reporting with daily market data by mapping financial metrics to actual earnings announcement dates.
+
+**Core Design:**
+- **Frequency:** Daily observations (long-form)
+- **Index:** `ticker` and `date` 
+- **Key Innovation:** Quarterly financial statements mapped to `date` based on actual earnings announcement dates (`reportedDate`), then forward-filled to create daily frequency
+
+**Date Column Usage:**
+- **`date`** - Primary column for daily frequency analysis, synchronized with daily prices
+- **`fiscalDateEnding`** - Use for quarterly frequency analysis of financial KPIs only
+
+**Contents:**
+- **Market data:** Daily prices, volume, dividends, splits
+- **Share metrics:** `commonStockSharesOutstanding`, `effective_shares_outstanding`, `market_cap`
+- **Financial metrics (per-share basis):**
+  - **Flow metrics:** Income statement & cash flow items converted to TTM per-share (e.g., `fcf_ttm_per_share`, `ebitda_ttm_per_share`)
+  - **Balance sheet metrics:** Point-in-time per-share values (e.g., `totalAssets_per_share`, `tangible_book_value_per_share`)
+
+**Key Features:**
+- Quarterly financial data forward-filled until next earnings announcement
+- Ready for daily time-series analysis of fundamental metrics
+- Enables creation of daily frequency fundamental ratios and screens
+- Maintains quarterly granularity via `fiscalDateEnding` for period-specific analysis
+
+**Primary Use Case:** Daily frequency fundamental analysis, bridging the gap between quarterly earnings cycles and daily market movements.

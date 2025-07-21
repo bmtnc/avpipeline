@@ -8,7 +8,7 @@
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "AMT"                # Ticker symbol to analyze
+TICKER <- "EQIX"                # Ticker symbol to analyze
 METRIC <- "operating_cash_flow_per_share"     # Metric column name to plot
 ANOMALY_THRESHOLD <- 2           # MAD threshold for anomaly detection
 PLOT_TITLE <- NULL               # Custom plot title (NULL for auto-generated)
@@ -21,10 +21,10 @@ source("R/detect_time_series_anomalies.R")
 # ---- SECTION 2: Load unified financial artifact -----------------------------
 cat("Loading unified financial artifact ...\n")
 
-# unified_final <- read_cached_data(
-#   "cache/unified_financial_artifact.csv",
-#   date_columns = c("date", "fiscalDateEnding", "reportedDate", "as_of_date", "calendar_quarter_ending")
-# )
+unified_final <- read_cached_data(
+  "cache/unified_financial_artifact.csv",
+  date_columns = c("date", "fiscalDateEnding", "reportedDate", "as_of_date", "calendar_quarter_ending")
+)
 
 cat("Loaded dataset: ", nrow(unified_final), " rows, ", ncol(unified_final), " columns\n")
 

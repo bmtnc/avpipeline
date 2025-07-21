@@ -182,6 +182,100 @@ cat("Quarterly anomaly cleaning completed.\n")
 
 
 # ============================================================================
+# SECTION 2.6: END-WINDOW ANOMALY CLEANING (STAGE 2)
+# ============================================================================
+
+cat("Applying second-stage end-window anomaly cleaning...\n")
+
+# Define end-window cleaning parameters
+END_WINDOW_SIZE <- 5
+END_THRESHOLD <- 3
+END_MIN_OBS <- 10
+
+cat("End-window anomaly cleaning parameters:\n")
+cat("- End window size:", END_WINDOW_SIZE, "quarters\n")
+cat("- Percentage change threshold:", END_THRESHOLD, "\n")
+cat("- Minimum observations required:", END_MIN_OBS, "\n")
+
+# Apply end-window cleaning to income statement
+cat("Applying end-window cleaning to income statement...\n")
+if (nrow(income_statement) > 0) {
+  income_statement <- tryCatch({
+    income_statement %>%
+      dplyr::group_by(ticker) %>%
+      dplyr::arrange(ticker, fiscalDateEnding) %>%
+      clean_end_window_anomalies(
+        metric_cols = income_statement_metrics,
+        end_window_size = END_WINDOW_SIZE,
+        threshold = END_THRESHOLD,
+        min_observations = END_MIN_OBS
+      ) %>%
+      dplyr::ungroup()
+  }, error = function(e) {
+    cat("Income statement end-window cleaning failed, keeping stage 1 data. Error:", e$message, "\n")
+    return(income_statement)
+  })
+  cat("✓ Income statement end-window cleaning completed\n")
+}
+
+# Apply end-window cleaning to cash flow
+cat("Applying end-window cleaning to cash flow...\n")
+if (nrow(cash_flow) > 0) {
+  cash_flow <- tryCatch({
+    cash_flow %>%
+      dplyr::group_by(ticker) %>%
+      dplyr::arrange(ticker, fiscalDateEnding) %>%
+      clean_end_window_anomalies(
+        metric_cols = cash_flow_metrics,
+        end_window_size = END_WINDOW_SIZE,
+        threshold = END_THRESHOLD,
+        min_observations = END_MIN_OBS
+      ) %>%
+      dplyr::ungroup()
+  }, error = function(e) {
+    cat("Cash flow end-window cleaning failed, keeping stage 1 data. Error:", e$message, "\n")
+    return(cash_flow)
+  })
+  cat("✓ Cash flow end-window cleaning completed\n")
+}
+
+# Apply end-window cleaning to balance sheet
+cat("Applying end-window cleaning to balance sheet...\n")
+if (nrow(balance_sheet) > 0) {
+  balance_sheet <- tryCatch({
+    balance_sheet %>%
+      dplyr::group_by(ticker) %>%
+      dplyr::arrange(ticker, fiscalDateEnding) %>%
+      clean_end_window_anomalies(
+        metric_cols = balance_sheet_metrics,
+        end_window_size = END_WINDOW_SIZE,
+        threshold = END_THRESHOLD,
+        min_observations = END_MIN_OBS
+      ) %>%
+      dplyr::ungroup()
+  }, error = function(e) {
+    cat("Balance sheet end-window cleaning failed, keeping stage 1 data. Error:", e$message, "\n")
+    return(balance_sheet)
+  })
+  cat("✓ Balance sheet end-window cleaning completed\n")
+}
+
+# Report final data after two-stage cleaning
+cat("Data after two-stage anomaly cleaning:\n")
+cat("- Income statement:", nrow(income_statement), "observations\n")
+cat("- Cash flow:", nrow(cash_flow), "observations\n")
+cat("- Balance sheet:", nrow(balance_sheet), "observations\n")
+
+cat("Two-stage anomaly cleaning completed.\n")
+
+# ============================================================================
+# SECTION 3: TICKER ALIGNMENT VALIDATION
+# ============================================================================
+
+# ... rest of existing code continues unchanged ...
+
+
+# ============================================================================
 # SECTION 3: TICKER ALIGNMENT VALIDATION
 # ============================================================================
 
@@ -321,6 +415,50 @@ financial_statements <- financial_statements %>%
     # Check if earnings metadata is available
     has_earnings_metadata = !is.na(reportedDate)
   )
+
+# ============================================================================
+# SECTION 6.5: KEEP ONLY ESSENTIAL COLUMNS
+# ============================================================================
+
+cat("Filtering to essential columns only...\n")
+
+# Get financial metrics from helper functions
+financial_metrics <- c(
+  get_cash_flow_metrics(),
+  get_income_statement_metrics(), 
+  get_balance_sheet_metrics()
+)
+
+# Define essential date and meta columns
+date_cols <- c("fiscalDateEnding", "calendar_quarter_ending", "reportedDate")
+meta_cols <- c("ticker", "reportedCurrency")
+
+# Combine all essential columns
+essential_cols <- c(financial_metrics, date_cols, meta_cols)
+
+# Only keep columns that actually exist in the dataset
+existing_essential_cols <- intersect(essential_cols, names(financial_statements))
+
+# Count columns before filtering
+original_col_count <- ncol(financial_statements)
+
+# Filter to essential columns only
+financial_statements <- financial_statements %>%
+  dplyr::select(dplyr::all_of(existing_essential_cols))
+
+# Report the filtering results
+cat("Column filtering summary:\n")
+cat("- Original columns:", original_col_count, "\n")
+cat("- Kept columns:", length(existing_essential_cols), "\n")
+cat("- Removed columns:", original_col_count - length(existing_essential_cols), "\n")
+
+cat("Essential columns breakdown:\n")
+cat("- Financial metrics:", length(intersect(financial_metrics, names(financial_statements))), "\n")
+cat("- Date columns:", length(intersect(date_cols, names(financial_statements))), "\n") 
+cat("- Meta columns:", length(intersect(meta_cols, names(financial_statements))), "\n")
+
+cat("Final dataset dimensions:", nrow(financial_statements), "observations x", ncol(financial_statements), "columns\n")
+cat("Essential column filtering completed.\n")
 
 # ============================================================================
 # SECTION 7: QUARTERLY SPACING VALIDATION
