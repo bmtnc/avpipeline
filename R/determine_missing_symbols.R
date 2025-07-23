@@ -8,16 +8,7 @@
 #' @param cached_data Data frame containing cached data with a 'ticker' or 'symbol' column
 #' @param symbol_column Character. Name of the symbol column in cached_data. 
 #'   If NULL, will auto-detect 'ticker' or 'symbol' columns.
-#'
 #' @return Character vector of symbols that need to be fetched
-#'
-#' @examples
-#' \dontrun{
-#' requested <- c("AAPL", "GOOGL", "MSFT", "TSLA")
-#' cached_data <- read_cached_price_data("cache/price_data.csv")
-#' symbols_to_fetch <- determine_missing_symbols(requested, cached_data)
-#' }
-#'
 #' @export
 determine_missing_symbols <- function(requested_symbols, cached_data, symbol_column = NULL) {
   

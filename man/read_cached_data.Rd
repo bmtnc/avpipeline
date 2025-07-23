@@ -21,19 +21,3 @@ This function handles the common issue of date columns being stored as character
 in CSV files and needing conversion back to Date objects. This is a generic function
 that works with any cached data type by specifying the relevant date columns.
 }
-\examples{
-\dontrun{
-# For price data
-cached_price_data <- read_cached_data(
-  "cache/price_data.csv",
-  date_columns = c("date", "initial_date", "latest_date", "as_of_date")
-)
-
-# For income statement data
-cached_income_data <- read_cached_data(
-  "cache/income_statement_data.csv",
-  date_columns = c("fiscalDateEnding", "as_of_date")
-)
-}
-
-}

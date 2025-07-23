@@ -13,33 +13,6 @@
 #' @return A tibble with data for all tickers in long format
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' # Fetch price data for multiple tickers
-#' price_data <- fetch_multiple_ticker_data(
-#'   c("AAPL", "GOOGL"), 
-#'   PRICE_CONFIG, 
-#'   outputsize = "full"
-#' )
-#' 
-#' # Fetch income statement data for multiple tickers
-#' income_data <- fetch_multiple_ticker_data(
-#'   c("AAPL", "GOOGL"), 
-#'   INCOME_STATEMENT_CONFIG
-#' )
-#' 
-#' # Fetch balance sheet data for multiple tickers
-#' balance_data <- fetch_multiple_ticker_data(
-#'   c("AAPL", "GOOGL"), 
-#'   BALANCE_SHEET_CONFIG
-#' )
-#' 
-#' # Fetch cash flow data for multiple tickers
-#' cash_flow_data <- fetch_multiple_ticker_data(
-#'   c("AAPL", "GOOGL"), 
-#'   CASH_FLOW_CONFIG
-#' )
-#' }
 fetch_multiple_ticker_data <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
   
   # Step 1: Validate inputs

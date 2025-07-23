@@ -14,21 +14,6 @@
 #' @keywords internal
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' # Process price data for multiple tickers
-#' results <- fetch_tickers_with_progress(
-#'   c("AAPL", "GOOGL"), 
-#'   PRICE_CONFIG, 
-#'   outputsize = "full"
-#' )
-#' 
-#' # Process income statement data for multiple tickers
-#' results <- fetch_tickers_with_progress(
-#'   c("AAPL", "GOOGL"), 
-#'   INCOME_STATEMENT_CONFIG
-#' )
-#' }
 fetch_tickers_with_progress <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
   
   # Validate inputs

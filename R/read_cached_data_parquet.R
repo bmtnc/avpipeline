@@ -6,22 +6,9 @@
 #' different data types in the pipeline.
 #'
 #' @param cache_file Path to the cache file (Parquet format, .parquet extension)
-#'
 #' @return A data frame with properly formatted columns (data types preserved from Parquet)
-#'
-#' @examples
-#' \dontrun{
-#' # For price data
-#' cached_price_data <- read_cached_data_parquet("cache/price_data.parquet")
-#' 
-#' # For TTM per-share data
-#' cached_ttm_data <- read_cached_data_parquet("cache/ttm_per_share_financial_artifact.parquet")
-#' 
-#' # For financial statements
-#' cached_financial_data <- read_cached_data_parquet("cache/financial_statements_artifact.parquet")
-#' }
-#'
 #' @export
+#' 
 read_cached_data_parquet <- function(cache_file) {
   
   # Validate input

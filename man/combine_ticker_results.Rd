@@ -22,13 +22,4 @@ column ordering and metadata. This function replaces all individual result
 combination functions by using configuration objects to determine the
 appropriate sorting and formatting.
 }
-\examples{
-\dontrun{
-# Combine price data results
-combined_data <- combine_ticker_results(results_list, tickers, PRICE_CONFIG)
-
-# Combine income statement results
-combined_data <- combine_ticker_results(results_list, tickers, INCOME_STATEMENT_CONFIG)
-}
-}
 \keyword{internal}

@@ -22,11 +22,3 @@ Determines which symbols need to be fetched by comparing requested symbols
 against symbols already present in cached data. Returns only the symbols
 that are not already cached. Works with both 'ticker' and 'symbol' column names.
 }
-\examples{
-\dontrun{
-requested <- c("AAPL", "GOOGL", "MSFT", "TSLA")
-cached_data <- read_cached_price_data("cache/price_data.csv")
-symbols_to_fetch <- determine_missing_symbols(requested, cached_data)
-}
-
-}

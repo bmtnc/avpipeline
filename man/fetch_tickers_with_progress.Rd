@@ -31,20 +31,4 @@ Processes multiple tickers with progress tracking, error handling, and rate limi
 This function replaces all individual progress processing functions by using
 configuration objects to determine the appropriate parameters and delays.
 }
-\examples{
-\dontrun{
-# Process price data for multiple tickers
-results <- fetch_tickers_with_progress(
-  c("AAPL", "GOOGL"), 
-  PRICE_CONFIG, 
-  outputsize = "full"
-)
-
-# Process income statement data for multiple tickers
-results <- fetch_tickers_with_progress(
-  c("AAPL", "GOOGL"), 
-  INCOME_STATEMENT_CONFIG
-)
-}
-}
 \keyword{internal}

@@ -12,20 +12,6 @@
 #' @return A tibble with the requested data type
 #' @export
 #' 
-#' @examples
-#' \dontrun{
-#' # Fetch price data
-#' price_data <- fetch_single_ticker_data("AAPL", PRICE_CONFIG, outputsize = "full")
-#' 
-#' # Fetch income statement data
-#' income_data <- fetch_single_ticker_data("AAPL", INCOME_STATEMENT_CONFIG)
-#' 
-#' # Fetch balance sheet data
-#' balance_data <- fetch_single_ticker_data("AAPL", BALANCE_SHEET_CONFIG)
-#' 
-#' # Fetch cash flow data
-#' cash_flow_data <- fetch_single_ticker_data("AAPL", CASH_FLOW_CONFIG)
-#' }
 fetch_single_ticker_data <- function(ticker, config, api_key = NULL, ...) {
   
   # Validate inputs

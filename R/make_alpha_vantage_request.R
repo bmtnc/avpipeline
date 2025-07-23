@@ -13,14 +13,6 @@
 #' @keywords internal
 #' @export
 #' 
-#' @examples
-#' \dontrun{
-#' # Fetch price data
-#' response <- make_alpha_vantage_request("AAPL", PRICE_CONFIG, outputsize = "full")
-#' 
-#' # Fetch income statement data
-#' response <- make_alpha_vantage_request("AAPL", INCOME_STATEMENT_CONFIG)
-#' }
 make_alpha_vantage_request <- function(ticker, config, api_key = NULL, ...) {
   
   # Validate inputs

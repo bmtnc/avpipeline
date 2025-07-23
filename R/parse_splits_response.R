@@ -6,12 +6,7 @@
 #' @param ticker Character string representing the ticker symbol
 #' @return A data.frame with columns: ticker, effective_date, split_factor, as_of_date
 #' @export
-#' @examples
-#' \dontrun{
-#' # This function is called internally by fetch_single_ticker_data
-#' response <- make_alpha_vantage_request("IBM", SPLITS_CONFIG)
-#' result <- parse_splits_response(response, "IBM")
-#' }
+#' 
 parse_splits_response <- function(response, ticker) {
   
   # Parse JSON response

@@ -13,14 +13,6 @@
 #' @keywords internal
 #' @export
 #'
-#' @examples
-#' \dontrun{
-#' # Combine price data results
-#' combined_data <- combine_ticker_results(results_list, tickers, PRICE_CONFIG)
-#' 
-#' # Combine income statement results
-#' combined_data <- combine_ticker_results(results_list, tickers, INCOME_STATEMENT_CONFIG)
-#' }
 combine_ticker_results <- function(results_list, tickers, config) {
   
   # Validate inputs

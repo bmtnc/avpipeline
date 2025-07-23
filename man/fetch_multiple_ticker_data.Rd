@@ -31,31 +31,3 @@ Fetches data from Alpha Vantage API for multiple tickers using configuration
 objects. This function replaces all individual multiple-ticker fetch functions
 by using a unified approach with progress tracking and error handling.
 }
-\examples{
-\dontrun{
-# Fetch price data for multiple tickers
-price_data <- fetch_multiple_ticker_data(
-  c("AAPL", "GOOGL"), 
-  PRICE_CONFIG, 
-  outputsize = "full"
-)
-
-# Fetch income statement data for multiple tickers
-income_data <- fetch_multiple_ticker_data(
-  c("AAPL", "GOOGL"), 
-  INCOME_STATEMENT_CONFIG
-)
-
-# Fetch balance sheet data for multiple tickers
-balance_data <- fetch_multiple_ticker_data(
-  c("AAPL", "GOOGL"), 
-  BALANCE_SHEET_CONFIG
-)
-
-# Fetch cash flow data for multiple tickers
-cash_flow_data <- fetch_multiple_ticker_data(
-  c("AAPL", "GOOGL"), 
-  CASH_FLOW_CONFIG
-)
-}
-}

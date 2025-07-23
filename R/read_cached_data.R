@@ -8,25 +8,9 @@
 #' @param cache_file Path to the cache file (CSV format)
 #' @param date_columns Character vector of column names that should be converted to Date type.
 #'   Defaults to common date columns across different data types.
-#'
 #' @return A data frame with properly formatted date columns
-#'
-#' @examples
-#' \dontrun{
-#' # For price data
-#' cached_price_data <- read_cached_data(
-#'   "cache/price_data.csv",
-#'   date_columns = c("date", "initial_date", "latest_date", "as_of_date")
-#' )
-#' 
-#' # For income statement data
-#' cached_income_data <- read_cached_data(
-#'   "cache/income_statement_data.csv",
-#'   date_columns = c("fiscalDateEnding", "as_of_date")
-#' )
-#' }
-#'
 #' @export
+#' 
 read_cached_data <- function(cache_file, date_columns = c("date", "as_of_date")) {
   
   # Validate input

@@ -44,31 +44,3 @@ data types (price, income statement, etc.). This function processes each ticker
 individually, collects all successful results in memory, and writes all data
 to cache at once at the end.
 }
-\examples{
-\dontrun{
-# For price data
-fetch_multiple_tickers_with_cache(
-  tickers = c("AAPL", "GOOGL"),
-  cache_file = "cache/price_data.csv",
-  single_fetch_func = fetch_daily_adjusted_prices,
-  cache_reader_func = read_cached_price_data,
-  data_type_name = "price",
-  delay_seconds = 1,
-  max_retries = 3,
-  outputsize = "full",
-  datatype = "json"
-)
-
-# For income statement data
-fetch_multiple_tickers_with_cache(
-  tickers = c("AAPL", "GOOGL"),
-  cache_file = "cache/income_statement_data.csv",
-  single_fetch_func = fetch_income_statement,
-  cache_reader_func = read_cached_income_statement_data,
-  data_type_name = "income statement",
-  delay_seconds = 12,
-  max_retries = 3
-)
-}
-
-}

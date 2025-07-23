@@ -23,13 +23,4 @@ Makes HTTP requests to the Alpha Vantage API for any supported data type.
 This function replaces all individual API request functions by using
 configuration objects to determine the appropriate parameters.
 }
-\examples{
-\dontrun{
-# Fetch price data
-response <- make_alpha_vantage_request("AAPL", PRICE_CONFIG, outputsize = "full")
-
-# Fetch income statement data
-response <- make_alpha_vantage_request("AAPL", INCOME_STATEMENT_CONFIG)
-}
-}
 \keyword{internal}

@@ -23,18 +23,3 @@ Fetches data from Alpha Vantage API for any supported data type using
 configuration objects. This function replaces all individual single-ticker
 fetch functions by using a unified approach.
 }
-\examples{
-\dontrun{
-# Fetch price data
-price_data <- fetch_single_ticker_data("AAPL", PRICE_CONFIG, outputsize = "full")
-
-# Fetch income statement data
-income_data <- fetch_single_ticker_data("AAPL", INCOME_STATEMENT_CONFIG)
-
-# Fetch balance sheet data
-balance_data <- fetch_single_ticker_data("AAPL", BALANCE_SHEET_CONFIG)
-
-# Fetch cash flow data
-cash_flow_data <- fetch_single_ticker_data("AAPL", CASH_FLOW_CONFIG)
-}
-}
