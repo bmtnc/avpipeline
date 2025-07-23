@@ -143,7 +143,7 @@ ttm_per_share_data <- unified_per_share_data %>%
       !is.na(operatingCashflow_ttm_per_share) &
         !is.na(capitalExpenditures_ttm_per_share),
       # capex is negative
-      operatingCashflow_ttm_per_share + capitalExpenditures_ttm_per_share,
+      operatingCashflow_ttm_per_share - capitalExpenditures_ttm_per_share,
       NA_real_
     ),
     
