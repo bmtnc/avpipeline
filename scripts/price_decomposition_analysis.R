@@ -14,13 +14,14 @@
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "BILL"
+TICKER <- "AAPL"
 
 # Choose the fundamental metric for decomposition
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
-FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "fcf_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "ebitda_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "operatingCashflow_ttm_per_share"
 
 # Analysis period (number of days back from most recent data)
 ANALYSIS_DAYS <- 1350
@@ -197,34 +198,36 @@ if (abs(current_data$price_change) > 0.01) {
   valuation_dollars <- current_data$multiple_contribution
 
   # Create clean metric name from FUNDAMENTAL_METRIC
-  metric_name <- gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC)
+  metric_name <- tolower(gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC))
 
-  # Create clear labels with dollar amounts and direction (sign always first)
-  nopat_label <- paste0(metric_name, ": ",
-                       ifelse(nopat_dollars >= 0, "+", "-"),
-                       "$", round(abs(nopat_dollars), 1))
+  # Create dynamic labels based on direction of effects
+  nopat_label <- paste0(
+    ifelse(nopat_dollars >= 0, paste0(metric_name, " Growth"), paste0(metric_name, " Decline")),
+    ": ", ifelse(nopat_dollars >= 0, "+", "-"), "$", round(abs(nopat_dollars), 1)
+  )
 
-  share_label <- paste0("Buybacks: ",
-                       ifelse(share_dollars >= 0, "+", "-"),
-                       "$", round(abs(share_dollars), 1))
+  share_label <- paste0(
+    ifelse(share_dollars >= 0, "Buybacks", "Dilution"),
+    ": ", ifelse(share_dollars >= 0, "+", "-"), "$", round(abs(share_dollars), 1)
+  )
 
-  valuation_label <- paste0("Valuation: ",
-                           ifelse(valuation_dollars >= 0, "+", "-"),
-                           "$", round(abs(valuation_dollars), 1))
+  valuation_label <- paste0(
+    ifelse(valuation_dollars >= 0, "Valuation Expansion", "Valuation Compression"),
+    ": ", ifelse(valuation_dollars >= 0, "+", "-"), "$", round(abs(valuation_dollars), 1)
+  )
 
   # Create subtitle with context
   total_change <- current_data$price_change
   direction_text <- ifelse(total_change > 0, "Gain", "Decline")
 
   subtitle_text <- paste0(
-    "$", round(abs(total_change), 1), " ", direction_text, " Breakdown:", "\n",
+    "$", round(abs(total_change), 1), " Cumulative ", direction_text, " Contribution:", "\n",
     nopat_label, " | ", share_label, " | ", valuation_label
   )
 } else {
   subtitle_text <- "No significant price change to analyze"
 }
 
-# ... rest of section remains the same ...
 # Prepare data for enhanced stacked area chart
 plot_data <- decomposition_data %>%
   dplyr::select(date, nopat_growth_contribution, share_count_contribution, multiple_contribution) %>%
@@ -308,7 +311,14 @@ p <- plot_data %>%
     x = "Date",
     y = "Cumulative Price Change ($)",
     fill = "Source of Change",
-    caption = paste0("Black line shows actual cumulative price change | Base date: ", base_date)
+    caption = paste0(
+      "Methodology: \n",
+      "Price = EPS × Valuation Multiple\n",
+      "Measure ∆ EPS and ∆ Valuation from start date\n",
+      "∆ Price = (∆ EPS × base Valuation) + (base EPS × ∆ Valuation)\n",
+      "∆ EPS = ∆ Total Earnings + ∆ Share Count Effects\n",
+      "Start Date: ", base_date
+    )
   ) +
   # Expand x-axis to create space for the callout
   ggplot2::coord_cartesian(
@@ -322,7 +332,8 @@ p <- plot_data %>%
     axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
     legend.position = "bottom",
     plot.title = ggplot2::element_text(size = 14, face = "bold", hjust = 0),
-    plot.subtitle = ggplot2::element_text(size = 11, lineheight = 1.2, hjust = 0)
+    plot.subtitle = ggplot2::element_text(size = 11, lineheight = 1.2, hjust = 0),
+    plot.caption = ggplot2::element_text(hjust = 1)
   )
 
 # Format y-axis

@@ -42,7 +42,7 @@
 # TTM Per-Share Financial Artifact Explorer - DUAL PLOT VERSION
 # =============================================================================
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "TMO"
+TICKER <- "ANET"
 
 # Fundamental KPI (quarterly bar plot)
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
@@ -50,11 +50,13 @@ FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "ebitda_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "tangible_book_value_per_share"
+# FUNDAMENTAL_METRIC <- "operatingCashflow_ttm_per_share"
 
 # Valuation metric (daily line plot with callout)
 VALUATION_METRIC <- "ev_nopat"
 # VALUATION_METRIC <- "ev_ebitda"
 # VALUATION_METRIC <- "ev_fcf"
+# VALUATION_METRIC <- "ev_gp"
 # VALUATION_METRIC <- "roic"
 # VALUATION_METRIC <- "market_cap"
 # VALUATION_METRIC <- "enterprise_value_per_share"
@@ -74,9 +76,9 @@ date_cols <- c(
   "calendar_quarter_ending"
 )
 
-ttm_per_share_data <- read_cached_data_parquet(
-"cache/ttm_per_share_financial_artifact.parquet"
-)
+# ttm_per_share_data <- read_cached_data_parquet(
+# "cache/ttm_per_share_financial_artifact.parquet"
+# )
 
 # Calculate additional metrics
 ttm_per_share_data <- ttm_per_share_data %>%
@@ -86,6 +88,7 @@ ttm_per_share_data <- ttm_per_share_data %>%
     ev_ebitda = enterprise_value_per_share / ebitda_ttm_per_share,
     ev_nopat = enterprise_value_per_share / nopat_ttm_per_share,
     ev_fcf = enterprise_value_per_share / fcf_ttm_per_share,
+    ev_gp = enterprise_value_per_share / grossProfit_ttm_per_share,
     roic = nopat_ttm_per_share / invested_capital_per_share * 100
   )
 cat("Loaded dataset: ", nrow(ttm_per_share_data), " rows, ", ncol(ttm_per_share_data), " columns\n")
