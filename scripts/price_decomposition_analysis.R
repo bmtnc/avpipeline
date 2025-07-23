@@ -14,7 +14,7 @@
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "AAPL"
+TICKER <- "TXN"
 
 # Choose the fundamental metric for decomposition
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
