@@ -39,25 +39,26 @@
 #
 # =============================================================================
 # =============================================================================
-# TTM Per-Share Financial Artifact Explorer - COMPLETE
+# TTM Per-Share Financial Artifact Explorer - DUAL PLOT VERSION
 # =============================================================================
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "AVGO"
-METRIC <- "commonStockSharesOutstanding"
-# METRIC <- "market_cap"
-METRIC <- "adjusted_close"
-METRIC <- "nopat_ttm_per_share"
-# METRIC <- "fcf_ttm_per_share"
-# METRIC <- "ebit_ttm_per_share"
-# METRIC <- "ebitda_ttm_per_share"
-# METRIC <- "grossProfit_ttm_per_share"
-# METRIC <- "tangible_book_value_per_share"
-# METRIC <- "enterprise_value_per_share"
-# METRIC <- "ev_ebitda"
-METRIC <- "ev_nopat"
-METRIC <- "roic"
+TICKER <- "TMO"
 
-ANOMALY_THRESHOLD <- 2
+# Fundamental KPI (quarterly bar plot)
+FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "fcf_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "ebitda_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "tangible_book_value_per_share"
+
+# Valuation metric (daily line plot with callout)
+VALUATION_METRIC <- "ev_nopat"
+# VALUATION_METRIC <- "ev_ebitda"
+# VALUATION_METRIC <- "ev_fcf"
+# VALUATION_METRIC <- "roic"
+# VALUATION_METRIC <- "market_cap"
+# VALUATION_METRIC <- "enterprise_value_per_share"
+
 PLOT_TITLE <- NULL
 # ---- SECTION 1: Load required functions -------------------------------------
 devtools::load_all()
@@ -72,22 +73,19 @@ date_cols <- c(
   "reportedDate",
   "calendar_quarter_ending"
 )
-# ttm_per_share_data <- read_cached_data_parquet(
-# "cache/ttm_per_share_financial_artifact.parquet"
-# )
-# ttm_per_share_data <- read_cached_data(
-#   "cache/ttm_per_share_financial_artifact.csv",
-#   date_columns = date_cols
-# )
-# Alternative: Subtract goodwill and other intangibles separately
-# Correct calculation for Tangible Book Value per Share
+
+ttm_per_share_data <- read_cached_data_parquet(
+"cache/ttm_per_share_financial_artifact.parquet"
+)
+
+# Calculate additional metrics
 ttm_per_share_data <- ttm_per_share_data %>%
   dplyr::mutate(
     tangible_book_value_per_share = totalShareholderEquity_per_share -
       dplyr::coalesce(goodwill_per_share, 0),
-    # dplyr::coalesce(intangibleAssets_per_share, 0),
     ev_ebitda = enterprise_value_per_share / ebitda_ttm_per_share,
     ev_nopat = enterprise_value_per_share / nopat_ttm_per_share,
+    ev_fcf = enterprise_value_per_share / fcf_ttm_per_share,
     roic = nopat_ttm_per_share / invested_capital_per_share * 100
   )
 cat("Loaded dataset: ", nrow(ttm_per_share_data), " rows, ", ncol(ttm_per_share_data), " columns\n")
@@ -96,80 +94,90 @@ if (!TICKER %in% ttm_per_share_data$ticker) {
   available_tickers <- unique(ttm_per_share_data$ticker)
   stop("Ticker '", TICKER, "' not found. Available tickers: ", paste(head(available_tickers, 10), collapse = ", "), "...")
 }
-if (!METRIC %in% names(ttm_per_share_data)) {
-  available_metrics <- names(ttm_per_share_data)[grepl("_per_share$|^price_to_|^market_cap|^enterprise_value", names(ttm_per_share_data))]
-  stop("Metric '", METRIC, "' not found. Common metrics: ", paste(head(available_metrics, 10), collapse = ", "), "...")
-}
-# ---- SECTION 4: Create Bar Plot for Selected Ticker and Metric -------------
-cat("Creating bar plot for", TICKER, "-", METRIC, "...\n")
-# Determine if metric is daily or quarterly frequency
-# Daily metrics: price, volume, market_cap, effective_shares_outstanding
-# Quarterly metrics: financial statement items (per_share metrics, ttm metrics)
-is_daily_metric <- METRIC %in% c(
-  "close",
-  "open",
-  "high",
-  "low",
-  "volume",
-  "market_cap",
-  "effective_shares_outstanding",
-  "commonStockSharesOutstanding",
-  "ev_nopat",
-  "ev_ebitda"
-)
-# Filter data for selected ticker
-ticker_data <- ttm_per_share_data %>%
-  dplyr::filter(ticker == !!TICKER) %>%
-  dplyr::filter(!is.na(!!rlang::sym(METRIC)))
-if (is_daily_metric) {
-  # For daily metrics, use recent data (last 2 years) to avoid overcrowding
-  plot_data <- ticker_data %>%
-    dplyr::filter(date >= Sys.Date() - 5000) %>%  # Last 2 years
-    dplyr::select(date, value = !!rlang::sym(METRIC)) %>%
-    dplyr::arrange(date)
-  date_col <- "date"
-  plot_subtitle <- "Daily frequency"
-} else {
-  # For quarterly metrics, use distinct fiscal periods
-  plot_data <- ticker_data %>%
-    dplyr::distinct(fiscalDateEnding, .keep_all = TRUE) %>%
-    dplyr::select(fiscalDateEnding, value = !!rlang::sym(METRIC)) %>%
-    dplyr::arrange(fiscalDateEnding)
-  # dplyr::slice_tail(n = 20)  # Last 20 quarters
-  date_col <- "fiscalDateEnding"
-  plot_subtitle <- "Quarterly frequency (last 20 quarters)"
-}
-# Create bar plot
-if (nrow(plot_data) == 0) {
-  cat("No data available for", TICKER, "-", METRIC, "\n")
-} else {
-  # Format plot title
-  plot_title_final <- PLOT_TITLE %||% paste0(TICKER, ": ", METRIC)
 
+if (!FUNDAMENTAL_METRIC %in% names(ttm_per_share_data)) {
+  stop("Fundamental metric '", FUNDAMENTAL_METRIC, "' not found in dataset")
+}
+
+if (!VALUATION_METRIC %in% names(ttm_per_share_data)) {
+  stop("Valuation metric '", VALUATION_METRIC, "' not found in dataset")
+}
+# ---- SECTION 4: Create Fundamental KPI Bar Plot (Quarterly) ----------------
+cat("Creating fundamental KPI bar plot for", TICKER, "-", FUNDAMENTAL_METRIC, "...\n")
+
+fundamental_data <- ttm_per_share_data %>%
+  dplyr::filter(ticker == !!TICKER) %>%
+  dplyr::filter(!is.na(!!rlang::sym(FUNDAMENTAL_METRIC))) %>%
+  dplyr::distinct(fiscalDateEnding, .keep_all = TRUE) %>%
+  dplyr::select(fiscalDateEnding, value = !!rlang::sym(FUNDAMENTAL_METRIC)) %>%
+  dplyr::arrange(fiscalDateEnding) %>%
+  dplyr::slice_tail(n = 54)
+
+if (nrow(fundamental_data) == 0) {
+  cat("No fundamental data available for", TICKER, "-", FUNDAMENTAL_METRIC, "\n")
+} else {
+  p1 <- fundamental_data %>%
+    ggplot2::ggplot(ggplot2::aes(x = fiscalDateEnding, y = value)) +
+    ggplot2::geom_col(fill = "steelblue", alpha = 0.7) +
+    ggplot2::labs(
+      title = paste0(TICKER, ": ", FUNDAMENTAL_METRIC),
+      # subtitle = "Quarterly",
+      x = "Fiscal Date Ending",
+      y = FUNDAMENTAL_METRIC
+    ) +
+    ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+    ggplot2::theme(
+      axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+      plot.title = ggplot2::element_text(size = 14, face = "bold")
+    )
+
+  # Format y-axis for large numbers
+  if (max(fundamental_data$value, na.rm = TRUE) > 1e9) {
+    p1 <- p1 + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-9, suffix = "B"))
+  } else if (max(fundamental_data$value, na.rm = TRUE) > 1e6) {
+    p1 <- p1 + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M"))
+  }
+
+  print(p1)
+  cat("Fundamental bar plot created with", nrow(fundamental_data), "data points\n")
+}
+# ---- SECTION 5: Create Valuation Line Plot (Daily with Callout) ------------
+cat("Creating valuation line plot for", TICKER, "-", VALUATION_METRIC, "...\n")
+
+valuation_data <- ttm_per_share_data %>%
+  dplyr::filter(ticker == !!TICKER) %>%
+  dplyr::filter(!is.na(!!rlang::sym(VALUATION_METRIC))) %>%
+  dplyr::filter(date >= Sys.Date() - 5000) %>%
+  dplyr::select(date, value = !!rlang::sym(VALUATION_METRIC)) %>%
+  dplyr::arrange(date)
+
+if (nrow(valuation_data) == 0) {
+  cat("No valuation data available for", TICKER, "-", VALUATION_METRIC, "\n")
+} else {
   # Get the most recent data point for callout
-  most_recent <- plot_data %>%
+  most_recent <- valuation_data %>%
     dplyr::slice_tail(n = 1)
-  # Create the plot
-  p <- plot_data %>%
-    ggplot2::ggplot(ggplot2::aes(x = !!rlang::sym(date_col), y = value)) +
-    ggplot2::geom_line(color = "steelblue", alpha = 0.7) +
+
+  p2 <- valuation_data %>%
+    ggplot2::ggplot(ggplot2::aes(x = date, y = value)) +
+    ggplot2::geom_line(color = "darkgreen", alpha = 0.8, size = 1) +
     # Add highlighted point for most recent data
     ggplot2::geom_point(
       data = most_recent,
-      ggplot2::aes(x = !!rlang::sym(date_col), y = value),
+      ggplot2::aes(x = date, y = value),
       color = "black",
-      size = 2
+      size = 3
     ) +
     # Add value label for most recent data
     ggplot2::geom_label(
       data = most_recent,
       ggplot2::aes(
-        x = !!rlang::sym(date_col),
+        x = date,
         y = value,
         label = scales::comma(value, accuracy = 0.01)
       ),
-      nudge_x = as.numeric(diff(range(plot_data[[date_col]]))) * 0.04,  # Move label to the right
-      nudge_y = max(plot_data$value, na.rm = TRUE) * 0.02,  # Position label slightly above point
+      nudge_x = as.numeric(diff(range(valuation_data$date))) * 0.04,
+      nudge_y = max(valuation_data$value, na.rm = TRUE) * 0.02,
       color = "black",
       fill = "white",
       alpha = 0.8,
@@ -177,39 +185,31 @@ if (nrow(plot_data) == 0) {
       fontface = "bold"
     ) +
     ggplot2::labs(
-      title = plot_title_final,
-      subtitle = plot_subtitle,
-      x = ifelse(is_daily_metric, "Date", "Fiscal Date Ending"),
-      y = METRIC
+      title = paste0(TICKER, ": ", VALUATION_METRIC),
+      # subtitle = "Daily frequency (last 2 years)",
+      x = "Date",
+      y = VALUATION_METRIC
     ) +
-    # Expand x-axis to create space for the label on the right
+    # Expand x-axis to create space for the label
     ggplot2::coord_cartesian(
       xlim = c(
-        min(plot_data[[date_col]]),
-        max(plot_data[[date_col]]) + as.numeric(diff(range(plot_data[[date_col]]))) * 0.12
+        min(valuation_data$date),
+        max(valuation_data$date) + as.numeric(diff(range(valuation_data$date))) * 0.12
       )
     ) +
+    ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y-%m") +
     ggplot2::theme(
       axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
       plot.title = ggplot2::element_text(size = 14, face = "bold")
     )
 
-
-  # Add formatting based on metric type
-  if (is_daily_metric) {
-    p <- p + ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y-%m")
-  } else {
-    p <- p + ggplot2::scale_x_date(date_breaks = "1 year", date_labels = "%Y")
-  }
-
   # Format y-axis for large numbers
-  if (max(plot_data$value, na.rm = TRUE) > 1e9) {
-    p <- p + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-9, suffix = "B"))
-  } else if (max(plot_data$value, na.rm = TRUE) > 1e6) {
-    p <- p + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M"))
+  if (max(valuation_data$value, na.rm = TRUE) > 1e9) {
+    p2 <- p2 + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-9, suffix = "B"))
+  } else if (max(valuation_data$value, na.rm = TRUE) > 1e6) {
+    p2 <- p2 + ggplot2::scale_y_continuous(labels = scales::label_number(scale = 1e-6, suffix = "M"))
   }
 
-  # Display the plot
-  print(p)
-  cat("Bar plot created with", nrow(plot_data), "data points\n")
+  print(p2)
+  cat("Valuation line plot created with", nrow(valuation_data), "data points\n")
 }
