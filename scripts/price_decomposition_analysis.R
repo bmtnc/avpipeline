@@ -7,22 +7,23 @@
 # 2. Change in valuation multiple
 #
 # Within the fundamental component, shows breakdown between:
-# - Actual fundamental growth (total company performance)  
+# - Actual fundamental growth (total company performance)
 # - Share count changes (buybacks/issuances)
 #
 # Key Formula: Price = NOPAT per share × Multiple
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "AAPL"
+TICKER <- "BILL"
 
 # Choose the fundamental metric for decomposition
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
+FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "fcf_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "ebitda_ttm_per_share"
 
 # Analysis period (number of days back from most recent data)
-ANALYSIS_DAYS <- 2000
+ANALYSIS_DAYS <- 1350
 
 # Base date for decomposition (NULL = use first available date in period)
 BASE_DATE <- NULL
@@ -36,9 +37,9 @@ set_ggplot_theme()
 # ---- SECTION 2: Load and prepare data ---------------------------------------
 cat("Loading TTM per-share financial artifact ...\n")
 
-ttm_per_share_data <- read_cached_data_parquet(
-  "cache/ttm_per_share_financial_artifact.parquet"
-)
+# ttm_per_share_data <- read_cached_data_parquet(
+#   "cache/ttm_per_share_financial_artifact.parquet"
+# )
 
 cat("Loaded dataset: ", nrow(ttm_per_share_data), " rows, ", ncol(ttm_per_share_data), " columns\n")
 
@@ -113,7 +114,7 @@ cat("Base shares outstanding:", round(base_shares / 1e9, 2), "B\n")
 cat("Base total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), ":", round(base_total_fundamental / 1e9, 2), "B\n")
 cat("Base multiple:", round(base_multiple, 1), "x\n")
 
-# ---- SECTION 5: Calculate decomposition (original + sub-breakdown) ----------
+# ---- SECTION 5: Calculate decomposition (original + corrected sub-breakdown) ----
 decomposition_data <- price_data %>%
   dplyr::filter(date >= base_date) %>%
   dplyr::mutate(
@@ -121,46 +122,52 @@ decomposition_data <- price_data %>%
     fundamental_per_share_change = fundamental_per_share - base_fundamental_per_share,
     multiple_change = multiple - base_multiple,
     price_change = price - base_price,
-    
+
     # Main components (original working math)
     fundamental_contribution = fundamental_per_share_change * base_multiple,
     multiple_contribution = base_fundamental_per_share * multiple_change,
-    
+
     # Interaction term (allocated proportionally as before)
     interaction_term = fundamental_per_share_change * multiple_change,
-    
+
     # Adjust for interaction term (same as original)
-    fundamental_contrib_adj = fundamental_contribution + 
+    fundamental_contrib_adj = fundamental_contribution +
       ifelse(abs(fundamental_contribution) + abs(multiple_contribution) > 0,
-             interaction_term * abs(fundamental_contribution) / 
+             interaction_term * abs(fundamental_contribution) /
              (abs(fundamental_contribution) + abs(multiple_contribution)),
              interaction_term / 2),
-    
-    multiple_contrib_adj = multiple_contribution + 
+
+    multiple_contrib_adj = multiple_contribution +
       ifelse(abs(fundamental_contribution) + abs(multiple_contribution) > 0,
-             interaction_term * abs(multiple_contribution) / 
+             interaction_term * abs(multiple_contribution) /
              (abs(fundamental_contribution) + abs(multiple_contribution)),
              interaction_term / 2),
-    
-    # SIMPLE SUB-BREAKDOWN: Split the fundamental_contrib_adj proportionally
-    # Calculate the two sources of per-share change
-    nopat_growth_per_share_effect = (total_fundamental - base_total_fundamental) / base_shares,
-    share_count_per_share_effect = base_total_fundamental * (1/shares_outstanding - 1/base_shares),
-    
-    # Calculate proportions (handling edge cases)
-    total_per_share_effects = abs(nopat_growth_per_share_effect) + abs(share_count_per_share_effect),
-    nopat_proportion = ifelse(total_per_share_effects > 0,
-                             abs(nopat_growth_per_share_effect) / total_per_share_effects,
-                             0.5),
-    share_proportion = ifelse(total_per_share_effects > 0,
-                             abs(share_count_per_share_effect) / total_per_share_effects,
-                             0.5),
-    
-    # Apply proportions to split the fundamental contribution
-    nopat_growth_contribution = fundamental_contrib_adj * nopat_proportion * 
-                               sign(nopat_growth_per_share_effect),
-    share_count_contribution = fundamental_contrib_adj * share_proportion * 
-                              sign(share_count_per_share_effect)
+
+    # CORRECTED SUB-BREAKDOWN: Mathematically consistent decomposition
+    # The exact relationship: current_per_share = current_total / current_shares
+    actual_per_share_change = fundamental_per_share - base_fundamental_per_share,
+
+    # Method 1: Direct allocation (mathematically exact)
+    nopat_growth_per_share_effect = (total_fundamental - base_total_fundamental) / shares_outstanding,
+    share_count_per_share_effect = actual_per_share_change - nopat_growth_per_share_effect,
+
+    # Verification: these should sum exactly to actual_per_share_change
+    per_share_decomp_check = nopat_growth_per_share_effect + share_count_per_share_effect,
+    per_share_error = abs(per_share_decomp_check - actual_per_share_change),
+
+    # Now allocate the fundamental_contrib_adj proportionally
+    # Handle edge case where actual change is near zero
+    nopat_growth_contribution = ifelse(abs(actual_per_share_change) > 1e-10,
+                                      fundamental_contrib_adj * nopat_growth_per_share_effect / actual_per_share_change,
+                                      fundamental_contrib_adj * 0.5),
+
+    share_count_contribution = ifelse(abs(actual_per_share_change) > 1e-10,
+                                     fundamental_contrib_adj * share_count_per_share_effect / actual_per_share_change,
+                                     fundamental_contrib_adj * 0.5),
+
+    # Final verification: sub-components should sum to fundamental contribution
+    sub_decomp_check = nopat_growth_contribution + share_count_contribution,
+    sub_decomp_error = abs(sub_decomp_check - fundamental_contrib_adj)
   ) %>%
   dplyr::select(
     date, price, fundamental_per_share, shares_outstanding, total_fundamental, multiple,
@@ -168,8 +175,13 @@ decomposition_data <- price_data %>%
     fundamental_contribution = fundamental_contrib_adj,
     multiple_contribution = multiple_contrib_adj,
     nopat_growth_contribution,
-    share_count_contribution
+    share_count_contribution,
+    # Keep validation columns for debugging
+    per_share_error,
+    sub_decomp_error
   )
+
+
 
 # ---- SECTION 6: Create enhanced stacked area chart ---------------------------
 cat("Creating enhanced price decomposition visualization...\n")
@@ -177,21 +189,42 @@ cat("Creating enhanced price decomposition visualization...\n")
 # Get current data for callout and subtitle
 current_data <- decomposition_data %>% dplyr::slice_tail(n = 1)
 
-# Create subtitle with actual percentage changes
-price_change_pct <- (current_data$price - base_price) / base_price * 100
-nopat_change_pct <- (current_data$total_fundamental - base_total_fundamental) / base_total_fundamental * 100
-share_change_pct <- (current_data$shares_outstanding - base_shares) / base_shares * 100
-valuation_change_pct <- (current_data$multiple - base_multiple) / base_multiple * 100
+# Clear approach: Show actual dollar contributions
+if (abs(current_data$price_change) > 0.01) {
+  # Get the actual dollar contributions
+  nopat_dollars <- current_data$nopat_growth_contribution
+  share_dollars <- current_data$share_count_contribution
+  valuation_dollars <- current_data$multiple_contribution
 
-# Create subtitle with contribution breakdown
-subtitle_text <- paste0(
-  "Contribution to Price Δ:", "\n",
-  "NOPAT Δ: ", round(100 * current_data$nopat_growth_contribution / current_data$price_change, 1), "%\n",
-  "Buybacks (Issuance): ", round(100 * current_data$share_count_contribution / current_data$price_change, 1), "%\n",
-  "Valuation Δ: ", round(100 * current_data$multiple_contribution / current_data$price_change, 1), "%"
-)
+  # Create clean metric name from FUNDAMENTAL_METRIC
+  metric_name <- gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC)
 
-# Prepare data for enhanced stacked area chart
+  # Create clear labels with dollar amounts and direction (sign always first)
+  nopat_label <- paste0(metric_name, ": ",
+                       ifelse(nopat_dollars >= 0, "+", "-"),
+                       "$", round(abs(nopat_dollars), 1))
+
+  share_label <- paste0("Buybacks: ",
+                       ifelse(share_dollars >= 0, "+", "-"),
+                       "$", round(abs(share_dollars), 1))
+
+  valuation_label <- paste0("Valuation: ",
+                           ifelse(valuation_dollars >= 0, "+", "-"),
+                           "$", round(abs(valuation_dollars), 1))
+
+  # Create subtitle with context
+  total_change <- current_data$price_change
+  direction_text <- ifelse(total_change > 0, "Gain", "Decline")
+
+  subtitle_text <- paste0(
+    "$", round(abs(total_change), 1), " ", direction_text, " Breakdown:", "\n",
+    nopat_label, " | ", share_label, " | ", valuation_label
+  )
+} else {
+  subtitle_text <- "No significant price change to analyze"
+}
+
+# ... rest of section remains the same ...
 # Prepare data for enhanced stacked area chart
 plot_data <- decomposition_data %>%
   dplyr::select(date, nopat_growth_contribution, share_count_contribution, multiple_contribution) %>%
@@ -210,7 +243,7 @@ plot_data <- decomposition_data %>%
     # Order for stacking
     component = factor(component, levels = c(
       paste("∆", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC)),
-      "∆ Share Count", 
+      "∆ Share Count",
       "∆ Valuation"
     ))
   )
@@ -301,6 +334,7 @@ if (max_change > 100) {
 }
 
 print(p)
+
 # ---- SECTION 7: VALIDATION AND QUALITY CHECKS ------------------------------
 cat(paste0("\n", strrep("=", 60), "\n"))
 cat("ENHANCED DECOMPOSITION VALIDATION CHECKS\n")
@@ -312,15 +346,15 @@ validation_data <- decomposition_data %>%
     # Check main decomposition (must equal original)
     main_total = fundamental_contribution + multiple_contribution,
     main_error = abs(main_total - price_change),
-    
+
     # Check sub-decomposition
     sub_total = nopat_growth_contribution + share_count_contribution,
     sub_error = abs(sub_total - fundamental_contribution),
-    
+
     # Check three-way total
     three_way_total = nopat_growth_contribution + share_count_contribution + multiple_contribution,
     three_way_error = abs(three_way_total - price_change),
-    
+
     # Per-share consistency
     calculated_per_share_change = (nopat_growth_contribution + share_count_contribution) / base_multiple,
     actual_per_share_change = fundamental_per_share - base_fundamental_per_share,
@@ -391,7 +425,7 @@ cat(paste0(strrep("=", 60), "\n"))
 
 validation_score <- 0
 if (max_main_error < 0.01) validation_score <- validation_score + 1
-if (max_sub_error < 0.01) validation_score <- validation_score + 1  
+if (max_sub_error < 0.01) validation_score <- validation_score + 1
 if (max_three_way_error < 0.01) validation_score <- validation_score + 1
 
 cat("Validation Score: ", validation_score, "/3 (",
@@ -420,7 +454,7 @@ cat("  - Multiple contribution: $", round(current_data$multiple_contribution, 2)
     " (", round(100 * current_data$multiple_contribution / current_data$price_change, 1), "%)\n\n")
 
 cat("Fundamental breakdown:\n")
-cat("  - From total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), "growth: $", 
+cat("  - From total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), "growth: $",
     round(current_data$nopat_growth_contribution, 2),
     " (", round(100 * current_data$nopat_growth_contribution / current_data$price_change, 1), "%)\n")
 cat("  - From share count changes: $", round(current_data$share_count_contribution, 2),
