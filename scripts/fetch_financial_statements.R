@@ -1,5 +1,5 @@
 # Unified Financial Artifacts Data Fetcher
-# Combines functionality from balance_sheet_artifact.R, cash_flow_artifact.R, 
+# Combines functionality from balance_sheet_artifact.R, cash_flow_artifact.R,
 # income_statement_artifact.R, and earnings_artifact.R into one script
 # Fetches quarterly financial data for multiple tickers across all four data types
 # Uses configuration-based architecture for cleaner, more maintainable code
@@ -10,7 +10,7 @@ devtools::load_all()
 # ==============================================================================
 # CONFIGURATION - Change this to fetch holdings from different ETFs
 # ==============================================================================
-etf_symbol <- "XLY"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
+etf_symbol <- "IWB"  # Can be changed to any ETF (e.g., "SPY", "VTI", "IWM")
 
 # ==============================================================================
 # FETCH ETF HOLDINGS

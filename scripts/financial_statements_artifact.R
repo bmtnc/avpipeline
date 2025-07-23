@@ -25,7 +25,7 @@ if (length(missing_files) > 0) {
 cat("Loading financial statement data...\n")
 
 earnings <- load_and_filter_financial_data("cache/earnings_artifact.csv")
-cash_flow <- load_and_filter_financial_data("cache/cash_flow_artifact.csv") 
+cash_flow <- load_and_filter_financial_data("cache/cash_flow_artifact.csv")
 income_statement <- load_and_filter_financial_data("cache/income_statement_artifact.csv")
 balance_sheet <- load_and_filter_financial_data("cache/balance_sheet_artifact.csv")
 
@@ -425,7 +425,7 @@ cat("Filtering to essential columns only...\n")
 # Get financial metrics from helper functions
 financial_metrics <- c(
   get_cash_flow_metrics(),
-  get_income_statement_metrics(), 
+  get_income_statement_metrics(),
   get_balance_sheet_metrics()
 )
 
@@ -454,7 +454,7 @@ cat("- Removed columns:", original_col_count - length(existing_essential_cols), 
 
 cat("Essential columns breakdown:\n")
 cat("- Financial metrics:", length(intersect(financial_metrics, names(financial_statements))), "\n")
-cat("- Date columns:", length(intersect(date_cols, names(financial_statements))), "\n") 
+cat("- Date columns:", length(intersect(date_cols, names(financial_statements))), "\n")
 cat("- Meta columns:", length(intersect(meta_cols, names(financial_statements))), "\n")
 
 cat("Final dataset dimensions:", nrow(financial_statements), "observations x", ncol(financial_statements), "columns\n")
@@ -582,23 +582,6 @@ cat("- Gaps in 80-100 day range:", gap_stats$gaps_80_to_100_pct, "%\n")
 financial_statements <- financial_statements %>%
   dplyr::select(-days_since_last_report)
 
-# ============================================================================
-# SECTION 10: SAVE FINAL ARTIFACT
-# ============================================================================
-
-# Final summary
-cat("\nFinal financial statements artifact:\n")
-cat("- Observations:", nrow(financial_statements), "\n")
-cat("- Tickers:", length(unique(financial_statements$ticker)), "\n")
-cat("- Date range:", as.character(min(financial_statements$fiscalDateEnding)), "to",
-    as.character(max(financial_statements$fiscalDateEnding)), "\n")
-cat("- Complete financial records:", sum(financial_statements$has_complete_financials), "\n")
-cat("- Records with earnings metadata:", sum(financial_statements$has_earnings_metadata), "\n")
-
-# Save the final artifact
-write.csv(financial_statements, "cache/financial_statements_artifact.csv", row.names = FALSE)
-cat("Financial statements artifact saved successfully!\n")
-
 
 
 # ============================================================================
@@ -639,7 +622,25 @@ standardization_summary <- financial_statements %>%
 print(standardization_summary)
 
 # ============================================================================
-# SECTION 12: VISUALIZE STANDARDIZED TICKER COUNTS
+# SECTION 12: SAVE FINAL ARTIFACT
+# ============================================================================
+
+# Final summary
+cat("\nFinal financial statements artifact:\n")
+cat("- Observations:", nrow(financial_statements), "\n")
+cat("- Tickers:", length(unique(financial_statements$ticker)), "\n")
+cat("- Date range:", as.character(min(financial_statements$fiscalDateEnding)), "to",
+    as.character(max(financial_statements$fiscalDateEnding)), "\n")
+cat("- Complete financial records:", sum(financial_statements$has_complete_financials), "\n")
+cat("- Records with earnings metadata:", sum(financial_statements$has_earnings_metadata), "\n")
+
+# Save the final artifact
+write.csv(financial_statements, "cache/financial_statements_artifact.csv", row.names = FALSE)
+cat("Financial statements artifact saved successfully!\n")
+
+
+# ============================================================================
+# SECTION 13: VISUALIZE STANDARDIZED TICKER COUNTS
 # ============================================================================
 
 # Calculate ticker counts by standardized calendar quarter

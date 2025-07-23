@@ -86,6 +86,7 @@ unified_data <- price_data %>%
     ticker,
     date,
     dplyr::contains("date"),
+    calendar_quarter_ending,
     dplyr::everything()
   )
 
@@ -110,7 +111,8 @@ date_cols <- c(
   "initial_date",
   "latest_date",
   "fiscalDateEnding",
-  "reportedDate"
+  "reportedDate",
+  "calendar_quarter_ending"
 )
 
 meta_cols <- c(
@@ -144,6 +146,39 @@ ttm_per_share_data <- unified_per_share_data %>%
       operatingCashflow_ttm_per_share + capitalExpenditures_ttm_per_share,
       NA_real_
     ),
+    
+    # NOPAT = (EBIT + Amortization) × (1 - Tax Rate)
+    # Using 23.75% corporate tax rate (21% federal + ~4% state average) * 0.95 
+    nopat_ttm_per_share = dplyr::case_when(
+      is.na(ebit_ttm_per_share) ~ NA_real_,
+      
+      TRUE ~ {
+        amortization_per_share <- dplyr::coalesce(depreciationAndAmortization_ttm_per_share, 0) - 
+                                  dplyr::coalesce(depreciation_ttm_per_share, 0)
+        
+        (ebit_ttm_per_share + pmax(amortization_per_share, 0)) * (1-0.2375)  # taxes
+      }
+    ),
+    
+    # Enterprise Value per share using adjusted close
+        # Enterprise Value per share with comprehensive debt and investment adjustments
+    # Enterprise Value per share - using pre-calculated debt total to avoid double-counting
+    enterprise_value_per_share = adjusted_close + 
+      # Use pre-calculated total debt (avoids double-counting current portion)
+      dplyr::coalesce(shortLongTermDebtTotal_per_share, 0) +
+      dplyr::coalesce(capitalLeaseObligations_per_share, 0) -
+      # Subtract liquid assets
+      dplyr::coalesce(cashAndShortTermInvestments_per_share, 0) -
+      dplyr::coalesce(longTermInvestments_per_share, 0),
+    
+    invested_capital_per_share =
+      # Total Debt
+      dplyr::coalesce(shortLongTermDebtTotal_per_share, 0) +
+      dplyr::coalesce(capitalLeaseObligations_per_share, 0) +
+      # Total Equity
+      dplyr::coalesce(totalShareholderEquity_per_share, 0),
+
+
     has_complete_financial_data =
       !is.na(totalRevenue_ttm_per_share) &
       !is.na(totalAssets_per_share) &
@@ -158,8 +193,8 @@ ttm_per_share_data <- unified_per_share_data %>%
   ) %>%
   dplyr::arrange(ticker, date)
 
-# Save
-write.csv(ttm_per_share_data, "cache/ttm_per_share_financial_artifact.csv", row.names = FALSE)
+# write.csv(ttm_per_share_data, "cache/ttm_per_share_financial_artifact.csv", row.names = FALSE)
+arrow::write_parquet(ttm_per_share_data, "cache/ttm_per_share_financial_artifact.parquet")
 
 cat("✓ Essential TTM per-share artifact created!\n")
 cat("Final dataset:", nrow(ttm_per_share_data), "observations x", ncol(ttm_per_share_data), "columns\n")
