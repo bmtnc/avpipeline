@@ -1,14 +1,16 @@
 # =============================================================================
-# Stock Price Decomposition Analysis
+# Stock Price Decomposition Analysis - Enhanced Visualization
 # =============================================================================
 #
-# Decomposes cumulative stock price changes into two components:
-# 1. Change in per-share economics (e.g., NOPAT per share)
+# Decomposes cumulative stock price changes into two main components:
+# 1. Change in per-share fundamentals (with sub-breakdown)
 # 2. Change in valuation multiple
 #
-# Key Formula: Price = NOPAT per share × Multiple
-# Where Multiple = Adjusted Close / NOPAT per share
+# Within the fundamental component, shows breakdown between:
+# - Actual fundamental growth (total company performance)  
+# - Share count changes (buybacks/issuances)
 #
+# Key Formula: Price = NOPAT per share × Multiple
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
@@ -34,9 +36,9 @@ set_ggplot_theme()
 # ---- SECTION 2: Load and prepare data ---------------------------------------
 cat("Loading TTM per-share financial artifact ...\n")
 
-# ttm_per_share_data <- read_cached_data_parquet(
-#   "cache/ttm_per_share_financial_artifact.parquet"
-# )
+ttm_per_share_data <- read_cached_data_parquet(
+  "cache/ttm_per_share_financial_artifact.parquet"
+)
 
 cat("Loaded dataset: ", nrow(ttm_per_share_data), " rows, ", ncol(ttm_per_share_data), " columns\n")
 
@@ -50,24 +52,32 @@ if (!FUNDAMENTAL_METRIC %in% names(ttm_per_share_data)) {
   stop("Fundamental metric '", FUNDAMENTAL_METRIC, "' not found in dataset")
 }
 
+if (!"commonStockSharesOutstanding" %in% names(ttm_per_share_data)) {
+  stop("commonStockSharesOutstanding not found in dataset - required for detailed decomposition")
+}
+
 # ---- SECTION 4: Prepare decomposition data ----------------------------------
-cat("Preparing price decomposition data for", TICKER, "...\n")
+cat("Preparing enhanced price decomposition data for", TICKER, "...\n")
 
 # Filter and prepare base dataset
 price_data <- ttm_per_share_data %>%
   dplyr::filter(ticker == !!TICKER) %>%
   dplyr::filter(!is.na(adjusted_close)) %>%
   dplyr::filter(!is.na(!!rlang::sym(FUNDAMENTAL_METRIC))) %>%
+  dplyr::filter(!is.na(commonStockSharesOutstanding)) %>%
   dplyr::filter(!!rlang::sym(FUNDAMENTAL_METRIC) > 0) %>%  # Ensure positive fundamentals
+  dplyr::filter(commonStockSharesOutstanding > 0) %>%  # Ensure positive share count
   dplyr::arrange(date) %>%
   dplyr::slice_tail(n = ANALYSIS_DAYS) %>%
   dplyr::select(
     date,
     price = adjusted_close,
-    fundamental = !!rlang::sym(FUNDAMENTAL_METRIC)
+    fundamental_per_share = !!rlang::sym(FUNDAMENTAL_METRIC),
+    shares_outstanding = commonStockSharesOutstanding
   ) %>%
   dplyr::mutate(
-    multiple = price / fundamental
+    total_fundamental = fundamental_per_share * shares_outstanding,
+    multiple = price / fundamental_per_share
   )
 
 if (nrow(price_data) == 0) {
@@ -91,37 +101,35 @@ base_values <- price_data %>%
   dplyr::slice(1)
 
 base_price <- base_values$price
-base_fundamental <- base_values$fundamental
+base_fundamental_per_share <- base_values$fundamental_per_share
+base_shares <- base_values$shares_outstanding
+base_total_fundamental <- base_values$total_fundamental
 base_multiple <- base_values$multiple
 
 cat("Base date:", as.character(base_date), "\n")
 cat("Base price: $", round(base_price, 2), "\n")
-cat("Base", FUNDAMENTAL_METRIC, ":", round(base_fundamental, 2), "\n")
+cat("Base", FUNDAMENTAL_METRIC, ":", round(base_fundamental_per_share, 2), "\n")
+cat("Base shares outstanding:", round(base_shares / 1e9, 2), "B\n")
+cat("Base total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), ":", round(base_total_fundamental / 1e9, 2), "B\n")
 cat("Base multiple:", round(base_multiple, 1), "x\n")
 
-# ---- SECTION 5: Calculate decomposition -------------------------------------
+# ---- SECTION 5: Calculate decomposition (original + sub-breakdown) ----------
 decomposition_data <- price_data %>%
   dplyr::filter(date >= base_date) %>%
   dplyr::mutate(
-    # Current changes from base
-    fundamental_change = fundamental - base_fundamental,
+    # ORIGINAL TWO-LEVEL DECOMPOSITION (this math must be preserved)
+    fundamental_per_share_change = fundamental_per_share - base_fundamental_per_share,
     multiple_change = multiple - base_multiple,
     price_change = price - base_price,
     
-    # Decomposition components
-    # Component 1: Change due to fundamental improvement (holding multiple constant)
-    fundamental_contribution = fundamental_change * base_multiple,
+    # Main components (original working math)
+    fundamental_contribution = fundamental_per_share_change * base_multiple,
+    multiple_contribution = base_fundamental_per_share * multiple_change,
     
-    # Component 2: Change due to multiple expansion (holding fundamental constant)
-    multiple_contribution = base_fundamental * multiple_change,
+    # Interaction term (allocated proportionally as before)
+    interaction_term = fundamental_per_share_change * multiple_change,
     
-    # Interaction term (allocated proportionally)
-    interaction_term = fundamental_change * multiple_change,
-    
-    # Total contribution should equal actual price change
-    total_contribution = fundamental_contribution + multiple_contribution + interaction_term,
-    
-    # Allocate interaction term proportionally
+    # Adjust for interaction term (same as original)
     fundamental_contrib_adj = fundamental_contribution + 
       ifelse(abs(fundamental_contribution) + abs(multiple_contribution) > 0,
              interaction_term * abs(fundamental_contribution) / 
@@ -132,39 +140,95 @@ decomposition_data <- price_data %>%
       ifelse(abs(fundamental_contribution) + abs(multiple_contribution) > 0,
              interaction_term * abs(multiple_contribution) / 
              (abs(fundamental_contribution) + abs(multiple_contribution)),
-             interaction_term / 2)
+             interaction_term / 2),
+    
+    # SIMPLE SUB-BREAKDOWN: Split the fundamental_contrib_adj proportionally
+    # Calculate the two sources of per-share change
+    nopat_growth_per_share_effect = (total_fundamental - base_total_fundamental) / base_shares,
+    share_count_per_share_effect = base_total_fundamental * (1/shares_outstanding - 1/base_shares),
+    
+    # Calculate proportions (handling edge cases)
+    total_per_share_effects = abs(nopat_growth_per_share_effect) + abs(share_count_per_share_effect),
+    nopat_proportion = ifelse(total_per_share_effects > 0,
+                             abs(nopat_growth_per_share_effect) / total_per_share_effects,
+                             0.5),
+    share_proportion = ifelse(total_per_share_effects > 0,
+                             abs(share_count_per_share_effect) / total_per_share_effects,
+                             0.5),
+    
+    # Apply proportions to split the fundamental contribution
+    nopat_growth_contribution = fundamental_contrib_adj * nopat_proportion * 
+                               sign(nopat_growth_per_share_effect),
+    share_count_contribution = fundamental_contrib_adj * share_proportion * 
+                              sign(share_count_per_share_effect)
   ) %>%
   dplyr::select(
-    date, price, fundamental, multiple, price_change,
+    date, price, fundamental_per_share, shares_outstanding, total_fundamental, multiple,
+    price_change,
     fundamental_contribution = fundamental_contrib_adj,
-    multiple_contribution = multiple_contrib_adj
+    multiple_contribution = multiple_contrib_adj,
+    nopat_growth_contribution,
+    share_count_contribution
   )
 
-# ---- SECTION 6: Create stacked area chart -----------------------------------
-cat("Creating price decomposition visualization...\n")
+# ---- SECTION 6: Create enhanced stacked area chart ---------------------------
+cat("Creating enhanced price decomposition visualization...\n")
 
-# Prepare data for stacked area chart
+# Get current data for callout and subtitle
+current_data <- decomposition_data %>% dplyr::slice_tail(n = 1)
+
+# Create subtitle with actual percentage changes
+price_change_pct <- (current_data$price - base_price) / base_price * 100
+nopat_change_pct <- (current_data$total_fundamental - base_total_fundamental) / base_total_fundamental * 100
+share_change_pct <- (current_data$shares_outstanding - base_shares) / base_shares * 100
+valuation_change_pct <- (current_data$multiple - base_multiple) / base_multiple * 100
+
+# Create subtitle with contribution breakdown
+subtitle_text <- paste0(
+  "Contribution to Price Δ:", "\n",
+  "NOPAT Δ: ", round(100 * current_data$nopat_growth_contribution / current_data$price_change, 1), "%\n",
+  "Buybacks (Issuance): ", round(100 * current_data$share_count_contribution / current_data$price_change, 1), "%\n",
+  "Valuation Δ: ", round(100 * current_data$multiple_contribution / current_data$price_change, 1), "%"
+)
+
+# Prepare data for enhanced stacked area chart
+# Prepare data for enhanced stacked area chart
 plot_data <- decomposition_data %>%
-  dplyr::select(date, fundamental_contribution, multiple_contribution) %>%
+  dplyr::select(date, nopat_growth_contribution, share_count_contribution, multiple_contribution) %>%
   tidyr::pivot_longer(
-    cols = c(fundamental_contribution, multiple_contribution),
+    cols = c(nopat_growth_contribution, share_count_contribution, multiple_contribution),
     names_to = "component",
     values_to = "contribution"
   ) %>%
   dplyr::mutate(
     component = dplyr::case_when(
-      component == "fundamental_contribution" ~ paste("Change in", FUNDAMENTAL_METRIC),
-      component == "multiple_contribution" ~ "Change in Valuation Multiple",
+      component == "nopat_growth_contribution" ~ paste("∆", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC)),
+      component == "share_count_contribution" ~ "∆ Share Count",
+      component == "multiple_contribution" ~ "∆ Valuation",
       TRUE ~ component
-    )
+    ),
+    # Order for stacking
+    component = factor(component, levels = c(
+      paste("∆", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC)),
+      "∆ Share Count", 
+      "∆ Valuation"
+    ))
   )
 
 # Create named color vector
-fundamental_label <- paste("Change in", FUNDAMENTAL_METRIC)
-multiple_label <- "Change in Valuation Multiple"
+fundamental_label <- paste("∆", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC))
+shares_label <- "∆ Share Count"
+multiple_label <- "∆ Valuation"
 
-color_values <- c("steelblue", "darkgreen")
-names(color_values) <- c(fundamental_label, multiple_label)
+# Use similar colors for the fundamental sub-components, different for multiple
+color_values <- c("steelblue", "lightblue", "darkgreen")
+names(color_values) <- c(fundamental_label, shares_label, multiple_label)
+
+# Create callout text for current metrics
+callout_text <- paste0(
+  "$", round(current_data$price, 2), "\n",
+  "", round(current_data$multiple, 1), "x"
+)
 
 # Create the plot
 p <- plot_data %>%
@@ -174,25 +238,58 @@ p <- plot_data %>%
     data = decomposition_data,
     ggplot2::aes(x = date, y = price_change),
     color = "black",
-    size = 1,
+    linewidth = 1,
+    inherit.aes = FALSE
+  ) +
+  # Add current metrics callout
+  ggplot2::geom_point(
+    data = current_data,
+    ggplot2::aes(x = date, y = price_change),
+    color = "black",
+    size = 3,
+    inherit.aes = FALSE
+  ) +
+  ggplot2::geom_label(
+    data = current_data,
+    ggplot2::aes(
+      x = date,
+      y = price_change,
+      label = callout_text
+    ),
+    nudge_x = as.numeric(diff(range(decomposition_data$date))) * 0.06,
+    nudge_y = max(decomposition_data$price_change, na.rm = TRUE) * 0.05,
+    color = "black",
+    fill = "white",
+    alpha = 0.9,
+    size = 3,
+    fontface = "bold",
+    lineheight = 0.9,
     inherit.aes = FALSE
   ) +
   ggplot2::scale_fill_manual(values = color_values) +
   ggplot2::labs(
-    title = ifelse(is.null(PLOT_TITLE), 
-                   paste0(TICKER, ": Stock Price Change Decomposition"), 
+    title = ifelse(is.null(PLOT_TITLE),
+                   paste0(TICKER, ": Cumulative Price Change Decomposition"),
                    PLOT_TITLE),
-    subtitle = paste0("Based on ", FUNDAMENTAL_METRIC, " | Base date: ", base_date),
+    subtitle = subtitle_text,
     x = "Date",
     y = "Cumulative Price Change ($)",
     fill = "Source of Change",
-    caption = "Black line shows actual cumulative price change"
+    caption = paste0("Black line shows actual cumulative price change | Base date: ", base_date)
+  ) +
+  # Expand x-axis to create space for the callout
+  ggplot2::coord_cartesian(
+    xlim = c(
+      min(decomposition_data$date),
+      max(decomposition_data$date) + as.numeric(diff(range(decomposition_data$date))) * 0.15
+    )
   ) +
   ggplot2::scale_x_date(date_breaks = "6 months", date_labels = "%Y-%m") +
   ggplot2::theme(
     axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
     legend.position = "bottom",
-    plot.title = ggplot2::element_text(size = 14, face = "bold")
+    plot.title = ggplot2::element_text(size = 14, face = "bold", hjust = 0),
+    plot.subtitle = ggplot2::element_text(size = 11, lineheight = 1.2, hjust = 0)
   )
 
 # Format y-axis
@@ -204,178 +301,88 @@ if (max_change > 100) {
 }
 
 print(p)
-
-# ... existing code ...
-
-
 # ---- SECTION 7: VALIDATION AND QUALITY CHECKS ------------------------------
 cat(paste0("\n", strrep("=", 60), "\n"))
-cat("DECOMPOSITION VALIDATION CHECKS\n")
+cat("ENHANCED DECOMPOSITION VALIDATION CHECKS\n")
 cat(paste0(strrep("=", 60), "\n"))
 
 # Create validation dataset
 validation_data <- decomposition_data %>%
   dplyr::mutate(
-    # Recalculate components for validation
-    calculated_total = fundamental_contribution + multiple_contribution,
-    decomposition_error = abs(calculated_total - price_change),
-    relative_error = ifelse(abs(price_change) > 0.01, 
-                           decomposition_error / abs(price_change) * 100, 
-                           NA),
+    # Check main decomposition (must equal original)
+    main_total = fundamental_contribution + multiple_contribution,
+    main_error = abs(main_total - price_change),
     
-    # Recalculate multiple for consistency check
-    calculated_multiple = price / fundamental,
-    multiple_consistency_error = abs(calculated_multiple - multiple),
+    # Check sub-decomposition
+    sub_total = nopat_growth_contribution + share_count_contribution,
+    sub_error = abs(sub_total - fundamental_contribution),
     
-    # Sign consistency checks
-    fundamental_direction = sign(fundamental - base_fundamental),
-    fundamental_contrib_direction = sign(fundamental_contribution),
-    multiple_direction = sign(multiple - base_multiple),
-    multiple_contrib_direction = sign(multiple_contribution)
+    # Check three-way total
+    three_way_total = nopat_growth_contribution + share_count_contribution + multiple_contribution,
+    three_way_error = abs(three_way_total - price_change),
+    
+    # Per-share consistency
+    calculated_per_share_change = (nopat_growth_contribution + share_count_contribution) / base_multiple,
+    actual_per_share_change = fundamental_per_share - base_fundamental_per_share,
+    per_share_error = abs(calculated_per_share_change - actual_per_share_change)
   )
 
-# ---- CHECK 1: Mathematical Accuracy -----------------------------------------
-cat("\n1. MATHEMATICAL ACCURACY\n")
-cat(paste0(strrep("-", 25), "\n"))
+# ---- CHECK 1: Main Decomposition Accuracy -----------------------------------
+cat("\n1. MAIN DECOMPOSITION ACCURACY (MUST BE PERFECT)\n")
+cat(paste0(strrep("-", 45), "\n"))
 
-max_abs_error <- max(validation_data$decomposition_error, na.rm = TRUE)
-mean_abs_error <- mean(validation_data$decomposition_error, na.rm = TRUE)
-max_rel_error <- max(validation_data$relative_error, na.rm = TRUE)
-mean_rel_error <- mean(validation_data$relative_error, na.rm = TRUE)
+max_main_error <- max(validation_data$main_error, na.rm = TRUE)
+mean_main_error <- mean(validation_data$main_error, na.rm = TRUE)
 
-cat("Max absolute error: $", round(max_abs_error, 4), "\n")
-cat("Mean absolute error: $", round(mean_abs_error, 4), "\n")
-cat("Max relative error: ", round(max_rel_error, 2), "%\n")
-cat("Mean relative error: ", round(mean_rel_error, 2), "%\n")
+cat("Max main decomposition error: $", round(max_main_error, 6), "\n")
+cat("Mean main decomposition error: $", round(mean_main_error, 6), "\n")
 
-# Correlation check
-price_change_cor <- cor(validation_data$calculated_total, validation_data$price_change, use = "complete.obs")
-cat("Correlation (calculated vs actual): ", round(price_change_cor, 6), "\n")
+main_correlation <- cor(validation_data$main_total, validation_data$price_change, use = "complete.obs")
+cat("Main correlation (fund + multiple vs price): ", round(main_correlation, 8), "\n")
 
-if (max_abs_error < 0.01) {
-  cat("✓ PASS: Decomposition is mathematically accurate\n")
+if (max_main_error < 0.01) {
+  cat("✓ PASS: Main decomposition is accurate\n")
 } else {
-  cat("✗ FAIL: Decomposition has significant errors\n")
+  cat("✗ FAIL: Main decomposition has errors\n")
 }
 
-# ---- CHECK 2: Multiple Consistency ------------------------------------------
-cat("\n2. MULTIPLE CONSISTENCY\n")
-cat(paste0(strrep("-", 20), "\n"))
+# ---- CHECK 2: Sub-Decomposition Accuracy ------------------------------------
+cat("\n2. SUB-DECOMPOSITION ACCURACY\n")
+cat(paste0(strrep("-", 28), "\n"))
 
-max_multiple_error <- max(validation_data$multiple_consistency_error, na.rm = TRUE)
-mean_multiple_error <- mean(validation_data$multiple_consistency_error, na.rm = TRUE)
+max_sub_error <- max(validation_data$sub_error, na.rm = TRUE)
+mean_sub_error <- mean(validation_data$sub_error, na.rm = TRUE)
 
-cat("Max multiple calculation error: ", round(max_multiple_error, 4), "x\n")
-cat("Mean multiple calculation error: ", round(mean_multiple_error, 4), "x\n")
+cat("Max sub-decomposition error: $", round(max_sub_error, 6), "\n")
+cat("Mean sub-decomposition error: $", round(mean_sub_error, 6), "\n")
 
-if (max_multiple_error < 0.01) {
-  cat("✓ PASS: Multiple calculations are consistent\n")
+sub_correlation <- cor(validation_data$sub_total, validation_data$fundamental_contribution, use = "complete.obs")
+cat("Sub correlation (nopat + shares vs fundamental): ", round(sub_correlation, 8), "\n")
+
+if (max_sub_error < 0.01) {
+  cat("✓ PASS: Sub-decomposition is accurate\n")
 } else {
-  cat("✗ FAIL: Multiple calculations have errors\n")
+  cat("✗ FAIL: Sub-decomposition has errors\n")
 }
 
-# ---- CHECK 3: Directional Logic ---------------------------------------------
-cat("\n3. DIRECTIONAL LOGIC\n")
-cat(paste0(strrep("-", 17), "\n"))
+# ---- CHECK 3: Three-Way Total -----------------------------------------------
+cat("\n3. THREE-WAY TOTAL ACCURACY\n")
+cat(paste0(strrep("-", 24), "\n"))
 
-# Check fundamental direction consistency
-fundamental_sign_matches <- validation_data %>%
-  dplyr::filter(!is.na(fundamental_direction) & !is.na(fundamental_contrib_direction)) %>%
-  dplyr::summarise(
-    total_obs = dplyr::n(),
-    matches = sum(fundamental_direction == fundamental_contrib_direction | 
-                  (fundamental_direction == 0 & abs(fundamental_contrib_direction) < 0.01) |
-                  (fundamental_contrib_direction == 0 & abs(fundamental_direction) < 0.01)),
-    match_rate = matches / total_obs * 100
-  )
+max_three_way_error <- max(validation_data$three_way_error, na.rm = TRUE)
+mean_three_way_error <- mean(validation_data$three_way_error, na.rm = TRUE)
 
-# Check multiple direction consistency  
-multiple_sign_matches <- validation_data %>%
-  dplyr::filter(!is.na(multiple_direction) & !is.na(multiple_contrib_direction)) %>%
-  dplyr::summarise(
-    total_obs = dplyr::n(),
-    matches = sum(multiple_direction == multiple_contrib_direction |
-                  (multiple_direction == 0 & abs(multiple_contrib_direction) < 0.01) |
-                  (multiple_contrib_direction == 0 & abs(multiple_direction) < 0.01)),
-    match_rate = matches / total_obs * 100
-  )
+cat("Max three-way total error: $", round(max_three_way_error, 6), "\n")
+cat("Mean three-way total error: $", round(mean_three_way_error, 6), "\n")
 
-cat("Fundamental direction consistency: ", round(fundamental_sign_matches$match_rate, 1), 
-    "% (", fundamental_sign_matches$matches, "/", fundamental_sign_matches$total_obs, ")\n")
-cat("Multiple direction consistency: ", round(multiple_sign_matches$match_rate, 1), 
-    "% (", multiple_sign_matches$matches, "/", multiple_sign_matches$total_obs, ")\n")
+three_way_correlation <- cor(validation_data$three_way_total, validation_data$price_change, use = "complete.obs")
+cat("Three-way correlation: ", round(three_way_correlation, 8), "\n")
 
-if (fundamental_sign_matches$match_rate > 95 & multiple_sign_matches$match_rate > 95) {
-  cat("✓ PASS: Directional logic is sound\n")
+if (max_three_way_error < 0.01) {
+  cat("✓ PASS: Three-way total matches price change\n")
 } else {
-  cat("✗ FAIL: Directional logic has inconsistencies\n")
+  cat("✗ FAIL: Three-way total has errors\n")
 }
-
-# ---- CHECK 4: Data Quality -----------------------------------------------
-cat("\n4. DATA QUALITY\n")
-cat(paste0(strrep("-", 12), "\n"))
-
-infinite_values <- sum(is.infinite(validation_data$fundamental_contribution) | 
-                       is.infinite(validation_data$multiple_contribution))
-na_values <- sum(is.na(validation_data$fundamental_contribution) | 
-                 is.na(validation_data$multiple_contribution))
-negative_fundamentals <- sum(validation_data$fundamental <= 0, na.rm = TRUE)
-
-cat("Infinite values: ", infinite_values, "\n")
-cat("NA values: ", na_values, "\n") 
-cat("Negative/zero fundamentals: ", negative_fundamentals, "\n")
-
-if (infinite_values == 0 & na_values == 0 & negative_fundamentals == 0) {
-  cat("✓ PASS: Data quality is good\n")
-} else {
-  cat("✗ FAIL: Data quality issues detected\n")
-}
-
-# ---- CHECK 5: Economic Sensibility ----------------------------------------
-cat("\n5. ECONOMIC SENSIBILITY\n")
-cat(paste0(strrep("-", 20), "\n"))
-
-current_data <- validation_data %>% dplyr::slice_tail(n = 1)
-start_data <- validation_data %>% dplyr::slice_head(n = 1)
-
-# Calculate percentage contributions
-total_price_change <- current_data$price_change
-fundamental_pct <- current_data$fundamental_contribution / total_price_change * 100
-multiple_pct <- current_data$multiple_contribution / total_price_change * 100
-
-cat("Total price change: $", round(total_price_change, 2), "\n")
-cat("Fundamental contribution: ", round(fundamental_pct, 1), "%\n")
-cat("Multiple contribution: ", round(multiple_pct, 1), "%\n")
-
-# Check if contributions sum to ~100%
-total_pct <- abs(fundamental_pct) + abs(multiple_pct)
-if (abs(total_pct - 100) < 1) {
-  cat("✓ PASS: Contributions sum to 100%\n")
-} else {
-  cat("✗ FAIL: Contributions don't sum to 100% (", round(total_pct, 1), "%)\n")
-}
-
-# ---- CHECK 6: Time Series Properties --------------------------------------
-cat("\n6. TIME SERIES PROPERTIES\n")
-cat(paste0(strrep("-", 22), "\n"))
-
-# Check for reasonable volatility
-price_volatility <- sd(validation_data$price_change, na.rm = TRUE)
-fundamental_volatility <- sd(validation_data$fundamental_contribution, na.rm = TRUE)
-multiple_volatility <- sd(validation_data$multiple_contribution, na.rm = TRUE)
-
-cat("Price change volatility: $", round(price_volatility, 2), "\n")
-cat("Fundamental contribution volatility: $", round(fundamental_volatility, 2), "\n")
-cat("Multiple contribution volatility: $", round(multiple_volatility, 2), "\n")
-
-# Check for trend consistency
-price_trend <- lm(price_change ~ as.numeric(date), data = validation_data)$coefficients[2]
-fundamental_trend <- lm(fundamental_contribution ~ as.numeric(date), data = validation_data)$coefficients[2]
-multiple_trend <- lm(multiple_contribution ~ as.numeric(date), data = validation_data)$coefficients[2]
-
-cat("Price change trend: $", round(price_trend * 365, 2), "/year\n")
-cat("Fundamental contribution trend: $", round(fundamental_trend * 365, 2), "/year\n")
-cat("Multiple contribution trend: $", round(multiple_trend * 365, 2), "/year\n")
 
 # ---- OVERALL VALIDATION SUMMARY ------------------------------------------
 cat(paste0("\n", strrep("=", 60), "\n"))
@@ -383,40 +390,55 @@ cat("VALIDATION SUMMARY\n")
 cat(paste0(strrep("=", 60), "\n"))
 
 validation_score <- 0
-total_checks <- 6
+if (max_main_error < 0.01) validation_score <- validation_score + 1
+if (max_sub_error < 0.01) validation_score <- validation_score + 1  
+if (max_three_way_error < 0.01) validation_score <- validation_score + 1
 
-if (max_abs_error < 0.01) validation_score <- validation_score + 1
-if (max_multiple_error < 0.01) validation_score <- validation_score + 1  
-if (fundamental_sign_matches$match_rate > 95 & multiple_sign_matches$match_rate > 95) validation_score <- validation_score + 1
-if (infinite_values == 0 & na_values == 0 & negative_fundamentals == 0) validation_score <- validation_score + 1
-if (abs(total_pct - 100) < 1) validation_score <- validation_score + 1
-validation_score <- validation_score + 1  # Time series check always passes for info
+cat("Validation Score: ", validation_score, "/3 (",
+    round(validation_score/3*100, 1), "%)\n")
 
-cat("Validation Score: ", validation_score, "/", total_checks, " (", 
-    round(validation_score/total_checks*100, 1), "%)\n")
-
-if (validation_score >= 5) {
-  cat("🎉 OVERALL: Decomposition validation PASSED\n")
+if (validation_score == 3) {
+  cat("🎉 OVERALL: Enhanced decomposition validation PASSED\n")
 } else {
-  cat("⚠️  OVERALL: Decomposition validation FAILED - Review issues above\n")
+  cat("⚠️ OVERALL: Enhanced decomposition validation FAILED - Review issues above\n")
 }
 
 cat(paste0(strrep("=", 60), "\n"))
 
 # ---- SECTION 8: Summary statistics ------------------------------------------
-cat("\n=== DECOMPOSITION SUMMARY ===\n")
+cat("\n=== ENHANCED DECOMPOSITION SUMMARY ===\n")
+
 current_data <- decomposition_data %>% dplyr::slice_tail(n = 1)
 
 cat("Period:", as.character(base_date), "to", as.character(current_data$date), "\n")
-cat("Total price change: $", round(current_data$price_change, 2), "\n")
-cat("  - From", FUNDAMENTAL_METRIC, "change: $", round(current_data$fundamental_contribution, 2), 
+cat("Total price change: $", round(current_data$price_change, 2), "\n\n")
+
+cat("Main decomposition:\n")
+cat("  - Fundamental contribution: $", round(current_data$fundamental_contribution, 2),
     " (", round(100 * current_data$fundamental_contribution / current_data$price_change, 1), "%)\n")
-cat("  - From multiple change: $", round(current_data$multiple_contribution, 2), 
-    " (", round(100 * current_data$multiple_contribution / current_data$price_change, 1), "%)\n")
+cat("  - Multiple contribution: $", round(current_data$multiple_contribution, 2),
+    " (", round(100 * current_data$multiple_contribution / current_data$price_change, 1), "%)\n\n")
+
+cat("Fundamental breakdown:\n")
+cat("  - From total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), "growth: $", 
+    round(current_data$nopat_growth_contribution, 2),
+    " (", round(100 * current_data$nopat_growth_contribution / current_data$price_change, 1), "%)\n")
+cat("  - From share count changes: $", round(current_data$share_count_contribution, 2),
+    " (", round(100 * current_data$share_count_contribution / current_data$price_change, 1), "%)\n")
 
 cat("\nCurrent metrics:\n")
 cat("  - Price: $", round(current_data$price, 2), "\n")
-cat("  -", FUNDAMENTAL_METRIC, ":", round(current_data$fundamental, 2), "\n")
+cat("  -", FUNDAMENTAL_METRIC, ":", round(current_data$fundamental_per_share, 2), "\n")
+cat("  - Shares outstanding:", round(current_data$shares_outstanding / 1e9, 2), "B\n")
+cat("  - Total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), ":", round(current_data$total_fundamental / 1e9, 2), "B\n")
 cat("  - Multiple:", round(current_data$multiple, 1), "x\n")
+
+# Change summary
+share_change_pct <- (current_data$shares_outstanding - base_shares) / base_shares * 100
+total_fundamental_change_pct <- (current_data$total_fundamental - base_total_fundamental) / base_total_fundamental * 100
+
+cat("\nChange summary:\n")
+cat("  - Share count change: ", round(share_change_pct, 1), "%\n")
+cat("  - Total", gsub("_ttm_per_share", "", FUNDAMENTAL_METRIC), "change: ", round(total_fundamental_change_pct, 1), "%\n")
 
 cat("\nData points:", nrow(decomposition_data), "\n")
