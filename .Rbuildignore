@@ -3,3 +3,6 @@
 ^avpipeline\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
+^cache$
+^\.clinerules$
+^memory-bank$
