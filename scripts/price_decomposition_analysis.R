@@ -14,7 +14,7 @@
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "TXN"
+TICKER <- "ASML"
 
 # Choose the fundamental metric for decomposition
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
@@ -24,7 +24,8 @@ FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "operatingCashflow_ttm_per_share"
 
 # Analysis period (number of days back from most recent data)
-ANALYSIS_DAYS <- 1350
+# ANALYSIS_DAYS <- 1350
+ANALYSIS_DAYS <- 1750
 
 # Base date for decomposition (NULL = use first available date in period)
 BASE_DATE <- NULL
@@ -310,7 +311,7 @@ p <- plot_data %>%
     subtitle = subtitle_text,
     x = "Date",
     y = "Cumulative Price Change ($)",
-    fill = "Source of Change",
+    fill = "",
     caption = paste0(
       "Methodology: \n",
       "Price = EPS × Valuation Multiple\n",
@@ -327,9 +328,9 @@ p <- plot_data %>%
       max(decomposition_data$date) + as.numeric(diff(range(decomposition_data$date))) * 0.15
     )
   ) +
-  ggplot2::scale_x_date(date_breaks = "6 months", date_labels = "%Y-%m") +
+  ggplot2::scale_x_date(date_breaks = "6 months", date_labels = "%Y") +
   ggplot2::theme(
-    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    axis.text.x = ggplot2::element_text(angle = 0, hjust = 1),
     legend.position = "bottom",
     plot.title = ggplot2::element_text(size = 14, face = "bold", hjust = 0),
     plot.subtitle = ggplot2::element_text(size = 11, lineheight = 1.2, hjust = 0),

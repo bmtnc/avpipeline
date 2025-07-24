@@ -42,7 +42,7 @@
 # TTM Per-Share Financial Artifact Explorer - DUAL PLOT VERSION
 # =============================================================================
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "TXN"
+TICKER <- "ASML"
 
 # Fundamental KPI (quarterly bar plot)
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
@@ -51,6 +51,7 @@ FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "grossProfit_ttm_per_share"
 # FUNDAMENTAL_METRIC <- "tangible_book_value_per_share"
 # FUNDAMENTAL_METRIC <- "operatingCashflow_ttm_per_share"
+# FUNDAMENTAL_METRIC <- "commonStockSharesOutstanding"
 
 # Valuation metric (daily line plot with callout)
 VALUATION_METRIC <- "ev_nopat"
