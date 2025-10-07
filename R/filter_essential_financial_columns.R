@@ -1,0 +1,38 @@
+#' Filter Essential Financial Columns
+#'
+#' Filters to essential columns using metric getter functions.
+#'
+#' @param financial_statements tibble: Financial statements with all columns
+#' @return tibble: Financial statements with only essential columns
+#' @keywords internal
+filter_essential_financial_columns <- function(financial_statements) {
+  if (!is.data.frame(financial_statements)) {
+    stop(paste0("filter_essential_financial_columns(): [financial_statements] must be a data.frame, not ", class(financial_statements)[1]))
+  }
+
+  message(paste0("Filtering to essential columns only..."))
+
+  financial_metrics <- c(
+    get_cash_flow_metrics(),
+    get_income_statement_metrics(),
+    get_balance_sheet_metrics()
+  )
+
+  date_cols <- c("fiscalDateEnding", "calendar_quarter_ending", "reportedDate")
+  meta_cols <- c("ticker", "reportedCurrency")
+
+  essential_cols <- c(financial_metrics, date_cols, meta_cols)
+  existing_essential_cols <- intersect(essential_cols, names(financial_statements))
+
+  original_col_count <- ncol(financial_statements)
+
+  filtered_data <- financial_statements %>%
+    dplyr::select(dplyr::all_of(existing_essential_cols))
+
+  message(paste0("Column filtering summary:"))
+  message(paste0("- Original columns: ", original_col_count))
+  message(paste0("- Kept columns: ", length(existing_essential_cols)))
+  message(paste0("- Removed columns: ", original_col_count - length(existing_essential_cols)))
+
+  filtered_data
+}
