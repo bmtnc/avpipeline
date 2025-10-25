@@ -15,7 +15,7 @@ load_single_financial_type <- function(cache_path, config) {
     stop(paste0("load_single_financial_type(): [config] must be a list, not ", class(config)[1]))
   }
   
-  data <- read_cached_data(cache_path, date_columns = config$cache_date_columns)
+  data <- read_cached_data_parquet(cache_path)
   message(paste0(config$data_type_name, " data loaded: ", nrow(data), " rows"))
   
   data

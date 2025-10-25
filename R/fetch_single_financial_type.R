@@ -29,9 +29,7 @@ fetch_single_financial_type <- function(tickers, config, cache_path) {
     single_fetch_func = function(ticker, ...) {
       fetch_single_ticker_data(ticker, config, ...)
     },
-    cache_reader_func = function(cache_file) {
-      read_cached_data(cache_file, date_columns = config$cache_date_columns)
-    },
+    cache_reader_func = read_cached_data_parquet,
     data_type_name = config$data_type_name,
     delay_seconds = config$default_delay
   )

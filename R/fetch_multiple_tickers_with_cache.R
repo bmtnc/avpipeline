@@ -155,8 +155,8 @@ fetch_multiple_tickers_with_cache <- function(tickers,
         dplyr::distinct(ticker, date, .keep_all = TRUE)
     }
     
-    # Write combined data to cache
-    write.csv(combined_data, cache_file, row.names = FALSE)
+    # Write combined data to cache (parquet format)
+    arrow::write_parquet(combined_data, cache_file)
     
     cat("Success: All data written to cache:", cache_file, "\n")
     cat("Total rows in cache:", nrow(combined_data), "\n")

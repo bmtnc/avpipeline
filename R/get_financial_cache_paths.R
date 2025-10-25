@@ -6,9 +6,9 @@
 #' @keywords internal
 get_financial_cache_paths <- function() {
   list(
-    balance_sheet = "cache/balance_sheet_artifact.csv",
-    cash_flow = "cache/cash_flow_artifact.csv",
-    income_statement = "cache/income_statement_artifact.csv",
-    earnings = "cache/earnings_artifact.csv"
+    balance_sheet = "cache/balance_sheet_artifact.parquet",
+    cash_flow = "cache/cash_flow_artifact.parquet",
+    income_statement = "cache/income_statement_artifact.parquet",
+    earnings = "cache/earnings_artifact.parquet"
   )
 }
