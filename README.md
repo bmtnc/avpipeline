@@ -126,6 +126,44 @@ etf_holdings <- fetch_etf_holdings("SPY")
 etf_prices <- fetch_multiple_alpha_vantage_data(etf_holdings, PRICE_CONFIG)
 ```
 
+## AWS Deployment
+
+The avpipeline can be deployed to AWS for automated weekly execution with artifact storage in S3.
+
+### Quick Deployment
+
+```bash
+# From project root
+bash deploy/setup.sh
+```
+
+This automated script will:
+- Deploy infrastructure using Terraform (ECS Fargate, S3, SNS, ECR, Parameter Store)
+- Build and push Docker container to ECR
+- Set up weekly scheduling (Sundays at 2am ET)
+- Configure email notifications
+
+### Architecture
+
+- **ECS Fargate**: Serverless container execution
+- **S3**: Artifact storage with 30-day lifecycle
+- **EventBridge**: Weekly scheduling
+- **SNS**: Email notifications for pipeline success/failure
+- **Parameter Store**: Secure API key storage
+
+### Cost
+
+Approximately **$3-6/month** for weekly runs.
+
+### Full Documentation
+
+See [deploy/README.md](deploy/README.md) for:
+- Prerequisites and setup instructions
+- Manual deployment steps
+- Testing and monitoring
+- Configuration options
+- Troubleshooting guide
+
 ## Core Functions
 
 ### Configuration Objects (7 total)

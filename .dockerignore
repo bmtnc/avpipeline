@@ -1,0 +1,33 @@
+# Exclude cache and temporary files
+cache/
+*.Rhistory
+*.RData
+.Rproj.user
+
+# Exclude development environment
+renv/
+.Rprofile
+
+# Exclude tests (not needed in production container)
+tests/
+
+# Exclude git and version control
+.git/
+.gitignore
+
+# Exclude output directories
+plots/
+output/
+
+# Exclude documentation and project files
+*.Rproj
+README.md
+LICENSE
+LICENSE.md
+.Rbuildignore
+
+# Exclude AWS deployment artifacts (avoid recursion)
+deploy/
+
+# Exclude implementation plan
+implementation_plan_aws_deployment.md

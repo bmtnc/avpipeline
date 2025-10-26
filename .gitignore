@@ -9,3 +9,9 @@
 .clinerules
 /cache
 .continue/rules
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
