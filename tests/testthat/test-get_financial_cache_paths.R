@@ -8,10 +8,10 @@ test_that("get_financial_cache_paths returns correct structure", {
 test_that("get_financial_cache_paths returns correct paths", {
   paths <- get_financial_cache_paths()
   
-  expect_equal(paths$balance_sheet, "cache/balance_sheet_artifact.csv")
-  expect_equal(paths$cash_flow, "cache/cash_flow_artifact.csv")
-  expect_equal(paths$income_statement, "cache/income_statement_artifact.csv")
-  expect_equal(paths$earnings, "cache/earnings_artifact.csv")
+  expect_equal(paths$balance_sheet, "cache/balance_sheet_artifact.parquet")
+  expect_equal(paths$cash_flow, "cache/cash_flow_artifact.parquet")
+  expect_equal(paths$income_statement, "cache/income_statement_artifact.parquet")
+  expect_equal(paths$earnings, "cache/earnings_artifact.parquet")
 })
 
 test_that("get_financial_cache_paths returns character paths", {

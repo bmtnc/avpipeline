@@ -34,15 +34,15 @@ test_that("load_all_financial_statements loads all data types", {
   )
   # nolint end
   
-  bs_file <- file.path(temp_dir, "bs.csv")
-  cf_file <- file.path(temp_dir, "cf.csv")
-  is_file <- file.path(temp_dir, "is.csv")
-  earnings_file <- file.path(temp_dir, "earnings.csv")
+  bs_file <- file.path(temp_dir, "bs.parquet")
+  cf_file <- file.path(temp_dir, "cf.parquet")
+  is_file <- file.path(temp_dir, "is.parquet")
+  earnings_file <- file.path(temp_dir, "earnings.parquet")
   
-  readr::write_csv(test_data, bs_file)
-  readr::write_csv(test_data, cf_file)
-  readr::write_csv(test_data, is_file)
-  readr::write_csv(test_data, earnings_file)
+  arrow::write_parquet(test_data, bs_file)
+  arrow::write_parquet(test_data, cf_file)
+  arrow::write_parquet(test_data, is_file)
+  arrow::write_parquet(test_data, earnings_file)
   
   cache_paths <- list(
     balance_sheet = bs_file,

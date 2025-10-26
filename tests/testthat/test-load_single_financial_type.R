@@ -36,7 +36,7 @@ test_that("load_single_financial_type validates config is list", {
 
 test_that("load_single_financial_type loads data with correct structure", {
   temp_dir <- tempdir()
-  temp_file <- file.path(temp_dir, "test_financial_data.csv")
+  temp_file <- file.path(temp_dir, "test_financial_data.parquet")
   
   # nolint start
   # fmt: skip
@@ -47,7 +47,7 @@ test_that("load_single_financial_type loads data with correct structure", {
   )
   # nolint end
   
-  readr::write_csv(test_data, temp_file)
+  arrow::write_parquet(test_data, temp_file)
   
   test_config <- list(
     data_type_name = "Test Data",
