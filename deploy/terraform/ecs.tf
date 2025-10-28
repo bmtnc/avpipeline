@@ -120,6 +120,14 @@ resource "aws_ecs_task_definition" "avpipeline" {
       {
         name  = "SNS_TOPIC_ARN"
         value = aws_sns_topic.pipeline_notifications.arn
+      },
+      {
+        name  = "ETF_SYMBOL"
+        value = var.etf_symbol
+      },
+      {
+        name  = "START_DATE"
+        value = var.start_date
       }
     ]
 

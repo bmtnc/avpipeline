@@ -32,3 +32,15 @@ variable "task_memory" {
   type        = number
   default     = 4096
 }
+
+variable "etf_symbol" {
+  description = "ETF ticker symbol to fetch holdings from (e.g., QQQ, SPY, IWB)"
+  type        = string
+  default     = "QQQ"
+}
+
+variable "start_date" {
+  description = "Start date for historical data filtering (YYYY-MM-DD format)"
+  type        = string
+  default     = "2004-12-31"
+}

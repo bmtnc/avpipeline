@@ -69,8 +69,12 @@ set_ggplot_theme()
 # ---- SECTION 2: Load TTM per-share financial artifact -----------------------
 cat("Loading TTM per-share financial artifact ...\n")
 
+# ttm_per_share_data <- arrow::read_parquet(
+#   "cache/ttm_per_share_financial_artifact.parquet"
+# )
+
 ttm_per_share_data <- arrow::read_parquet(
-  "cache/ttm_per_share_financial_artifact.parquet"
+  "s3://avpipeline-artifacts-prod/ttm-artifacts/2025-10-28/ttm_per_share_financial_artifact.parquet"
 )
 
 # Calculate additional metrics

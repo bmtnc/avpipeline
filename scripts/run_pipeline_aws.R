@@ -3,6 +3,12 @@
 # AWS Pipeline Orchestration Script
 # This script runs the complete TTM pipeline in AWS ECS and uploads results to S3
 
+# Use pre-built renv library installed during Docker build
+.libPaths(c("/app/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu", .libPaths()))
+
+# Load package functions
+devtools::load_all("/app")
+
 message("=== Starting AWS Pipeline Execution ===")
 start_time <- Sys.time()
 
@@ -26,7 +32,7 @@ message(paste0("S3 Bucket: ", S3_BUCKET))
 # Step 1: Retrieve API key from Parameter Store
 message("\n[1/4] Retrieving API key from Parameter Store...")
 tryCatch({
-  api_key <- avpipeline::get_api_key_from_parameter_store(
+  api_key <- get_api_key_from_parameter_store(
     parameter_name = "/avpipeline/alpha-vantage-api-key",
     region = AWS_REGION
   )
@@ -35,7 +41,7 @@ tryCatch({
 }, error = function(e) {
   error_msg <- paste0("Failed to retrieve API key: ", e$message)
   message(error_msg)
-  avpipeline::send_pipeline_notification(
+  send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
     subject = "Pipeline Failed: API Key Retrieval",
     message = error_msg,
@@ -54,7 +60,7 @@ tryCatch({
 }, error = function(e) {
   error_msg <- paste0("Pipeline execution failed: ", e$message)
   message(error_msg)
-  avpipeline::send_pipeline_notification(
+  send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
     subject = "Pipeline Failed: Execution Error",
     message = error_msg,
@@ -70,7 +76,7 @@ local_artifact_path <- "/app/cache/ttm_per_share_financial_artifact.parquet"
 if (!file.exists(local_artifact_path)) {
   error_msg <- paste0("Artifact file not found: ", local_artifact_path)
   message(error_msg)
-  avpipeline::send_pipeline_notification(
+  send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
     subject = "Pipeline Failed: Artifact Not Found",
     message = error_msg,
@@ -80,8 +86,8 @@ if (!file.exists(local_artifact_path)) {
 }
 
 tryCatch({
-  s3_key <- avpipeline::generate_s3_artifact_key(date = Sys.Date())
-  avpipeline::upload_artifact_to_s3(
+  s3_key <- generate_s3_artifact_key(date = Sys.Date())
+  upload_artifact_to_s3(
     local_path = local_artifact_path,
     bucket_name = S3_BUCKET,
     s3_key = s3_key,
@@ -91,7 +97,7 @@ tryCatch({
 }, error = function(e) {
   error_msg <- paste0("Failed to upload artifact: ", e$message)
   message(error_msg)
-  avpipeline::send_pipeline_notification(
+  send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
     subject = "Pipeline Failed: S3 Upload Error",
     message = error_msg,
@@ -114,7 +120,7 @@ success_message <- paste0(
 )
 
 tryCatch({
-  avpipeline::send_pipeline_notification(
+  send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
     subject = paste0("Pipeline Success: ", format(Sys.Date(), "%Y-%m-%d")),
     message = success_message,

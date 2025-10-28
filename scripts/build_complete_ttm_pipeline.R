@@ -16,7 +16,15 @@ devtools::load_all()
 # ============================================================================
 message("Stage 0: Fetching financial data from Alpha Vantage API...")
 
-tickers <- get_financial_statement_tickers(etf_symbol = "QQQ")
+# Read configuration from environment variables with defaults
+etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
+start_date_str <- Sys.getenv("START_DATE", "2004-12-31")
+start_date <- as.Date(start_date_str)
+
+message(paste0("  ETF Symbol: ", etf_symbol))
+message(paste0("  Start Date: ", start_date))
+
+tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
 
 # Fetch financial statements
 cache_paths <- get_financial_cache_paths()
@@ -136,7 +144,7 @@ splits_clean <- splits_data %>%
 prices_clean <- prices %>%
   dplyr::filter(
     ticker %in% target_tickers,
-    date >= as.Date("2004-12-31"),
+    date >= start_date,
     !is.na(close) & close > 0
   ) %>%
   dplyr::mutate(close = as.numeric(close)) %>%
@@ -148,7 +156,7 @@ prices_clean <- prices %>%
 financial_clean <- financial_statements %>%
   dplyr::filter(
     ticker %in% target_tickers,
-    fiscalDateEnding >= as.Date("2004-12-31")
+    fiscalDateEnding >= start_date
   ) %>%
   dplyr::mutate(
     commonStockSharesOutstanding = as.numeric(commonStockSharesOutstanding)

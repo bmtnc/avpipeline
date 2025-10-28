@@ -4,9 +4,10 @@ cache/
 *.RData
 .Rproj.user
 
-# Exclude development environment
-renv/
-.Rprofile
+# Exclude renv staging (temporary build artifacts only)
+renv/staging/
+# IMPORTANT: Keep renv/library/ in the image - contains all installed packages from Docker build
+# Also keep renv.lock, renv/activate.R, renv/settings.json, and .Rprofile
 
 # Exclude tests (not needed in production container)
 tests/
