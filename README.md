@@ -164,6 +164,39 @@ See [deploy/README.md](deploy/README.md) for:
 - Configuration options
 - Troubleshooting guide
 
+## Pipeline Architecture
+
+### Ticker-by-Ticker Processing (Current)
+
+The production pipeline uses a ticker-by-ticker architecture that processes one ticker completely before moving to the next. This design solves memory bottlenecks encountered when processing large ETFs.
+
+**Key Benefits:**
+- **Memory Efficiency**: Bounded at ~5,000 rows per iteration vs 10M+ rows for bulk processing
+- **Error Isolation**: One bad ticker doesn't crash the entire pipeline
+- **Scalability**: Can handle Russell 3000 (3,000 tickers) without memory issues
+- **Graceful Degradation**: Failed tickers are skipped with detailed logging
+
+**Processing Flow (per ticker):**
+1. Fetch financial data from API (6 API calls: balance sheet, income, cash flow, earnings, price, splits)
+2. Clean and validate data (anomaly detection, quarterly continuity checks)
+3. Calculate TTM metrics and per-share values
+4. Append to final artifact
+5. Memory cleanup
+
+**Performance Characteristics:**
+- **Small ETFs** (QQQ ~100 tickers): ~17 minutes
+- **Large ETFs** (Russell 3000 ~3,000 tickers): ~5 hours
+- **Memory usage**: Constant ~500MB vs scaling linearly with ticker count
+- **API rate**: 60 requests/min (1-second delay, stays under 75 req/min premium limit)
+
+**Production Files:**
+- `scripts/build_complete_ttm_pipeline_ticker_by_ticker.R` - Current production pipeline
+- `R/process_single_ticker.R` - Core orchestration function for single-ticker processing
+- `scripts/build_complete_ttm_pipeline.R` - Deprecated bulk pipeline (kept for reference)
+
+**Architecture Decision:**
+The ticker-by-ticker refactor was implemented to enable processing of large ETFs like Russell 3000. The bulk pipeline would exceed memory limits with 3,000 tickers due to holding all ticker data simultaneously in memory. The new architecture maintains constant memory usage by processing and releasing each ticker sequentially.
+
 ## Core Functions
 
 ### Configuration Objects (7 total)

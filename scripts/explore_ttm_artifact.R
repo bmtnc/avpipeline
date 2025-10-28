@@ -42,7 +42,7 @@
 # TTM Per-Share Financial Artifact Explorer - DUAL PLOT VERSION
 # =============================================================================
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "NVDA"
+TICKER <- "CTAS"
 
 # Fundamental KPI (quarterly bar plot)
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
@@ -69,13 +69,13 @@ set_ggplot_theme()
 # ---- SECTION 2: Load TTM per-share financial artifact -----------------------
 cat("Loading TTM per-share financial artifact ...\n")
 
-# ttm_per_share_data <- arrow::read_parquet(
-#   "cache/ttm_per_share_financial_artifact.parquet"
-# )
-
 ttm_per_share_data <- arrow::read_parquet(
-  "s3://avpipeline-artifacts-prod/ttm-artifacts/2025-10-28/ttm_per_share_financial_artifact.parquet"
+  "cache/ttm_per_share_financial_artifact.parquet"
 )
+
+# ttm_per_share_data <- arrow::read_parquet(
+#   "s3://avpipeline-artifacts-prod/ttm-artifacts/2025-10-28/ttm_per_share_financial_artifact.parquet"
+# )
 
 # Calculate additional metrics
 ttm_per_share_data <- ttm_per_share_data %>%

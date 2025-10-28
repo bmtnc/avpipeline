@@ -30,13 +30,13 @@ variable "task_cpu" {
 variable "task_memory" {
   description = "Memory for ECS task in MB"
   type        = number
-  default     = 4096
+  default     = 6144
 }
 
 variable "etf_symbol" {
-  description = "ETF ticker symbol to fetch holdings from (e.g., QQQ, SPY, IWB)"
+  description = "ETF ticker symbol to fetch holdings from (e.g., IWV, QQQ, SPY)"
   type        = string
-  default     = "QQQ"
+  default     = "IWV"
 }
 
 variable "start_date" {

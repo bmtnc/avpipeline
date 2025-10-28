@@ -50,11 +50,11 @@ tryCatch({
   stop(error_msg)
 })
 
-# Step 2: Run the main pipeline
+# Step 2: Run the main pipeline (ticker-by-ticker architecture)
 message("\n[2/4] Running TTM pipeline...")
 pipeline_success <- FALSE
 tryCatch({
-  source("/app/scripts/build_complete_ttm_pipeline.R")
+  source("/app/scripts/build_complete_ttm_pipeline_ticker_by_ticker.R")
   message("Pipeline completed successfully")
   pipeline_success <- TRUE
 }, error = function(e) {

@@ -187,10 +187,10 @@ variable "start_date" {
 }
 ```
 
-**Example: Switch to Russell 3000 (IWB)**
+**Example: Switch to Russell 3000 (IWV)**
 ```bash
 cd deploy/terraform
-terraform apply -var="email_address=your@email.com" -var="etf_symbol=IWB"
+terraform apply -var="email_address=your@email.com" -var="etf_symbol=IWV"
 ```
 
 **Example: Process only recent data (since 2020)**
@@ -199,6 +199,58 @@ terraform apply -var="email_address=your@email.com" -var="start_date=2020-01-01"
 ```
 
 These changes only require redeploying the infrastructure (no Docker rebuild needed).
+
+### Large ETF Deployment (Russell 3000)
+
+The ticker-by-ticker pipeline architecture enables processing large ETFs like **Russell 3000 (IWV)** with ~3,000 constituent tickers.
+
+**Deployment Command:**
+```bash
+cd deploy/terraform
+terraform apply -var="email_address=your@email.com" -var="etf_symbol=IWV"
+```
+
+**Execution Characteristics:**
+- **Ticker Count**: ~3,000 tickers
+- **API Calls**: ~18,000 total (6 per ticker: balance sheet, income, cash flow, earnings, price, splits)
+- **Runtime**: ~5 hours (at 60 requests/min with 1-second API delay)
+- **Cost per run**: ~$1.50 (ECS Fargate: $0.099/hr × 5 hrs + S3/SNS overhead)
+- **Monthly cost** (weekly runs): ~$6
+
+**API Requirements:**
+- **Premium Alpha Vantage key required**: 75+ requests/min capacity
+- Free tier (25 requests/day) is insufficient for Russell 3000
+- Current pipeline uses 1-second delay = 60 requests/min (stays under 75 req/min limit)
+
+**Memory Efficiency:**
+The ticker-by-ticker architecture maintains **constant ~500MB memory usage** regardless of ETF size:
+- **Old bulk pipeline**: Would exceed 10GB+ for 3,000 tickers (memory bottleneck)
+- **New ticker-by-ticker**: Processes one ticker completely, then releases memory before next ticker
+- **ECS task configuration**: 4GB memory (current default) is sufficient
+
+**Monitoring Large Runs:**
+```bash
+# Watch progress in real-time
+aws logs tail /ecs/avpipeline --follow --region us-east-1
+
+# Expected log output:
+# Processing AAPL (1/3000)...
+# ✓ AAPL complete (5043 rows)
+# Processing MSFT (2/3000)...
+# ✓ MSFT complete (4821 rows)
+# ...
+```
+
+**Cost Optimization:**
+For large ETFs, consider adjusting schedule to monthly instead of weekly:
+```hcl
+# In deploy/terraform/variables.tf
+variable "schedule_expression" {
+  default = "cron(0 6 1 * ? *)"  # First day of month at 2am ET
+}
+```
+
+This reduces monthly cost from ~$6 (weekly) to ~$1.50 (monthly).
 
 ## Monitoring
 

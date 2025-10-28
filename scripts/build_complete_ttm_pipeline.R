@@ -1,7 +1,26 @@
 # ============================================================================
-# Complete TTM Per-Share Financial Artifact Pipeline
+# DEPRECATED: Complete TTM Per-Share Financial Artifact Pipeline (Bulk Processing)
 # ============================================================================
-# Consolidates three pipeline stages into one unified, in-memory workflow:
+# ⚠️  THIS PIPELINE HAS BEEN DEPRECATED AND REPLACED ⚠️
+#
+# Replacement: scripts/build_complete_ttm_pipeline_ticker_by_ticker.R
+#
+# Reason for Deprecation:
+# This bulk processing pipeline processes all tickers simultaneously, which causes
+# memory bottlenecks with large ETFs (>500 tickers). Memory usage can exceed 10M
+# rows when processing all tickers at once, making it unsuitable for Russell 3000
+# (~3000 tickers) and similar large ETF indices.
+#
+# The ticker-by-ticker pipeline solves these issues by:
+#   - Processing one ticker completely before moving to the next
+#   - Bounded memory usage: ~5000 rows per iteration (vs 10M+ rows)
+#   - Error isolation: One bad ticker doesn't crash entire pipeline
+#   - Scalability: Can handle any ETF size without memory constraints
+#
+# TODO: Remove this file after confirming ticker-by-ticker pipeline stability
+#       in production (target: Q2 2026)
+#
+# Original Pipeline Stages (kept for reference):
 #   1. Financial Statements Artifact (quarterly data)
 #   2. Market Cap Artifact (daily market data with split adjustments)
 #   3. TTM Per-Share Artifact (final output)
