@@ -30,7 +30,7 @@ variable "task_cpu" {
 variable "task_memory" {
   description = "Memory for ECS task in MB"
   type        = number
-  default     = 6144
+  default     = 8192
 }
 
 variable "etf_symbol" {

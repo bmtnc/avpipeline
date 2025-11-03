@@ -61,6 +61,7 @@ message("")
 
 # Initialize containers
 final_artifact <- tibble::tibble()
+api_log_artifact <- tibble::tibble()
 failed_tickers <- character()
 successful_tickers <- character()
 
@@ -68,54 +69,82 @@ successful_tickers <- character()
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
   
-  message(sprintf("Processing %s (%d/%d)...", ticker, i, n_tickers))
-  
   # Wrap in tryCatch to prevent one bad ticker from crashing pipeline
   ticker_result <- tryCatch(
     {
-      process_single_ticker(
-        ticker = ticker,
-        start_date = start_date,
-        threshold = threshold,
-        lookback = lookback,
-        lookahead = lookahead,
-        end_window_size = end_window_size,
-        end_threshold = end_threshold,
-        min_obs = min_obs,
-        delay_seconds = delay_seconds
-      )
+      invisible(capture.output(
+        result <- suppressMessages(
+          process_single_ticker(
+            ticker = ticker,
+            start_date = start_date,
+            threshold = threshold,
+            lookback = lookback,
+            lookahead = lookahead,
+            end_window_size = end_window_size,
+            end_threshold = end_threshold,
+            min_obs = min_obs,
+            delay_seconds = delay_seconds
+          )
+        )
+      ))
+      result
     },
     error = function(e) {
-      message("  ✗ ", ticker, " failed: ", conditionMessage(e))
-      return(NULL)
+      list(
+        data = NULL,
+        api_log = tibble::tibble(
+          ticker = ticker,
+          endpoint = "pipeline_error",
+          status_message = paste0("Error: ", conditionMessage(e))
+        )
+      )
     }
   )
   
-  # Handle result
-  if (is.null(ticker_result)) {
-    message("  ✗ ", ticker, " skipped (no data or processing failed)")
+  # Extract components
+  ticker_data <- ticker_result$data
+  ticker_api_log <- ticker_result$api_log
+  
+  # Count successful endpoints
+  n_successful <- sum(ticker_api_log$status_message == "successful")
+  n_total <- nrow(ticker_api_log)
+  
+  # Append api_log (always, even if ticker failed)
+  api_log_artifact <- dplyr::bind_rows(api_log_artifact, ticker_api_log)
+  
+  # Handle data result
+  if (is.null(ticker_data)) {
+    message(sprintf("Fetched (%d of %d) endpoints for ticker: %s (%d of %d)", 
+                    n_successful, n_total, ticker, i, n_tickers))
     failed_tickers <- c(failed_tickers, ticker)
-  } else if (nrow(ticker_result) == 0) {
-    message("  ✗ ", ticker, " skipped (empty result)")
+  } else if (nrow(ticker_data) == 0) {
+    message(sprintf("Fetched (%d of %d) endpoints for ticker: %s (%d of %d)", 
+                    n_successful, n_total, ticker, i, n_tickers))
     failed_tickers <- c(failed_tickers, ticker)
   } else {
-    message("  ✓ ", ticker, " complete (", nrow(ticker_result), " rows)")
-    final_artifact <- dplyr::bind_rows(final_artifact, ticker_result)
+    message(sprintf("Successfully fetched (%d of %d) endpoints for ticker: %s (%d of %d)", 
+                    n_successful, n_total, ticker, i, n_tickers))
+    final_artifact <- dplyr::bind_rows(final_artifact, ticker_data)
     successful_tickers <- c(successful_tickers, ticker)
   }
   
-  # Memory cleanup every 100 tickers
-  if (i %% 100 == 0) {
-    rm(ticker_result)
+  # Immediate cleanup after EVERY ticker (critical for memory management)
+  rm(ticker_result, ticker_data, ticker_api_log)
+  
+  # Periodic garbage collection
+  if (i %% 10 == 0) {
     gc(verbose = FALSE)
-    message("  [Memory cleanup performed]")
   }
   
-  message("")
+  # Full GC with status message every 50 tickers
+  if (i %% 50 == 0) {
+    gc(full = TRUE, verbose = FALSE)
+    message(sprintf("[Memory cleanup: %d/%d tickers]", i, n_tickers))
+  }
 }
 
 # Final cleanup
-rm(ticker_result)
+rm(ticker_result, ticker_data, ticker_api_log)
 gc(verbose = FALSE)
 
 # ============================================================================
@@ -147,9 +176,12 @@ if (length(failed_tickers) > 0) {
 # SAVE OUTPUT
 # ============================================================================
 
-message("Saving artifact to cache/ttm_per_share_financial_artifact.parquet...")
+message("Saving artifacts...")
 arrow::write_parquet(final_artifact, "cache/ttm_per_share_financial_artifact.parquet")
-message("  ✓ Artifact saved")
+message("  ✓ TTM artifact saved (", scales::comma(nrow(final_artifact)), " rows)")
+
+arrow::write_parquet(api_log_artifact, "cache/api_request_log.parquet")
+message("  ✓ API log saved (", scales::comma(nrow(api_log_artifact)), " rows)")
 message("")
 
 # ============================================================================

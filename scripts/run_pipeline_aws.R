@@ -69,8 +69,10 @@ tryCatch({
   stop(error_msg)
 })
 
-# Step 3: Upload artifact to S3
-message("\n[3/4] Uploading artifact to S3...")
+# Step 3: Upload artifacts to S3
+message("\n[3/4] Uploading artifacts to S3...")
+
+# Upload main TTM artifact
 local_artifact_path <- "/app/cache/ttm_per_share_financial_artifact.parquet"
 
 if (!file.exists(local_artifact_path)) {
@@ -93,9 +95,9 @@ tryCatch({
     s3_key = s3_key,
     region = AWS_REGION
   )
-  message("Artifact uploaded successfully")
+  message("Main artifact uploaded successfully")
 }, error = function(e) {
-  error_msg <- paste0("Failed to upload artifact: ", e$message)
+  error_msg <- paste0("Failed to upload main artifact: ", e$message)
   message(error_msg)
   send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
@@ -105,6 +107,28 @@ tryCatch({
   )
   stop(error_msg)
 })
+
+# Upload API log artifact
+local_api_log_path <- "/app/cache/api_request_log.parquet"
+
+if (!file.exists(local_api_log_path)) {
+  warning_msg <- paste0("API log file not found: ", local_api_log_path)
+  message(warning_msg)
+} else {
+  tryCatch({
+    api_log_s3_key <- paste0("ttm-artifacts/", format(Sys.Date(), "%Y-%m-%d"), "/api_request_log.parquet")
+    upload_artifact_to_s3(
+      local_path = local_api_log_path,
+      bucket_name = S3_BUCKET,
+      s3_key = api_log_s3_key,
+      region = AWS_REGION
+    )
+    message("API log artifact uploaded successfully")
+  }, error = function(e) {
+    warning_msg <- paste0("Failed to upload API log artifact: ", e$message)
+    message(warning_msg)
+  })
+}
 
 # Step 4: Send success notification
 message("\n[4/4] Sending success notification...")

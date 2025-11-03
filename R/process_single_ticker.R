@@ -14,7 +14,7 @@
 #' @param end_threshold numeric: Threshold for end-of-series anomaly detection (default 3)
 #' @param min_obs integer: Minimum observations required for anomaly detection (default 10)
 #' @param delay_seconds numeric: API delay between requests in seconds (default 1)
-#' @return tibble: Complete TTM per-share financial data for the ticker, or NULL if processing fails
+#' @return list: Contains 'data' (tibble with TTM per-share financial data) and 'api_log' (tibble with API call status)
 #' @keywords internal
 process_single_ticker <- function(ticker,
                                    start_date,
@@ -55,29 +55,153 @@ process_single_ticker <- function(ticker,
   # FETCH DATA
   # ============================================================================
   
-  # Fetch financial statements
-  balance_sheet <- fetch_single_ticker_data(ticker, BALANCE_SHEET_CONFIG, datatype = "json")
+  # Initialize API log
+  api_log <- tibble::tibble(
+    ticker = character(),
+    endpoint = character(),
+    status_message = character()
+  )
+  
+  # Fetch balance sheet
+  balance_sheet_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, BALANCE_SHEET_CONFIG, datatype = "json")
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "balance_sheet",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "balance_sheet",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  balance_sheet <- balance_sheet_result
   Sys.sleep(delay_seconds)
   
-  income_statement <- fetch_single_ticker_data(ticker, INCOME_STATEMENT_CONFIG, datatype = "json")
+  # Fetch income statement
+  income_statement_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, INCOME_STATEMENT_CONFIG, datatype = "json")
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "income_statement",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "income_statement",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  income_statement <- income_statement_result
   Sys.sleep(delay_seconds)
   
-  cash_flow <- fetch_single_ticker_data(ticker, CASH_FLOW_CONFIG, datatype = "json")
+  # Fetch cash flow
+  cash_flow_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, CASH_FLOW_CONFIG, datatype = "json")
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "cash_flow",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "cash_flow",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  cash_flow <- cash_flow_result
   Sys.sleep(delay_seconds)
   
-  earnings <- fetch_single_ticker_data(ticker, EARNINGS_CONFIG, datatype = "json")
+  # Fetch earnings
+  earnings_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, EARNINGS_CONFIG, datatype = "json")
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "earnings",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "earnings",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  earnings <- earnings_result
   Sys.sleep(delay_seconds)
   
   # Fetch price data
-  price_data <- fetch_single_ticker_data(ticker, PRICE_CONFIG, outputsize = "full", datatype = "json")
+  price_data_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, PRICE_CONFIG, outputsize = "full", datatype = "json")
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "price_data",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "price_data",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  price_data <- price_data_result
   Sys.sleep(delay_seconds)
   
   # Fetch splits data
-  splits_data <- fetch_single_ticker_data(ticker, SPLITS_CONFIG)
+  splits_data_result <- tryCatch(
+    {
+      result <- fetch_single_ticker_data(ticker, SPLITS_CONFIG)
+      api_log <- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "splits_data",
+        status_message = "successful"
+      ))
+      result
+    },
+    error = function(e) {
+      api_log <<- dplyr::bind_rows(api_log, tibble::tibble(
+        ticker = ticker,
+        endpoint = "splits_data",
+        status_message = paste0("Error: ", conditionMessage(e))
+      ))
+      tibble::tibble()
+    }
+  )
+  splits_data <- splits_data_result
   
   # Check if we have minimal data
   if (nrow(earnings) == 0 || nrow(price_data) == 0) {
-    return(NULL)
+    return(list(data = NULL, api_log = api_log))
   }
   
   # ============================================================================
@@ -132,7 +256,7 @@ process_single_ticker <- function(ticker,
   
   # Check if we have financial data after cleaning
   if (nrow(financial_statements) == 0) {
-    return(NULL)
+    return(list(data = NULL, api_log = api_log))
   }
   
   # ============================================================================
@@ -306,5 +430,5 @@ process_single_ticker <- function(ticker,
     ) %>%
     dplyr::arrange(ticker, date)
   
-  ttm_per_share_data
+  list(data = ttm_per_share_data, api_log = api_log)
 }
