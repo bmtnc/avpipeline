@@ -9,7 +9,7 @@
 .clinerules
 /cache
 .continue/rules
-/claude
+/.claude
 
 # Terraform
 *.tfstate
