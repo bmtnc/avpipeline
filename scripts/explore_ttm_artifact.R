@@ -42,7 +42,7 @@
 # TTM Per-Share Financial Artifact Explorer - DUAL PLOT VERSION
 # =============================================================================
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "CTAS"
+TICKER <- "AMZN"
 
 # Fundamental KPI (quarterly bar plot)
 FUNDAMENTAL_METRIC <- "nopat_ttm_per_share"
