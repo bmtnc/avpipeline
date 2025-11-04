@@ -13,8 +13,6 @@ select_essential_columns <- function(data) {
 
   date_cols <- c(
     "date",
-    "initial_date",
-    "latest_date",
     "fiscalDateEnding",
     "reportedDate",
     "calendar_quarter_ending"

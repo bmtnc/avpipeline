@@ -30,7 +30,7 @@ calculate_unified_ttm_per_share_metrics <- function(
   
   # Calculate per-share metrics
   ttm_flow_metrics <- paste0(flow_metrics, "_ttm")
-  all_financial_metrics <- c(balance_sheet_metrics, flow_metrics, ttm_flow_metrics)
+  all_financial_metrics <- c(balance_sheet_metrics, ttm_flow_metrics)
   unified_per_share_data <- calculate_per_share_metrics(unified_data, all_financial_metrics)
   
   # Select essential columns
@@ -51,8 +51,6 @@ calculate_unified_ttm_per_share_metrics <- function(
   # Reorder columns: ticker, dates, meta, flag, then everything else
   date_cols <- c(
     "date",
-    "initial_date",
-    "latest_date",
     "fiscalDateEnding",
     "reportedDate",
     "calendar_quarter_ending"
