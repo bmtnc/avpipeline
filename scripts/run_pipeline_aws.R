@@ -1,7 +1,8 @@
 #!/usr/bin/env Rscript
 
-# AWS Pipeline Orchestration Script
-# This script runs the complete TTM pipeline in AWS ECS and uploads results to S3
+# AWS Pipeline Orchestration Script (Two-Phase Architecture)
+# Phase 1: Fetch raw data to S3 with smart refresh
+# Phase 2: Generate TTM artifacts from S3 data
 
 # Use pre-built renv library installed during Docker build
 .libPaths(c("/app/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu", .libPaths()))
@@ -9,7 +10,7 @@
 # Load package functions
 devtools::load_all("/app")
 
-message("=== Starting AWS Pipeline Execution ===")
+message("=== Starting AWS Pipeline Execution (Two-Phase) ===")
 start_time <- Sys.time()
 
 # AWS configuration from environment variables
@@ -29,115 +30,63 @@ if (SNS_TOPIC_ARN == "") {
 message(paste0("AWS Region: ", AWS_REGION))
 message(paste0("S3 Bucket: ", S3_BUCKET))
 
-# Step 1: Retrieve API key from Parameter Store
-message("\n[1/4] Retrieving API key from Parameter Store...")
+# Step 1: Phase 1 - Fetch raw data to S3
+message("\n[1/3] Phase 1: Fetching raw data to S3...")
+phase1_success <- FALSE
 tryCatch({
-  api_key <- get_api_key_from_parameter_store(
-    parameter_name = "/avpipeline/alpha-vantage-api-key",
-    region = AWS_REGION
-  )
-  Sys.setenv(ALPHA_VANTAGE_API_KEY = api_key)
-  message("API key retrieved successfully")
+  source("/app/scripts/run_phase1_fetch.R")
+  message("Phase 1 completed successfully")
+  phase1_success <- TRUE
 }, error = function(e) {
-  error_msg <- paste0("Failed to retrieve API key: ", e$message)
+  error_msg <- paste0("Phase 1 (Fetch) failed: ", e$message)
   message(error_msg)
   send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: API Key Retrieval",
+    subject = "Pipeline Failed: Phase 1 (Fetch)",
     message = error_msg,
     region = AWS_REGION
   )
   stop(error_msg)
 })
 
-# Step 2: Run the main pipeline (ticker-by-ticker architecture)
-message("\n[2/4] Running TTM pipeline...")
-pipeline_success <- FALSE
+phase1_time <- Sys.time()
+phase1_duration <- round(as.numeric(difftime(phase1_time, start_time, units = "mins")), 2)
+
+# Step 2: Phase 2 - Generate TTM artifacts
+message("\n[2/3] Phase 2: Generating TTM artifacts...")
+phase2_success <- FALSE
 tryCatch({
-  source("/app/scripts/build_complete_ttm_pipeline_ticker_by_ticker.R")
-  message("Pipeline completed successfully")
-  pipeline_success <- TRUE
+  source("/app/scripts/run_phase2_generate.R")
+  message("Phase 2 completed successfully")
+  phase2_success <- TRUE
 }, error = function(e) {
-  error_msg <- paste0("Pipeline execution failed: ", e$message)
+  error_msg <- paste0("Phase 2 (Generate) failed: ", e$message)
   message(error_msg)
   send_pipeline_notification(
     topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: Execution Error",
+    subject = "Pipeline Failed: Phase 2 (Generate)",
     message = error_msg,
     region = AWS_REGION
   )
   stop(error_msg)
 })
 
-# Step 3: Upload artifacts to S3
-message("\n[3/4] Uploading artifacts to S3...")
+phase2_time <- Sys.time()
+phase2_duration <- round(as.numeric(difftime(phase2_time, phase1_time, units = "mins")), 2)
 
-# Upload main TTM artifact
-local_artifact_path <- "/app/cache/ttm_per_share_financial_artifact.parquet"
-
-if (!file.exists(local_artifact_path)) {
-  error_msg <- paste0("Artifact file not found: ", local_artifact_path)
-  message(error_msg)
-  send_pipeline_notification(
-    topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: Artifact Not Found",
-    message = error_msg,
-    region = AWS_REGION
-  )
-  stop(error_msg)
-}
-
-tryCatch({
-  s3_key <- generate_s3_artifact_key(date = Sys.Date())
-  upload_artifact_to_s3(
-    local_path = local_artifact_path,
-    bucket_name = S3_BUCKET,
-    s3_key = s3_key,
-    region = AWS_REGION
-  )
-  message("Main artifact uploaded successfully")
-}, error = function(e) {
-  error_msg <- paste0("Failed to upload main artifact: ", e$message)
-  message(error_msg)
-  send_pipeline_notification(
-    topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: S3 Upload Error",
-    message = error_msg,
-    region = AWS_REGION
-  )
-  stop(error_msg)
-})
-
-# Upload API log artifact
-local_api_log_path <- "/app/cache/api_request_log.parquet"
-
-if (!file.exists(local_api_log_path)) {
-  warning_msg <- paste0("API log file not found: ", local_api_log_path)
-  message(warning_msg)
-} else {
-  tryCatch({
-    api_log_s3_key <- paste0("ttm-artifacts/", format(Sys.Date(), "%Y-%m-%d"), "/api_request_log.parquet")
-    upload_artifact_to_s3(
-      local_path = local_api_log_path,
-      bucket_name = S3_BUCKET,
-      s3_key = api_log_s3_key,
-      region = AWS_REGION
-    )
-    message("API log artifact uploaded successfully")
-  }, error = function(e) {
-    warning_msg <- paste0("Failed to upload API log artifact: ", e$message)
-    message(warning_msg)
-  })
-}
-
-# Step 4: Send success notification
-message("\n[4/4] Sending success notification...")
+# Step 3: Send success notification
+message("\n[3/3] Sending success notification...")
 end_time <- Sys.time()
-duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
+total_duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
+
+s3_key <- generate_s3_artifact_key(date = Sys.Date())
 
 success_message <- paste0(
   "TTM Pipeline completed successfully!\n\n",
-  "Execution Time: ", duration, " minutes\n",
+  "Execution Time:\n",
+  "  Phase 1 (Fetch): ", phase1_duration, " minutes\n",
+  "  Phase 2 (Generate): ", phase2_duration, " minutes\n",
+  "  Total: ", total_duration, " minutes\n\n",
   "Date: ", format(Sys.Date(), "%Y-%m-%d"), "\n",
   "S3 Location: s3://", S3_BUCKET, "/", s3_key, "\n\n",
   "The financial data artifact has been updated and is ready for analysis."
@@ -156,4 +105,6 @@ tryCatch({
 })
 
 message("\n=== Pipeline Execution Complete ===")
-message(paste0("Total execution time: ", duration, " minutes"))
+message(paste0("Phase 1 (Fetch): ", phase1_duration, " minutes"))
+message(paste0("Phase 2 (Generate): ", phase2_duration, " minutes"))
+message(paste0("Total execution time: ", total_duration, " minutes"))
