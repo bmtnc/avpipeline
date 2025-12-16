@@ -8,15 +8,6 @@
 #' @return tibble: Input data with derived metrics added as new columns
 #' @keywords internal
 add_derived_financial_metrics <- function(data) {
-  # Input validation
-  if (!is.data.frame(data)) {
-    stop(paste0(
-      "add_derived_financial_metrics(): [data] must be a data.frame, not ",
-      class(data)[1]
-    ))
-  }
-
-  # Define required columns
   required_cols <- c(
     "operatingCashflow_ttm_per_share",
     "capitalExpenditures_ttm_per_share",
@@ -33,13 +24,7 @@ add_derived_financial_metrics <- function(data) {
     "totalAssets_per_share"
   )
 
-  missing_cols <- setdiff(required_cols, names(data))
-  if (length(missing_cols) > 0) {
-    stop(paste0(
-      "add_derived_financial_metrics(): [data] is missing required columns: ",
-      paste(missing_cols, collapse = ", ")
-    ))
-  }
+  validate_df_cols(data, required_cols)
 
   # Calculate derived metrics
   data %>%

@@ -80,31 +80,6 @@ test_that("add_derived_financial_metrics handles missing financial data flag", {
   expect_equal(result$has_complete_financial_data[2], FALSE)
 })
 
-test_that("add_derived_financial_metrics validates input type", {
-  expect_error(
-    add_derived_financial_metrics("not_a_dataframe"),
-    "^add_derived_financial_metrics\\(\\): \\[data\\] must be a data.frame, not character$"
-  )
-  
-  expect_error(
-    add_derived_financial_metrics(list(a = 1, b = 2)),
-    "^add_derived_financial_metrics\\(\\): \\[data\\] must be a data.frame, not list$"
-  )
-})
-
-test_that("add_derived_financial_metrics checks for required columns", {
-  # Missing multiple columns
-  incomplete_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01")
-  )
-  
-  expect_error(
-    add_derived_financial_metrics(incomplete_data),
-    "^add_derived_financial_metrics\\(\\): \\[data\\] is missing required columns:"
-  )
-})
-
 test_that("add_derived_financial_metrics preserves original columns", {
   # nolint start
   # fmt: skip

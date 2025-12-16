@@ -16,61 +16,6 @@ test_that("create_ticker_count_plot creates ggplot object with valid data", {
   expect_equal(plot$labels$y, "Number of Tickers")
 })
 
-test_that("create_ticker_count_plot validates financial_statements is a data.frame", {
-  expect_error(
-    create_ticker_count_plot("not a data frame"),
-    "^create_ticker_count_plot\\(\\): \\[financial_statements\\] must be a data\\.frame, not character$"
-  )
-  
-  expect_error(
-    create_ticker_count_plot(list(ticker = "AAPL")),
-    "^create_ticker_count_plot\\(\\): \\[financial_statements\\] must be a data\\.frame, not list$"
-  )
-})
-
-test_that("create_ticker_count_plot validates required columns exist", {
-  # Missing ticker column
-  # nolint start
-  # fmt: skip
-  missing_ticker <- tibble::tibble(
-    calendar_quarter_ending = as.Date("2020-03-31"),
-    fiscalDateEnding        = as.Date("2020-03-31")
-  )
-  # nolint end
-  
-  expect_error(
-    create_ticker_count_plot(missing_ticker),
-    "^create_ticker_count_plot\\(\\): \\[financial_statements\\] missing required columns: ticker$"
-  )
-  
-  # Missing calendar_quarter_ending column
-  # nolint start
-  # fmt: skip
-  missing_calendar <- tibble::tibble(
-    ticker           = "AAPL",
-    fiscalDateEnding = as.Date("2020-03-31")
-  )
-  # nolint end
-  
-  expect_error(
-    create_ticker_count_plot(missing_calendar),
-    "^create_ticker_count_plot\\(\\): \\[financial_statements\\] missing required columns: calendar_quarter_ending$"
-  )
-  
-  # Missing both columns
-  # nolint start
-  # fmt: skip
-  missing_both <- tibble::tibble(
-    fiscalDateEnding = as.Date("2020-03-31")
-  )
-  # nolint end
-  
-  expect_error(
-    create_ticker_count_plot(missing_both),
-    "^create_ticker_count_plot\\(\\): \\[financial_statements\\] missing required columns: ticker, calendar_quarter_ending$"
-  )
-})
-
 test_that("create_ticker_count_plot handles single ticker", {
   # nolint start
   # fmt: skip

@@ -5,34 +5,6 @@ test_that("join_all_financial_statements validates statements parameter", {
   )
 })
 
-test_that("join_all_financial_statements validates valid_dates parameter", {
-  statements <- list(
-    earnings = data.frame(ticker = "A"),
-    cash_flow = data.frame(ticker = "A"),
-    income_statement = data.frame(ticker = "A"),
-    balance_sheet = data.frame(ticker = "A")
-  )
-
-  expect_error(
-    join_all_financial_statements(statements, "not a df"),
-    "^join_all_financial_statements\\(\\): \\[valid_dates\\] must be a data.frame, not character$"
-  )
-})
-
-test_that("join_all_financial_statements validates required columns", {
-  statements <- list(
-    earnings = data.frame(ticker = "A"),
-    cash_flow = data.frame(ticker = "A"),
-    income_statement = data.frame(ticker = "A"),
-    balance_sheet = data.frame(ticker = "A")
-  )
-
-  expect_error(
-    join_all_financial_statements(statements, data.frame(wrong_col = "A")),
-    "^join_all_financial_statements\\(\\): \\[valid_dates\\] must contain columns: ticker, fiscalDateEnding$"
-  )
-})
-
 test_that("join_all_financial_statements joins statements correctly", {
   # nolint start
   # fmt: skip

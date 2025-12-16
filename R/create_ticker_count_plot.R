@@ -7,21 +7,7 @@
 #' @return ggplot: Bar chart visualization of ticker counts by calendar quarter
 #' @keywords internal
 create_ticker_count_plot <- function(financial_statements) {
-  if (!is.data.frame(financial_statements)) {
-    stop(paste0(
-      "create_ticker_count_plot(): [financial_statements] must be a data.frame, not ",
-      class(financial_statements)[1]
-    ))
-  }
-
-  required_cols <- c("ticker", "calendar_quarter_ending")
-  missing_cols <- setdiff(required_cols, names(financial_statements))
-  if (length(missing_cols) > 0) {
-    stop(paste0(
-      "create_ticker_count_plot(): [financial_statements] missing required columns: ",
-      paste(missing_cols, collapse = ", ")
-    ))
-  }
+  validate_df_cols(financial_statements, c("ticker", "calendar_quarter_ending"))
 
   message(paste0(
     "Creating ticker count visualization with standardized dates..."

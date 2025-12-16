@@ -13,21 +13,8 @@ join_all_financial_statements <- function(statements, valid_dates) {
       class(statements)[1]
     ))
   }
-  if (!is.data.frame(valid_dates)) {
-    stop(paste0(
-      "join_all_financial_statements(): [valid_dates] must be a data.frame, not ",
-      class(valid_dates)[1]
-    ))
-  }
 
-  required_cols <- c("ticker", "fiscalDateEnding")
-  missing_cols <- setdiff(required_cols, names(valid_dates))
-  if (length(missing_cols) > 0) {
-    stop(paste0(
-      "join_all_financial_statements(): [valid_dates] must contain columns: ",
-      paste(required_cols, collapse = ", ")
-    ))
-  }
+  validate_df_cols(valid_dates, c("ticker", "fiscalDateEnding"))
 
   final_tickers <- unique(valid_dates$ticker)
   earnings_final <- statements$earnings %>%
