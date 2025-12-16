@@ -17,37 +17,10 @@ detect_temporary_anomalies <- function(
   lookahead = 4,
   threshold = 3
 ) {
-  if (!is.numeric(values)) {
-    stop(paste0(
-      "Argument 'values' must be numeric vector, received: ",
-      class(values)[1]
-    ))
-  }
-
-  if (length(values) == 0) {
-    stop("Argument 'values' cannot be empty vector")
-  }
-
-  if (!is.numeric(lookback) || length(lookback) != 1 || lookback < 1) {
-    stop(paste0(
-      "Argument 'lookback' must be positive integer, received: ",
-      lookback
-    ))
-  }
-
-  if (!is.numeric(lookahead) || length(lookahead) != 1 || lookahead < 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be positive integer, received: ",
-      lookahead
-    ))
-  }
-
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric, received: ",
-      threshold
-    ))
-  }
+  validate_numeric_vector(values, allow_empty = FALSE, name = "values")
+  validate_numeric_scalar(lookback, name = "lookback", gte = 1)
+  validate_numeric_scalar(lookahead, name = "lookahead", gte = 1)
+  validate_positive(threshold, name = "threshold")
 
   # Convert to integer for indexing
   lookback <- as.integer(lookback)

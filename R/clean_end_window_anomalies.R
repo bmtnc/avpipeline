@@ -20,7 +20,8 @@ clean_end_window_anomalies <- function(
   min_observations = 10
 ) {
   # Input validation for metric_cols
-  if (!is.character(metric_cols) || length(metric_cols) == 0) {
+  validate_non_empty(metric_cols, name = "metric_cols")
+  if (!is.character(metric_cols)) {
     stop(paste0(
       "Argument 'metric_cols' must be non-empty character vector, received: ",
       class(metric_cols)[1],
@@ -34,34 +35,9 @@ clean_end_window_anomalies <- function(
   validate_df_cols(data, required_cols)
 
   # Input validation for numeric parameters
-  if (
-    !is.numeric(end_window_size) ||
-      length(end_window_size) != 1 ||
-      end_window_size < 1
-  ) {
-    stop(paste0(
-      "Argument 'end_window_size' must be positive integer, received: ",
-      end_window_size
-    ))
-  }
-
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric, received: ",
-      threshold
-    ))
-  }
-
-  if (
-    !is.numeric(min_observations) ||
-      length(min_observations) != 1 ||
-      min_observations < 1
-  ) {
-    stop(paste0(
-      "Argument 'min_observations' must be positive integer, received: ",
-      min_observations
-    ))
-  }
+  validate_numeric_scalar(end_window_size, name = "end_window_size", gte = 1)
+  validate_positive(threshold, name = "threshold")
+  validate_numeric_scalar(min_observations, name = "min_observations", gte = 1)
 
   # Convert to integers
   end_window_size <- as.integer(end_window_size)

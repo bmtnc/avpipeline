@@ -8,11 +8,7 @@
 #' @return tibble: Updated tracking dataframe
 #' @keywords internal
 update_tracking_after_error <- function(tracking, ticker, error_message) {
-  if (!is.character(error_message) || length(error_message) != 1) {
-    stop(
-      "update_tracking_after_error(): [error_message] must be a character scalar"
-    )
-  }
+  validate_character_scalar(error_message, name = "error_message")
 
   update_ticker_tracking(
     tracking,

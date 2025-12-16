@@ -75,14 +75,14 @@ test_that("returns logical value", {
 test_that("fails when i is not numeric", {
   expect_error(
     detect_single_baseline_anomaly("invalid", test_values, test_lookback, test_lookahead, test_threshold),
-    "^Argument 'i' must be single numeric value, received: invalid$"
+    "^i must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when i is not single value", {
   expect_error(
     detect_single_baseline_anomaly(c(1, 2), test_values, test_lookback, test_lookahead, test_threshold),
-    "^Argument 'i' must be single numeric value, received: 1, 2$"
+    "^i must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
@@ -103,91 +103,91 @@ test_that("fails when i is greater than length of values", {
 test_that("fails when values is not numeric", {
   expect_error(
     detect_single_baseline_anomaly(test_i, c("a", "b", "c"), test_lookback, test_lookahead, test_threshold),
-    "^Argument 'values' must be numeric vector, received: character$"
+    "^values must be a numeric vector\\. Received: character$"
   )
 })
 
 test_that("fails when values is empty vector", {
   expect_error(
     detect_single_baseline_anomaly(1, numeric(0), test_lookback, test_lookahead, test_threshold),
-    "^Argument 'values' cannot be empty vector$"
+    "^values must not be empty$"
   )
 })
 
 test_that("fails when lookback is not numeric", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, "invalid", test_lookahead, test_threshold),
-    "^Argument 'lookback' must be single numeric value, received: invalid$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookback is not single value", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, c(1, 2), test_lookahead, test_threshold),
-    "^Argument 'lookback' must be single numeric value, received: 1, 2$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when lookback is less than 1", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, 0, test_lookahead, test_threshold),
-    "^Argument 'lookback' must be positive integer, received: 0$"
+    "^lookback must be >= 1\\. Received: 0$"
   )
 })
 
 test_that("fails when lookahead is not numeric", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, "invalid", test_threshold),
-    "^Argument 'lookahead' must be single numeric value, received: invalid$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookahead is not single value", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, c(1, 2), test_threshold),
-    "^Argument 'lookahead' must be single numeric value, received: 1, 2$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when lookahead is less than 1", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, 0, test_threshold),
-    "^Argument 'lookahead' must be positive integer, received: 0$"
+    "^lookahead must be >= 1\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is not numeric", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, test_lookahead, "invalid"),
-    "^Argument 'threshold' must be positive numeric value, received: invalid$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when threshold is not single value", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, test_lookahead, c(1, 2)),
-    "^Argument 'threshold' must be positive numeric value, received: 1, 2$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when threshold is zero", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, test_lookahead, 0),
-    "^Argument 'threshold' must be positive numeric value, received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is negative", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, test_lookahead, -1),
-    "^Argument 'threshold' must be positive numeric value, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when threshold is NA", {
   expect_error(
     detect_single_baseline_anomaly(test_i, test_values, test_lookback, test_lookahead, NA_real_),
-    "^Argument 'threshold' must be positive numeric value, received: NA$"
+    "^threshold must not be NA$"
   )
 })
 

@@ -50,49 +50,49 @@ testthat::test_that("non-numeric values argument fails", {
 testthat::test_that("non-numeric threshold fails", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, threshold = "3"),
-    "^Argument 'threshold' must be a single numeric value\\. Received: character of length 1$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 testthat::test_that("multiple threshold values fail", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, threshold = c(2, 3)),
-    "^Argument 'threshold' must be a single numeric value\\. Received: numeric of length 2$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 testthat::test_that("non-positive threshold fails", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, threshold = -1),
-    "^Argument 'threshold' must be positive\\. Received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 testthat::test_that("zero threshold fails", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, threshold = 0),
-    "^Argument 'threshold' must be positive\\. Received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
 testthat::test_that("non-numeric min_observations fails", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, min_observations = "10"),
-    "^Argument 'min_observations' must be a single positive integer\\. Received: character of length 1$"
+    "^min_observations must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 testthat::test_that("multiple min_observations values fail", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, min_observations = c(5, 10)),
-    "^Argument 'min_observations' must be a single positive integer\\. Received: numeric of length 2$"
+    "^min_observations must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 testthat::test_that("non-positive min_observations fails", {
   testthat::expect_error(
     detect_time_series_anomalies(test_values, min_observations = 0),
-    "^Argument 'min_observations' must be a single positive integer\\. Received: numeric with value 0$"
+    "^min_observations must be >= 1\\. Received: 0$"
   )
 })
 

@@ -7,21 +7,15 @@
 parse_etf_profile_response <- function(response) {
   # Get response content
   content <- httr::content(response, as = "text", encoding = "UTF-8")
-  
+
   # Parse JSON response
   parsed_data <- jsonlite::fromJSON(content)
-  
+
   # Check for API error messages
-  if ("Error Message" %in% names(parsed_data)) {
-    stop("Alpha Vantage API Error: ", parsed_data$`Error Message`)
-  }
-  
+  validate_api_response(parsed_data, ticker = "ETF")
+
   if ("Information" %in% names(parsed_data)) {
     stop("Alpha Vantage API Information: ", parsed_data$Information)
-  }
-  
-  if ("Note" %in% names(parsed_data)) {
-    stop("Alpha Vantage API Note: ", parsed_data$Note)
   }
   
   # Check if holdings data exists

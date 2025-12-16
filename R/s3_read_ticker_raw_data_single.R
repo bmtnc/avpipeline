@@ -14,21 +14,9 @@ s3_read_ticker_raw_data_single <- function(
   bucket_name,
   region = "us-east-1"
 ) {
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop(
-      "s3_read_ticker_raw_data_single(): [ticker] must be a character scalar"
-    )
-  }
-  if (!is.character(data_type) || length(data_type) != 1) {
-    stop(
-      "s3_read_ticker_raw_data_single(): [data_type] must be a character scalar"
-    )
-  }
-  if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop(
-      "s3_read_ticker_raw_data_single(): [bucket_name] must be a character scalar"
-    )
-  }
+  validate_character_scalar(ticker, name = "ticker")
+  validate_character_scalar(data_type, name = "data_type")
+  validate_character_scalar(bucket_name, name = "bucket_name")
 
   s3_key <- generate_raw_data_s3_key(ticker, data_type)
   s3_uri <- paste0("s3://", bucket_name, "/", s3_key)

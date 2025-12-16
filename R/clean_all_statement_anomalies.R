@@ -36,12 +36,7 @@ clean_all_statement_anomalies <- function(
     ))
   }
 
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "clean_all_statement_anomalies(): [threshold] must be a positive numeric scalar, not ",
-      class(threshold)[1]
-    ))
-  }
+  validate_positive(threshold, name = "threshold")
 
   message(paste0("Cleaning quarterly anomalies in financial metrics..."))
   message(paste0(

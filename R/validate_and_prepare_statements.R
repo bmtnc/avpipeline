@@ -28,30 +28,9 @@ validate_and_prepare_statements <- function(
   end_threshold = 3,
   min_obs = 10
 ) {
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "validate_and_prepare_statements(): [threshold] must be a positive numeric scalar, not ",
-      class(threshold)[1],
-      " of length ",
-      length(threshold)
-    ))
-  }
-  if (!is.numeric(lookback) || length(lookback) != 1 || lookback < 0) {
-    stop(paste0(
-      "validate_and_prepare_statements(): [lookback] must be a non-negative numeric scalar, not ",
-      class(lookback)[1],
-      " of length ",
-      length(lookback)
-    ))
-  }
-  if (!is.numeric(lookahead) || length(lookahead) != 1 || lookahead < 0) {
-    stop(paste0(
-      "validate_and_prepare_statements(): [lookahead] must be a non-negative numeric scalar, not ",
-      class(lookahead)[1],
-      " of length ",
-      length(lookahead)
-    ))
-  }
+  validate_positive(threshold, name = "threshold")
+  validate_numeric_scalar(lookback, name = "lookback", gte = 0)
+  validate_numeric_scalar(lookahead, name = "lookahead", gte = 0)
 
   statements_cleaned <- remove_all_na_financial_observations(list(
     cash_flow = cash_flow,

@@ -13,23 +13,10 @@ summarize_artifact_construction <- function(
   final_data,
   removed_detail = NULL
 ) {
-  if (!is.data.frame(original_data)) {
-    stop(paste0(
-      "summarize_artifact_construction(): [original_data] must be a data.frame, not ",
-      class(original_data)[1]
-    ))
-  }
-  if (!is.data.frame(final_data)) {
-    stop(paste0(
-      "summarize_artifact_construction(): [final_data] must be a data.frame, not ",
-      class(final_data)[1]
-    ))
-  }
-  if (!is.null(removed_detail) && !is.data.frame(removed_detail)) {
-    stop(paste0(
-      "summarize_artifact_construction(): [removed_detail] must be a data.frame or NULL, not ",
-      class(removed_detail)[1]
-    ))
+  validate_df_type(original_data)
+  validate_df_type(final_data)
+  if (!is.null(removed_detail)) {
+    validate_df_type(removed_detail)
   }
 
   original_obs <- nrow(original_data)

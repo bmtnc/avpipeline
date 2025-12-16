@@ -21,9 +21,13 @@ fetch_tickers_with_progress <- function(
   delay_seconds = NULL,
   ...
 ) {
-  if (missing(tickers) || !is.character(tickers) || length(tickers) == 0) {
+  if (missing(tickers)) {
     stop("tickers must be a non-empty character vector")
   }
+  if (!is.character(tickers)) {
+    stop("tickers must be a non-empty character vector")
+  }
+  validate_non_empty(tickers, name = "tickers")
 
   if (missing(config) || !is.list(config)) {
     stop("config must be a configuration list object")
@@ -38,9 +42,7 @@ fetch_tickers_with_progress <- function(
     delay_seconds <- config$default_delay %||% 1
   }
 
-  if (!is.numeric(delay_seconds) || delay_seconds < 0) {
-    stop("delay_seconds must be a non-negative number")
-  }
+  validate_numeric_scalar(delay_seconds, name = "delay_seconds", gte = 0)
 
   # Get API key once
   if (is.null(api_key)) {

@@ -55,100 +55,100 @@ test_that("works with higher threshold values", {
 
 test_that("fails when values is not numeric", {
   values <- c("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o")
-  
+
   expect_error(
     detect_temporary_anomalies(values),
-    "^Argument 'values' must be numeric vector, received: character$"
+    "^values must be a numeric vector\\. Received: character$"
   )
 })
 
 test_that("fails when values is empty vector", {
   values <- numeric(0)
-  
+
   expect_error(
     detect_temporary_anomalies(values),
-    "^Argument 'values' cannot be empty vector$"
+    "^values must not be empty$"
   )
 })
 
 test_that("fails when lookback is not positive integer", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookback = 0),
-    "^Argument 'lookback' must be positive integer, received: 0$"
+    "^lookback must be >= 1\\. Received: 0$"
   )
 })
 
 test_that("fails when lookback is negative", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookback = -1),
-    "^Argument 'lookback' must be positive integer, received: -1$"
+    "^lookback must be >= 1\\. Received: -1$"
   )
 })
 
 test_that("fails when lookback is not numeric", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookback = "invalid"),
-    "^Argument 'lookback' must be positive integer, received: invalid$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookahead is not positive integer", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookahead = 0),
-    "^Argument 'lookahead' must be positive integer, received: 0$"
+    "^lookahead must be >= 1\\. Received: 0$"
   )
 })
 
 test_that("fails when lookahead is negative", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookahead = -2),
-    "^Argument 'lookahead' must be positive integer, received: -2$"
+    "^lookahead must be >= 1\\. Received: -2$"
   )
 })
 
 test_that("fails when lookahead is not numeric", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, lookahead = TRUE),
-    "^Argument 'lookahead' must be positive integer, received: TRUE$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: logical of length 1$"
   )
 })
 
 test_that("fails when threshold is not positive", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, threshold = 0),
-    "^Argument 'threshold' must be positive numeric, received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is negative", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, threshold = -1),
-    "^Argument 'threshold' must be positive numeric, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when threshold is not numeric", {
   values <- test_values
-  
+
   expect_error(
     detect_temporary_anomalies(values, threshold = "invalid"),
-    "^Argument 'threshold' must be positive numeric, received: invalid$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 

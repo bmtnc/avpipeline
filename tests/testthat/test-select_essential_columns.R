@@ -107,17 +107,17 @@ test_that("select_essential_columns preserves column order", {
 test_that("select_essential_columns validates input types", {
   expect_error(
     select_essential_columns("not a dataframe"),
-    "^select_essential_columns\\(\\): \\[data\\] must be a data\\.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
 
   expect_error(
     select_essential_columns(list(a = 1, b = 2)),
-    "^select_essential_columns\\(\\): \\[data\\] must be a data\\.frame, not list$"
+    "^Input data must be a data\\.frame\\. Received: list$"
   )
 
   expect_error(
     select_essential_columns(123),
-    "^select_essential_columns\\(\\): \\[data\\] must be a data\\.frame, not numeric$"
+    "^Input data must be a data\\.frame\\. Received: numeric$"
   )
 })
 

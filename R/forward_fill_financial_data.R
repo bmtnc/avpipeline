@@ -8,12 +8,7 @@
 #' @return tibble: Data frame with forward-filled financial metrics
 #' @keywords internal
 forward_fill_financial_data <- function(data) {
-  validate_df_type(data)
-  if (!"ticker" %in% names(data)) {
-    stop(paste0(
-      "forward_fill_financial_data(): [data] must contain 'ticker' column"
-    ))
-  }
+  validate_df_cols(data, required_cols = "ticker")
 
   # Forward fill by ticker group
   data %>%

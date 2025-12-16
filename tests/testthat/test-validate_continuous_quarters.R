@@ -238,28 +238,28 @@ test_that("works with custom cleanup columns", {
 test_that("fails when date_col is not character", {
   expect_error(
     validate_continuous_quarters(test_df, date_col = 123),
-    "^Input 'date_col' must be a single character string\\. Received: numeric of length 1$"
+    "^date_col must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
 })
 
 test_that("fails when date_col has multiple values", {
   expect_error(
     validate_continuous_quarters(test_df, date_col = c("col1", "col2")),
-    "^Input 'date_col' must be a single character string\\. Received: character of length 2$"
+    "^date_col must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 
 test_that("fails when row_num_col is not character", {
   expect_error(
     validate_continuous_quarters(test_df, row_num_col = 456),
-    "^Input 'row_num_col' must be a single character string\\. Received: numeric of length 1$"
+    "^row_num_col must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
 })
 
 test_that("fails when row_num_col has multiple values", {
   expect_error(
     validate_continuous_quarters(test_df, row_num_col = c("col1", "col2")),
-    "^Input 'row_num_col' must be a single character string\\. Received: character of length 2$"
+    "^row_num_col must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 

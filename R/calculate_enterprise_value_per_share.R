@@ -19,40 +19,11 @@ calculate_enterprise_value_per_share <- function(
   lt_investments_ps
 ) {
   # Input validation
-  if (!is.numeric(price)) {
-    stop(paste0(
-      "calculate_enterprise_value_per_share(): [price] must be numeric, not ",
-      class(price)[1]
-    ))
-  }
-
-  if (!is.numeric(debt_total_ps)) {
-    stop(paste0(
-      "calculate_enterprise_value_per_share(): [debt_total_ps] must be numeric, not ",
-      class(debt_total_ps)[1]
-    ))
-  }
-
-  if (!is.numeric(lease_obligations_ps)) {
-    stop(paste0(
-      "calculate_enterprise_value_per_share(): [lease_obligations_ps] must be numeric, not ",
-      class(lease_obligations_ps)[1]
-    ))
-  }
-
-  if (!is.numeric(cash_st_investments_ps)) {
-    stop(paste0(
-      "calculate_enterprise_value_per_share(): [cash_st_investments_ps] must be numeric, not ",
-      class(cash_st_investments_ps)[1]
-    ))
-  }
-
-  if (!is.numeric(lt_investments_ps)) {
-    stop(paste0(
-      "calculate_enterprise_value_per_share(): [lt_investments_ps] must be numeric, not ",
-      class(lt_investments_ps)[1]
-    ))
-  }
+  validate_numeric_vector(price, allow_empty = TRUE, name = "price")
+  validate_numeric_vector(debt_total_ps, allow_empty = TRUE, name = "debt_total_ps")
+  validate_numeric_vector(lease_obligations_ps, allow_empty = TRUE, name = "lease_obligations_ps")
+  validate_numeric_vector(cash_st_investments_ps, allow_empty = TRUE, name = "cash_st_investments_ps")
+  validate_numeric_vector(lt_investments_ps, allow_empty = TRUE, name = "lt_investments_ps")
 
   # Calculate enterprise value
   price +

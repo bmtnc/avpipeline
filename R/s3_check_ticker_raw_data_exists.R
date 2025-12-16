@@ -12,16 +12,8 @@ s3_check_ticker_raw_data_exists <- function(
   bucket_name,
   region = "us-east-1"
 ) {
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop(
-      "s3_check_ticker_raw_data_exists(): [ticker] must be a character scalar"
-    )
-  }
-  if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop(
-      "s3_check_ticker_raw_data_exists(): [bucket_name] must be a character scalar"
-    )
-  }
+  validate_character_scalar(ticker, name = "ticker")
+  validate_character_scalar(bucket_name, name = "bucket_name")
 
   prefix <- paste0("raw/", ticker, "/")
   s3_uri <- paste0("s3://", bucket_name, "/", prefix)

@@ -26,21 +26,21 @@ test_that("validate_and_prepare_statements validates threshold parameter", {
       cash_flow, income_statement, balance_sheet, earnings,
       threshold = "invalid"
     ),
-    "must be a positive numeric scalar"
+    "threshold must be a numeric scalar"
   )
   expect_error(
     validate_and_prepare_statements(
       cash_flow, income_statement, balance_sheet, earnings,
       threshold = -1
     ),
-    "must be a positive numeric scalar"
+    "threshold must be greater than 0"
   )
   expect_error(
     validate_and_prepare_statements(
       cash_flow, income_statement, balance_sheet, earnings,
       threshold = c(1, 2)
     ),
-    "must be a positive numeric scalar"
+    "threshold must be a numeric scalar"
   )
 })
 
@@ -72,14 +72,14 @@ test_that("validate_and_prepare_statements validates lookback parameter", {
       cash_flow, income_statement, balance_sheet, earnings,
       lookback = "invalid"
     ),
-    "must be a non-negative numeric scalar"
+    "lookback must be a numeric scalar"
   )
   expect_error(
     validate_and_prepare_statements(
       cash_flow, income_statement, balance_sheet, earnings,
       lookback = -1
     ),
-    "must be a non-negative numeric scalar"
+    "lookback must be >= 0"
   )
 })
 

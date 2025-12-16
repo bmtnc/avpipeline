@@ -96,20 +96,20 @@ test_that("join_daily_and_financial_data validates input types", {
     ticker = c("AAPL"),
     date = as.Date("2023-01-01")
   )
-  
+
   expect_error(
     join_daily_and_financial_data("not_a_dataframe", valid_data, valid_data),
-    "^join_daily_and_financial_data\\(\\): \\[price_data\\] must be a data.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
-  
+
   expect_error(
     join_daily_and_financial_data(valid_data, "not_a_dataframe", valid_data),
-    "^join_daily_and_financial_data\\(\\): \\[market_cap_data\\] must be a data.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
-  
+
   expect_error(
     join_daily_and_financial_data(valid_data, valid_data, "not_a_dataframe"),
-    "^join_daily_and_financial_data\\(\\): \\[ttm_data\\] must be a data.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
 })
 
@@ -119,37 +119,37 @@ test_that("join_daily_and_financial_data validates required columns", {
     date = as.Date("2023-01-01"),
     open = c(150.0)
   )
-  
+
   valid_data <- tibble::tibble(
     ticker = c("AAPL"),
     date = as.Date("2023-01-01")
   )
-  
+
   expect_error(
     join_daily_and_financial_data(invalid_price, valid_data, valid_data),
-    "^join_daily_and_financial_data\\(\\): \\[price_data\\] must contain 'ticker' and 'date' columns$"
+    "^Required columns missing from data: ticker\\. Available columns: date, open$"
   )
-  
+
   # Missing date column from market_cap_data
   invalid_market <- tibble::tibble(
     ticker = c("AAPL"),
     market_cap = c(2500000)
   )
-  
+
   expect_error(
     join_daily_and_financial_data(valid_data, invalid_market, valid_data),
-    "^join_daily_and_financial_data\\(\\): \\[market_cap_data\\] must contain 'ticker' and 'date' columns$"
+    "^Required columns missing from data: date\\. Available columns: ticker, market_cap$"
   )
-  
+
   # Missing ticker column from ttm_data
   invalid_ttm <- tibble::tibble(
     date = as.Date("2023-01-01"),
     totalRevenue_ttm = c(400000)
   )
-  
+
   expect_error(
     join_daily_and_financial_data(valid_data, valid_data, invalid_ttm),
-    "^join_daily_and_financial_data\\(\\): \\[ttm_data\\] must contain 'ticker' and 'date' columns$"
+    "^Required columns missing from data: ticker\\. Available columns: date, totalRevenue_ttm$"
   )
 })
 

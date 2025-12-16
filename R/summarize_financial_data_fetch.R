@@ -8,16 +8,8 @@
 #' @return invisible NULL (prints summary as side effect)
 #' @keywords internal
 summarize_financial_data_fetch <- function(etf_symbol, tickers, data_list) {
-  if (
-    !is.null(etf_symbol) &&
-      (!is.character(etf_symbol) || length(etf_symbol) != 1)
-  ) {
-    stop(paste0(
-      "summarize_financial_data_fetch(): [etf_symbol] must be NULL or a character scalar, not ",
-      class(etf_symbol)[1],
-      " of length ",
-      length(etf_symbol)
-    ))
+  if (!is.null(etf_symbol)) {
+    validate_character_scalar(etf_symbol, name = "etf_symbol")
   }
   if (!is.character(tickers)) {
     stop(paste0(

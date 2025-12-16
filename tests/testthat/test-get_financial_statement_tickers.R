@@ -29,12 +29,12 @@ test_that("get_financial_statement_tickers validates at least one parameter prov
 test_that("get_financial_statement_tickers validates etf_symbol is character scalar", {
   expect_error(
     get_financial_statement_tickers(etf_symbol = 123),
-    "^get_financial_statement_tickers\\(\\): \\[etf_symbol\\] must be a character scalar, not numeric of length 1$"
+    "^etf_symbol must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
-  
+
   expect_error(
     get_financial_statement_tickers(etf_symbol = c("SPY", "IWB")),
-    "^get_financial_statement_tickers\\(\\): \\[etf_symbol\\] must be a character scalar, not character of length 2$"
+    "^etf_symbol must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 

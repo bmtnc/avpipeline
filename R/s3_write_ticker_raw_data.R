@@ -16,18 +16,10 @@ s3_write_ticker_raw_data <- function(
   bucket_name,
   region = "us-east-1"
 ) {
-  if (!is.data.frame(data)) {
-    stop("s3_write_ticker_raw_data(): [data] must be a data.frame")
-  }
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop("s3_write_ticker_raw_data(): [ticker] must be a character scalar")
-  }
-  if (!is.character(data_type) || length(data_type) != 1) {
-    stop("s3_write_ticker_raw_data(): [data_type] must be a character scalar")
-  }
-  if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop("s3_write_ticker_raw_data(): [bucket_name] must be a character scalar")
-  }
+  validate_df_type(data)
+  validate_character_scalar(ticker, name = "ticker")
+  validate_character_scalar(data_type, name = "data_type")
+  validate_character_scalar(bucket_name, name = "bucket_name")
 
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)

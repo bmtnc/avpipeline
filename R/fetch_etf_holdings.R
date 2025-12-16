@@ -11,14 +11,7 @@
 #' @export
 #'
 fetch_etf_holdings <- function(etf_symbol, api_key = NULL) {
-  if (
-    is.null(etf_symbol) || !is.character(etf_symbol) || length(etf_symbol) != 1
-  ) {
-    stop("etf_symbol must be a single character string")
-  }
-  if (nchar(etf_symbol) == 0) {
-    stop("etf_symbol cannot be empty")
-  }
+  validate_character_scalar(etf_symbol, allow_empty = FALSE, name = "etf_symbol")
 
   # Convert to uppercase for consistency
   etf_symbol <- toupper(etf_symbol)

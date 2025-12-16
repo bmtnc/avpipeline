@@ -8,15 +8,9 @@
 #' @return tibble: Updated tracking dataframe
 #' @keywords internal
 update_earnings_prediction <- function(tracking, ticker, earnings_data) {
-  if (!is.data.frame(tracking)) {
-    stop("update_earnings_prediction(): [tracking] must be a data.frame")
-  }
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop("update_earnings_prediction(): [ticker] must be a character scalar")
-  }
-  if (!is.data.frame(earnings_data)) {
-    stop("update_earnings_prediction(): [earnings_data] must be a data.frame")
-  }
+  validate_df_type(tracking)
+  validate_character_scalar(ticker, name = "ticker")
+  validate_df_type(earnings_data)
   if (nrow(earnings_data) == 0) {
     return(tracking)
   }

@@ -15,12 +15,7 @@ parse_cash_flow_response <- function(response, ticker) {
   parsed_data <- jsonlite::fromJSON(content)
 
   # Check for API error messages
-  if ("Error Message" %in% names(parsed_data)) {
-    stop("Alpha Vantage API error: ", parsed_data$`Error Message`)
-  }
-  if ("Note" %in% names(parsed_data)) {
-    stop("Alpha Vantage API note: ", parsed_data$Note)
-  }
+  validate_api_response(parsed_data, ticker = ticker)
   if (!"quarterlyReports" %in% names(parsed_data)) {
     stop("No quarterly reports found in API response for ticker: ", ticker)
   }

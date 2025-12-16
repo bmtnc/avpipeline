@@ -13,15 +13,9 @@ parse_income_statement_response <- function(response, ticker) {
   # Parse JSON response
   content <- httr::content(response, "text", encoding = "UTF-8")
   parsed_data <- jsonlite::fromJSON(content)
-  
+
   # Check for API error messages
-  if ("Error Message" %in% names(parsed_data)) {
-    stop("Alpha Vantage API error: ", parsed_data$`Error Message`)
-  }
-  
-  if ("Note" %in% names(parsed_data)) {
-    stop("Alpha Vantage API note: ", parsed_data$Note)
-  }
+  validate_api_response(parsed_data, ticker = ticker)
   
   # Extract quarterly reports only
   if (!"quarterlyReports" %in% names(parsed_data)) {

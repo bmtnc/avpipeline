@@ -22,7 +22,8 @@ clean_quarterly_metrics <- function(
   lookback = 4,
   lookahead = 4
 ) {
-  if (!is.character(metric_cols) || length(metric_cols) == 0) {
+  validate_non_empty(metric_cols, name = "metric_cols")
+  if (!is.character(metric_cols)) {
     stop(paste0(
       "Argument 'metric_cols' must be non-empty character vector, received: ",
       class(metric_cols)[1],
@@ -31,30 +32,9 @@ clean_quarterly_metrics <- function(
     ))
   }
 
-  if (!is.character(date_col) || length(date_col) != 1) {
-    stop(paste0(
-      "Argument 'date_col' must be single character string, received: ",
-      class(date_col)[1],
-      " of length ",
-      length(date_col)
-    ))
-  }
-
-  if (!is.character(ticker_col) || length(ticker_col) != 1) {
-    stop(paste0(
-      "Argument 'ticker_col' must be single character string, received: ",
-      class(ticker_col)[1],
-      " of length ",
-      length(ticker_col)
-    ))
-  }
-
-  if (!is.data.frame(data)) {
-    stop(paste0(
-      "Argument 'data' must be data frame, received: ",
-      class(data)[1]
-    ))
-  }
+  validate_character_scalar(date_col, allow_empty = FALSE, name = "date_col")
+  validate_character_scalar(ticker_col, allow_empty = FALSE, name = "ticker_col")
+  validate_df_type(data)
 
   if (nrow(data) == 0) {
     return(data)
@@ -63,26 +43,9 @@ clean_quarterly_metrics <- function(
   required_cols <- c(ticker_col, date_col, metric_cols)
   validate_df_cols(data, required_cols)
 
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric, received: ",
-      threshold
-    ))
-  }
-
-  if (!is.numeric(lookback) || length(lookback) != 1 || lookback < 1) {
-    stop(paste0(
-      "Argument 'lookback' must be positive integer, received: ",
-      lookback
-    ))
-  }
-
-  if (!is.numeric(lookahead) || length(lookahead) != 1 || lookahead < 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be positive integer, received: ",
-      lookahead
-    ))
-  }
+  validate_positive(threshold, name = "threshold")
+  validate_numeric_scalar(lookback, name = "lookback", gte = 1)
+  validate_numeric_scalar(lookahead, name = "lookahead", gte = 1)
 
   # Create symbols for NSE
   date_sym <- rlang::sym(date_col)

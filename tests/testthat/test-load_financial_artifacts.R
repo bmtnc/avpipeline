@@ -70,10 +70,10 @@ test_that("load_financial_artifacts loads price data with date columns", {
 test_that("load_financial_artifacts handles missing financial statements file", {
   # Skip if file actually exists (we're testing error handling)
   skip_if(file.exists("cache/financial_statements_artifact.csv"))
-  
+
   expect_error(
     load_financial_artifacts(),
-    "^load_financial_artifacts\\(\\): Financial statements file not found at cache/financial_statements_artifact\\.csv$"
+    "^Financial statements file does not exist: cache/financial_statements_artifact\\.csv$"
   )
 })
 

@@ -61,7 +61,7 @@ test_that("function works with data missing ticker and fiscalDateEnding columns"
 test_that("function stops when financial_cols is not a character vector", {
   expect_error(
     identify_all_na_rows(test_df, 123, "test statement"),
-    "^'financial_cols' must be a character vector, got: numeric$"
+    "^financial_cols must be a character vector\\. Received: numeric$"
   )
 })
 
@@ -69,7 +69,7 @@ test_that("function stops when statement_type is not a single character string",
   financial_cols <- c("revenue", "expenses", "profit")
   expect_error(
     identify_all_na_rows(test_df, financial_cols, c("test", "statement")),
-    "^'statement_type' must be a single character string, got: character of length 2$"
+    "^statement_type must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 
@@ -77,6 +77,6 @@ test_that("function stops when statement_type is not character", {
   financial_cols <- c("revenue", "expenses", "profit")
   expect_error(
     identify_all_na_rows(test_df, financial_cols, 123),
-    "^'statement_type' must be a single character string, got: numeric of length 1$"
+    "^statement_type must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
 })

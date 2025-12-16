@@ -13,16 +13,16 @@ test_that("summarize_financial_data_fetch validates etf_symbol is character scal
       tickers = tickers,
       data_list = data_list
     ),
-    "^summarize_financial_data_fetch\\(\\): \\[etf_symbol\\] must be NULL or a character scalar, not numeric of length 1$"
+    "^etf_symbol must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
-  
+
   expect_error(
     summarize_financial_data_fetch(
       etf_symbol = c("SPY", "IWB"),
       tickers = tickers,
       data_list = data_list
     ),
-    "^summarize_financial_data_fetch\\(\\): \\[etf_symbol\\] must be NULL or a character scalar, not character of length 2$"
+    "^etf_symbol must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 

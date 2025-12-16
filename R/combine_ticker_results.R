@@ -14,15 +14,24 @@
 #' @export
 #'
 combine_ticker_results <- function(results_list, tickers, config) {
-  if (missing(results_list) || !is.list(results_list)) {
+  if (missing(results_list)) {
+    stop("results_list must be a list")
+  }
+  if (!is.list(results_list)) {
     stop("results_list must be a list")
   }
 
-  if (missing(tickers) || !is.character(tickers)) {
+  if (missing(tickers)) {
+    stop("tickers must be a character vector")
+  }
+  if (!is.character(tickers)) {
     stop("tickers must be a character vector")
   }
 
-  if (missing(config) || !is.list(config)) {
+  if (missing(config)) {
+    stop("config must be a configuration list object")
+  }
+  if (!is.list(config)) {
     stop("config must be a configuration list object")
   }
 

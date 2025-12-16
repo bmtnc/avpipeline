@@ -12,9 +12,7 @@
 read_cached_data_parquet <- function(cache_file) {
   
   # Validate input
-  if (!file.exists(cache_file)) {
-    stop("Cache file does not exist: ", cache_file)
-  }
+  validate_file_exists(cache_file, name = "cache_file")
   
   # Validate file extension
   if (tools::file_ext(cache_file) != "parquet") {

@@ -24,14 +24,14 @@ test_that("build_market_cap_with_splits validates start_date parameter", {
       price_data, splits_data, financial_statements,
       start_date = "2020-01-01"
     ),
-    "must be a Date scalar"
+    "^start_date must be a Date object\\. Received: character$"
   )
   expect_error(
     build_market_cap_with_splits(
       price_data, splits_data, financial_statements,
       start_date = c(as.Date("2020-01-01"), as.Date("2020-01-02"))
     ),
-    "must be a Date scalar"
+    "^start_date must be a Date scalar \\(length 1\\)\\. Received length: 2$"
   )
 })
 

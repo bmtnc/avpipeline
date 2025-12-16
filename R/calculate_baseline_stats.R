@@ -9,21 +9,8 @@
 #' @export
 calculate_baseline_stats <- function(values, indices) {
   # Input validation
-  if (!is.numeric(values)) {
-    stop(paste0(
-      "Argument 'values' must be numeric vector, received: ",
-      class(values)[1]
-    ))
-  }
-
-  if (!is.numeric(indices) || length(indices) == 0) {
-    stop(paste0(
-      "Argument 'indices' must be non-empty integer vector, received: ",
-      class(indices)[1],
-      " of length ",
-      length(indices)
-    ))
-  }
+  validate_numeric_vector(values, allow_empty = TRUE, name = "values")
+  validate_numeric_vector(indices, allow_empty = FALSE, name = "indices")
 
   if (any(indices < 1) || any(indices > length(values))) {
     stop(paste0(

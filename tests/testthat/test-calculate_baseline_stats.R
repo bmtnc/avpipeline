@@ -72,10 +72,10 @@ test_that("works with non-consecutive indices", {
 
 test_that("fails when values is not numeric", {
   values <- c("a", "b", "c", "d", "e")
-  
+
   expect_error(
     calculate_baseline_stats(values, test_indices),
-    "^Argument 'values' must be numeric vector, received: character$"
+    "^values must be a numeric vector\\. Received: character$"
   )
 })
 
@@ -91,21 +91,21 @@ test_that("fails when values is empty vector", {
 test_that("fails when indices is not numeric", {
   expect_error(
     calculate_baseline_stats(test_values, c("a", "b")),
-    "^Argument 'indices' must be non-empty integer vector, received: character of length 2$"
+    "^indices must be a numeric vector\\. Received: character$"
   )
 })
 
 test_that("fails when indices is empty vector", {
   expect_error(
     calculate_baseline_stats(test_values, numeric(0)),
-    "^Argument 'indices' must be non-empty integer vector, received: numeric of length 0$"
+    "^indices must not be empty$"
   )
 })
 
 test_that("fails when indices is empty integer vector", {
   expect_error(
     calculate_baseline_stats(test_values, integer(0)),
-    "^Argument 'indices' must be non-empty integer vector, received: integer of length 0$"
+    "^indices must not be empty$"
   )
 })
 

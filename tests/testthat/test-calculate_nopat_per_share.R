@@ -78,17 +78,17 @@ test_that("calculate_nopat_per_share handles edge cases", {
 test_that("calculate_nopat_per_share validates input types", {
   expect_error(
     calculate_nopat_per_share("not_numeric", c(20), c(15)),
-    "^calculate_nopat_per_share\\(\\): \\[ebit_ps\\] must be numeric, not character$"
+    "^ebit_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_nopat_per_share(c(100), "not_numeric", c(15)),
-    "^calculate_nopat_per_share\\(\\): \\[dep_amort_ps\\] must be numeric, not character$"
+    "^dep_amort_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_nopat_per_share(c(100), c(20), "not_numeric"),
-    "^calculate_nopat_per_share\\(\\): \\[depreciation_ps\\] must be numeric, not character$"
+    "^depreciation_ps must be a numeric vector\\. Received: character$"
   )
 })
 
@@ -96,25 +96,25 @@ test_that("calculate_nopat_per_share validates tax_rate parameter", {
   # Non-numeric tax_rate
   expect_error(
     calculate_nopat_per_share(c(100), c(20), c(15), tax_rate = "0.25"),
-    "^calculate_nopat_per_share\\(\\): \\[tax_rate\\] must be a numeric scalar, not character"
+    "^tax_rate must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
-  
+
   # Vector tax_rate
   expect_error(
     calculate_nopat_per_share(c(100), c(20), c(15), tax_rate = c(0.2, 0.3)),
-    "^calculate_nopat_per_share\\(\\): \\[tax_rate\\] must be a numeric scalar, not numeric of length 2$"
+    "^tax_rate must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
-  
+
   # Tax rate out of range (negative)
   expect_error(
     calculate_nopat_per_share(c(100), c(20), c(15), tax_rate = -0.1),
-    "^calculate_nopat_per_share\\(\\): \\[tax_rate\\] must be between 0 and 1, not -0.1$"
+    "^tax_rate must be >= 0\\. Received: -0\\.1$"
   )
-  
+
   # Tax rate out of range (> 1)
   expect_error(
     calculate_nopat_per_share(c(100), c(20), c(15), tax_rate = 1.5),
-    "^calculate_nopat_per_share\\(\\): \\[tax_rate\\] must be between 0 and 1, not 1.5$"
+    "^tax_rate must be <= 1\\. Received: 1\\.5$"
   )
 })
 

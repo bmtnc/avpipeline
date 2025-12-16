@@ -31,12 +31,12 @@ test_that("summarize_artifact_construction validates original_data is a data.fra
   
   expect_error(
     summarize_artifact_construction("not a data frame", final_data),
-    "^summarize_artifact_construction\\(\\): \\[original_data\\] must be a data\\.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
-  
+
   expect_error(
     summarize_artifact_construction(list(ticker = "AAPL"), final_data),
-    "^summarize_artifact_construction\\(\\): \\[original_data\\] must be a data\\.frame, not list$"
+    "^Input data must be a data\\.frame\\. Received: list$"
   )
 })
 
@@ -51,12 +51,12 @@ test_that("summarize_artifact_construction validates final_data is a data.frame"
   
   expect_error(
     summarize_artifact_construction(original_data, "not a data frame"),
-    "^summarize_artifact_construction\\(\\): \\[final_data\\] must be a data\\.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
-  
+
   expect_error(
     summarize_artifact_construction(original_data, list(ticker = "AAPL")),
-    "^summarize_artifact_construction\\(\\): \\[final_data\\] must be a data\\.frame, not list$"
+    "^Input data must be a data\\.frame\\. Received: list$"
   )
 })
 
@@ -76,7 +76,7 @@ test_that("summarize_artifact_construction validates removed_detail is data.fram
   
   expect_error(
     summarize_artifact_construction(original_data, final_data, removed_detail = "not a data frame"),
-    "^summarize_artifact_construction\\(\\): \\[removed_detail\\] must be a data\\.frame or NULL, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
 })
 

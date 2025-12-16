@@ -13,18 +13,12 @@
 identify_all_na_rows <- function(data, financial_cols, statement_type) {
   if (!is.character(financial_cols)) {
     stop(paste0(
-      "'financial_cols' must be a character vector, got: ",
+      "financial_cols must be a character vector. Received: ",
       class(financial_cols)[1]
     ))
   }
-  if (!is.character(statement_type) || length(statement_type) != 1) {
-    stop(paste0(
-      "'statement_type' must be a single character string, got: ",
-      class(statement_type)[1],
-      " of length ",
-      length(statement_type)
-    ))
-  }
+  validate_character_scalar(statement_type, name = "statement_type")
+
   if (length(financial_cols) == 0) {
     cat("Warning: No financial columns found for", statement_type, "\n")
     return(data)

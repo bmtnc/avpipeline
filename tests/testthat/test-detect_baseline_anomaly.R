@@ -159,35 +159,35 @@ test_that("fails when baseline_mad is not single value", {
 test_that("fails when threshold is not numeric", {
   expect_error(
     detect_baseline_anomaly(test_value, test_baseline_median, test_baseline_mad, "invalid"),
-    "^Argument 'threshold' must be positive numeric value, received: invalid$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when threshold is not single value", {
   expect_error(
     detect_baseline_anomaly(test_value, test_baseline_median, test_baseline_mad, c(1, 2)),
-    "^Argument 'threshold' must be positive numeric value, received: 1, 2$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when threshold is zero", {
   expect_error(
     detect_baseline_anomaly(test_value, test_baseline_median, test_baseline_mad, 0),
-    "^Argument 'threshold' must be positive numeric value, received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is negative", {
   expect_error(
     detect_baseline_anomaly(test_value, test_baseline_median, test_baseline_mad, -1),
-    "^Argument 'threshold' must be positive numeric value, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when threshold is NA", {
   expect_error(
     detect_baseline_anomaly(test_value, test_baseline_median, test_baseline_mad, NA_real_),
-    "^Argument 'threshold' must be positive numeric value, received: NA$"
+    "^threshold must not be NA$"
   )
 })
 

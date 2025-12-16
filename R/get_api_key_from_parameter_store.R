@@ -10,23 +10,8 @@ get_api_key_from_parameter_store <- function(
   parameter_name = "/avpipeline/alpha-vantage-api-key",
   region = "us-east-1"
 ) {
-  if (!is.character(parameter_name) || length(parameter_name) != 1) {
-    stop(paste0(
-      "get_api_key_from_parameter_store(): [parameter_name] must be a character scalar, not ",
-      class(parameter_name)[1],
-      " of length ",
-      length(parameter_name)
-    ))
-  }
-
-  if (!is.character(region) || length(region) != 1) {
-    stop(paste0(
-      "get_api_key_from_parameter_store(): [region] must be a character scalar, not ",
-      class(region)[1],
-      " of length ",
-      length(region)
-    ))
-  }
+  validate_character_scalar(parameter_name, name = "parameter_name")
+  validate_character_scalar(region, name = "region")
 
   cmd <- sprintf(
     "aws ssm get-parameter --name %s --with-decryption --region %s --query Parameter.Value --output text",

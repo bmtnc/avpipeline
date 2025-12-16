@@ -7,9 +7,7 @@
 #' @return tibble: Single row for the ticker
 #' @keywords internal
 get_ticker_tracking <- function(ticker, tracking) {
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop("get_ticker_tracking(): [ticker] must be a character scalar")
-  }
+  validate_character_scalar(ticker, name = "ticker")
   validate_df_type(tracking)
 
   ticker_row <- dplyr::filter(tracking, ticker == !!ticker)

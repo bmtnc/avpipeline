@@ -22,22 +22,8 @@ validate_continuous_quarters <- function(
   row_num_col = "row_num",
   cleanup_cols = c("days_diff", "is_quarterly", "row_num")
 ) {
-  if (!is.character(date_col) || length(date_col) != 1) {
-    stop(paste0(
-      "Input 'date_col' must be a single character string. Received: ",
-      class(date_col)[1],
-      " of length ",
-      length(date_col)
-    ))
-  }
-  if (!is.character(row_num_col) || length(row_num_col) != 1) {
-    stop(paste0(
-      "Input 'row_num_col' must be a single character string. Received: ",
-      class(row_num_col)[1],
-      " of length ",
-      length(row_num_col)
-    ))
-  }
+  validate_character_scalar(date_col, name = "date_col")
+  validate_character_scalar(row_num_col, name = "row_num_col")
   if (!is.character(cleanup_cols)) {
     stop(paste0(
       "Input 'cleanup_cols' must be a character vector. Received: ",

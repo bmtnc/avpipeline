@@ -17,14 +17,7 @@ build_market_cap_with_splits <- function(
   start_date
 ) {
   # Input validation
-  if (!inherits(start_date, "Date") || length(start_date) != 1) {
-    stop(paste0(
-      "build_market_cap_with_splits(): [start_date] must be a Date scalar, not ",
-      class(start_date)[1],
-      " of length ",
-      length(start_date)
-    ))
-  }
+  validate_date_type(start_date, scalar = TRUE, name = "start_date")
 
   # Clean splits data
   splits_clean <- splits_data %>%

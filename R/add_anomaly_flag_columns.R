@@ -19,7 +19,8 @@ add_anomaly_flag_columns <- function(
   lookahead = 4
 ) {
   # Input validation
-  if (!is.character(metric_cols) || length(metric_cols) == 0) {
+  validate_non_empty(metric_cols, name = "metric_cols")
+  if (!is.character(metric_cols)) {
     stop(paste0(
       "Argument 'metric_cols' must be non-empty character vector, received: ",
       class(metric_cols)[1],
@@ -31,26 +32,9 @@ add_anomaly_flag_columns <- function(
   # Validate data frame and required columns
   validate_df_cols(data, metric_cols)
 
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric, received: ",
-      threshold
-    ))
-  }
-
-  if (!is.numeric(lookback) || length(lookback) != 1 || lookback < 1) {
-    stop(paste0(
-      "Argument 'lookback' must be positive integer, received: ",
-      lookback
-    ))
-  }
-
-  if (!is.numeric(lookahead) || length(lookahead) != 1 || lookahead < 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be positive integer, received: ",
-      lookahead
-    ))
-  }
+  validate_positive(threshold, name = "threshold")
+  validate_positive(lookback, name = "lookback")
+  validate_positive(lookahead, name = "lookahead")
 
   # Check if ticker column exists
   if (!"ticker" %in% names(data)) {

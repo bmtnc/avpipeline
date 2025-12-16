@@ -129,70 +129,70 @@ test_that("fails when metric_cols is not character vector", {
 test_that("fails when metric_cols is empty", {
   expect_error(
     add_anomaly_flag_columns(test_df, character(0)),
-    "^Argument 'metric_cols' must be non-empty character vector, received: character of length 0$"
+    "^metric_cols must not be empty \\(length 0\\)$"
   )
 })
 
 test_that("fails when threshold is not positive numeric", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), threshold = 0),
-    "^Argument 'threshold' must be positive numeric, received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is negative", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), threshold = -1),
-    "^Argument 'threshold' must be positive numeric, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when threshold is not numeric", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), threshold = "invalid"),
-    "^Argument 'threshold' must be positive numeric, received: invalid$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookback is not positive integer", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookback = 0),
-    "^Argument 'lookback' must be positive integer, received: 0$"
+    "^lookback must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when lookback is negative", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookback = -1),
-    "^Argument 'lookback' must be positive integer, received: -1$"
+    "^lookback must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when lookback is not numeric", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookback = "invalid"),
-    "^Argument 'lookback' must be positive integer, received: invalid$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookahead is not positive integer", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookahead = 0),
-    "^Argument 'lookahead' must be positive integer, received: 0$"
+    "^lookahead must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when lookahead is negative", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookahead = -2),
-    "^Argument 'lookahead' must be positive integer, received: -2$"
+    "^lookahead must be greater than 0\\. Received: -2$"
   )
 })
 
 test_that("fails when lookahead is not numeric", {
   expect_error(
     add_anomaly_flag_columns(test_df, c("metric1"), lookahead = TRUE),
-    "^Argument 'lookahead' must be positive integer, received: TRUE$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: logical of length 1$"
   )
 })
 

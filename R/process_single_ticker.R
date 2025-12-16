@@ -28,30 +28,10 @@ process_single_ticker <- function(
   delay_seconds = 1
 ) {
   # Input validation
-  if (!is.character(ticker) || length(ticker) != 1 || nchar(ticker) == 0) {
-    stop(paste0(
-      "process_single_ticker(): [ticker] must be a non-empty character scalar, not ",
-      class(ticker)[1], " of length ", length(ticker)
-    ))
-  }
-  if (!inherits(start_date, "Date") || length(start_date) != 1) {
-    stop(paste0(
-      "process_single_ticker(): [start_date] must be a Date scalar, not ",
-      class(start_date)[1], " of length ", length(start_date)
-    ))
-  }
-  if (!is.numeric(threshold) || length(threshold) != 1 || threshold <= 0) {
-    stop(paste0(
-      "process_single_ticker(): [threshold] must be a positive numeric scalar, not ",
-      class(threshold)[1], " of length ", length(threshold)
-    ))
-  }
-  if (!is.numeric(delay_seconds) || length(delay_seconds) != 1 || delay_seconds < 0) {
-    stop(paste0(
-      "process_single_ticker(): [delay_seconds] must be a non-negative numeric scalar, not ",
-      class(delay_seconds)[1], " of length ", length(delay_seconds)
-    ))
-  }
+  validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
+  validate_date_type(start_date, scalar = TRUE, name = "start_date")
+  validate_positive(threshold, name = "threshold")
+  validate_numeric_scalar(delay_seconds, name = "delay_seconds", gte = 0)
   
   # ============================================================================
   # FETCH ALL DATA

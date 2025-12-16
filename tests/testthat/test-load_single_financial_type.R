@@ -4,15 +4,15 @@ test_that("load_single_financial_type validates cache_path is character scalar",
       cache_path = 123,
       config = BALANCE_SHEET_CONFIG
     ),
-    "^load_single_financial_type\\(\\): \\[cache_path\\] must be a character scalar, not numeric of length 1$"
+    "^cache_path must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
-  
+
   expect_error(
     load_single_financial_type(
       cache_path = c("path1.csv", "path2.csv"),
       config = BALANCE_SHEET_CONFIG
     ),
-    "^load_single_financial_type\\(\\): \\[cache_path\\] must be a character scalar, not character of length 2$"
+    "^cache_path must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 

@@ -176,42 +176,42 @@ test_that("handles quarterly pattern across multiple years", {
 test_that("fails when first_date is not Date object", {
   expect_error(
     extract_quarterly_pattern("2020-01-31", as.Date("2020-12-31"), monthly_dates_2020_2022),
-    "^Input 'first_date' must be a Date object\\. Received: character$"
+    "^first_date must be a Date object\\. Received: character$"
   )
 })
 
 test_that("fails when last_date is not Date object", {
   expect_error(
     extract_quarterly_pattern(as.Date("2020-01-31"), "2020-12-31", monthly_dates_2020_2022),
-    "^Input 'last_date' must be a Date object\\. Received: character$"
+    "^last_date must be a Date object\\. Received: character$"
   )
 })
 
 test_that("fails when monthly_dates is not Date vector", {
   expect_error(
     extract_quarterly_pattern(as.Date("2020-01-31"), as.Date("2020-12-31"), c("2020-01-31", "2020-02-29")),
-    "^Input 'monthly_dates' must be a vector of Date objects\\. Received: character$"
+    "^monthly_dates must be a Date object\\. Received: character$"
   )
 })
 
 test_that("fails when first_date has multiple values", {
   expect_error(
     extract_quarterly_pattern(c(as.Date("2020-01-31"), as.Date("2020-02-29")), as.Date("2020-12-31"), monthly_dates_2020_2022),
-    "^Input 'first_date' must be a single Date value\\. Received length: 2$"
+    "^first_date must be a Date scalar \\(length 1\\)\\. Received length: 2$"
   )
 })
 
 test_that("fails when last_date has multiple values", {
   expect_error(
     extract_quarterly_pattern(as.Date("2020-01-31"), c(as.Date("2020-12-31"), as.Date("2021-01-31")), monthly_dates_2020_2022),
-    "^Input 'last_date' must be a single Date value\\. Received length: 2$"
+    "^last_date must be a Date scalar \\(length 1\\)\\. Received length: 2$"
   )
 })
 
 test_that("fails when monthly_dates is empty", {
   expect_error(
     extract_quarterly_pattern(as.Date("2020-01-31"), as.Date("2020-12-31"), as.Date(character(0))),
-    "^Input 'monthly_dates' cannot be empty$"
+    "^monthly_dates must not be empty \\(length 0\\)$"
   )
 })
 

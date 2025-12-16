@@ -12,26 +12,8 @@ fetch_all_ticker_data <- function(
   ticker,
   delay_seconds = 1
 ) {
-  if (!is.character(ticker) || length(ticker) != 1 || nchar(ticker) == 0) {
-    stop(paste0(
-      "fetch_all_ticker_data(): [ticker] must be a non-empty character scalar, not ",
-      class(ticker)[1],
-      " of length ",
-      length(ticker)
-    ))
-  }
-  if (
-    !is.numeric(delay_seconds) ||
-      length(delay_seconds) != 1 ||
-      delay_seconds < 0
-  ) {
-    stop(paste0(
-      "fetch_all_ticker_data(): [delay_seconds] must be a non-negative numeric scalar, not ",
-      class(delay_seconds)[1],
-      " of length ",
-      length(delay_seconds)
-    ))
-  }
+  validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
+  validate_numeric_scalar(delay_seconds, name = "delay_seconds", gte = 0)
 
   # Initialize API log
   api_log <- tibble::tibble(

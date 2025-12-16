@@ -13,26 +13,9 @@ calculate_invested_capital_per_share <- function(
   lease_obligations_ps,
   equity_ps
 ) {
-  if (!is.numeric(debt_total_ps)) {
-    stop(paste0(
-      "calculate_invested_capital_per_share(): [debt_total_ps] must be numeric, not ",
-      class(debt_total_ps)[1]
-    ))
-  }
-
-  if (!is.numeric(lease_obligations_ps)) {
-    stop(paste0(
-      "calculate_invested_capital_per_share(): [lease_obligations_ps] must be numeric, not ",
-      class(lease_obligations_ps)[1]
-    ))
-  }
-
-  if (!is.numeric(equity_ps)) {
-    stop(paste0(
-      "calculate_invested_capital_per_share(): [equity_ps] must be numeric, not ",
-      class(equity_ps)[1]
-    ))
-  }
+  validate_numeric_vector(debt_total_ps, allow_empty = TRUE, name = "debt_total_ps")
+  validate_numeric_vector(lease_obligations_ps, allow_empty = TRUE, name = "lease_obligations_ps")
+  validate_numeric_vector(equity_ps, allow_empty = TRUE, name = "equity_ps")
 
   # Calculate invested capital
   dplyr::coalesce(debt_total_ps, 0) +

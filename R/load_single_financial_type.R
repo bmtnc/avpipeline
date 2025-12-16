@@ -7,14 +7,7 @@
 #' @return tibble: Loaded financial data
 #' @keywords internal
 load_single_financial_type <- function(cache_path, config) {
-  if (!is.character(cache_path) || length(cache_path) != 1) {
-    stop(paste0(
-      "load_single_financial_type(): [cache_path] must be a character scalar, not ",
-      class(cache_path)[1],
-      " of length ",
-      length(cache_path)
-    ))
-  }
+  validate_character_scalar(cache_path, name = "cache_path")
   if (!is.list(config)) {
     stop(paste0(
       "load_single_financial_type(): [config] must be a list, not ",

@@ -32,7 +32,7 @@ test_that("clean_all_statement_anomalies validates threshold parameter", {
 
   expect_error(
     clean_all_statement_anomalies(statements, threshold = -1),
-    "^clean_all_statement_anomalies\\(\\): \\[threshold\\] must be a positive numeric scalar"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 

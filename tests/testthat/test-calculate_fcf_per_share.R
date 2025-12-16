@@ -39,17 +39,17 @@ test_that("calculate_fcf_per_share handles edge cases", {
 test_that("calculate_fcf_per_share validates input types", {
   expect_error(
     calculate_fcf_per_share("not_numeric", c(-2)),
-    "^calculate_fcf_per_share\\(\\): \\[operating_cf_ps\\] must be numeric, not character$"
+    "^operating_cf_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_fcf_per_share(c(10), "not_numeric"),
-    "^calculate_fcf_per_share\\(\\): \\[capex_ps\\] must be numeric, not character$"
+    "^capex_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_fcf_per_share(list(10), c(-2)),
-    "^calculate_fcf_per_share\\(\\): \\[operating_cf_ps\\] must be numeric, not list$"
+    "^operating_cf_ps must be a numeric vector\\. Received: list$"
   )
 })
 

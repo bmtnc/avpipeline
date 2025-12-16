@@ -12,21 +12,15 @@ parse_splits_response <- function(response, ticker) {
   # Parse JSON response
   content <- httr::content(response, "text", encoding = "UTF-8")
   response_content <- jsonlite::fromJSON(content)
-  
+
   # Check if we got a proper JSON structure before using $ operator
   if (!is.list(response_content)) {
-    stop("API returned non-JSON response for ticker ", ticker, ". Response: ", 
+    stop("API returned non-JSON response for ticker ", ticker, ". Response: ",
          substr(as.character(response_content), 1, 200))
   }
-  
+
   # Check for API error messages
-  if ("Error Message" %in% names(response_content)) {
-    stop("Alpha Vantage API error: ", response_content$`Error Message`)
-  }
-  
-  if ("Note" %in% names(response_content)) {
-    stop("Alpha Vantage API note: ", response_content$Note)
-  }
+  validate_api_response(response_content, ticker = ticker)
   
   if (is.null(response_content$data) || length(response_content$data) == 0) {
     # No split data available - return empty data.frame with correct structure

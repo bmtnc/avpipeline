@@ -62,14 +62,14 @@ test_that("excludes current point and immediate neighbors", {
 test_that("fails when i is not numeric", {
   expect_error(
     calculate_baseline("invalid", test_n, test_lookback, test_lookahead),
-    "^Argument 'i' must be single numeric value, received: invalid$"
+    "^i must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when i is not single value", {
   expect_error(
     calculate_baseline(c(1, 2), test_n, test_lookback, test_lookahead),
-    "^Argument 'i' must be single numeric value, received: 1, 2$"
+    "^i must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
@@ -90,63 +90,63 @@ test_that("fails when i is greater than n", {
 test_that("fails when n is not numeric", {
   expect_error(
     calculate_baseline(8, "invalid", test_lookback, test_lookahead),
-    "^Argument 'n' must be single numeric value, received: invalid$"
+    "^n must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when n is not single value", {
   expect_error(
     calculate_baseline(8, c(10, 15), test_lookback, test_lookahead),
-    "^Argument 'n' must be single numeric value, received: 10, 15$"
+    "^n must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when n is less than 1", {
   expect_error(
     calculate_baseline(8, 0, test_lookback, test_lookahead),
-    "^Argument 'n' must be positive integer, received: 0$"
+    "^n must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when lookback is not numeric", {
   expect_error(
     calculate_baseline(8, test_n, "invalid", test_lookahead),
-    "^Argument 'lookback' must be single numeric value, received: invalid$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookback is not single value", {
   expect_error(
     calculate_baseline(8, test_n, c(2, 4), test_lookahead),
-    "^Argument 'lookback' must be single numeric value, received: 2, 4$"
+    "^lookback must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when lookback is less than 1", {
   expect_error(
     calculate_baseline(8, test_n, 0, test_lookahead),
-    "^Argument 'lookback' must be positive integer, received: 0$"
+    "^lookback must be greater than 0\\. Received: 0$"
   )
 })
 
 test_that("fails when lookahead is not numeric", {
   expect_error(
     calculate_baseline(8, test_n, test_lookback, "invalid"),
-    "^Argument 'lookahead' must be single numeric value, received: invalid$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
 test_that("fails when lookahead is not single value", {
   expect_error(
     calculate_baseline(8, test_n, test_lookback, c(3, 5)),
-    "^Argument 'lookahead' must be single numeric value, received: 3, 5$"
+    "^lookahead must be a numeric scalar \\(length 1\\)\\. Received: numeric of length 2$"
   )
 })
 
 test_that("fails when lookahead is less than 1", {
   expect_error(
     calculate_baseline(8, test_n, test_lookback, 0),
-    "^Argument 'lookahead' must be positive integer, received: 0$"
+    "^lookahead must be greater than 0\\. Received: 0$"
   )
 })
 

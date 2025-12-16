@@ -13,39 +13,9 @@ join_daily_and_financial_data <- function(
   market_cap_data,
   ttm_data
 ) {
-  if (!is.data.frame(price_data)) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [price_data] must be a data.frame, not ",
-      class(price_data)[1]
-    ))
-  }
-  if (!is.data.frame(market_cap_data)) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [market_cap_data] must be a data.frame, not ",
-      class(market_cap_data)[1]
-    ))
-  }
-  if (!is.data.frame(ttm_data)) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [ttm_data] must be a data.frame, not ",
-      class(ttm_data)[1]
-    ))
-  }
-  if (!all(c("ticker", "date") %in% names(price_data))) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [price_data] must contain 'ticker' and 'date' columns"
-    ))
-  }
-  if (!all(c("ticker", "date") %in% names(market_cap_data))) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [market_cap_data] must contain 'ticker' and 'date' columns"
-    ))
-  }
-  if (!all(c("ticker", "date") %in% names(ttm_data))) {
-    stop(paste0(
-      "join_daily_and_financial_data(): [ttm_data] must contain 'ticker' and 'date' columns"
-    ))
-  }
+  validate_df_cols(price_data, c("ticker", "date"))
+  validate_df_cols(market_cap_data, c("ticker", "date"))
+  validate_df_cols(ttm_data, c("ticker", "date"))
 
   price_clean <- price_data %>%
     dplyr::select(-dplyr::any_of("as_of_date"))

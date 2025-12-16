@@ -8,12 +8,8 @@
 #' @return list: has_changes (logical), new_records_count (integer), latest_date (Date or NULL)
 #' @keywords internal
 detect_data_changes <- function(existing_data, new_data, date_column) {
-  if (!is.data.frame(new_data)) {
-    stop("detect_data_changes(): [new_data] must be a data.frame")
-  }
-  if (!is.character(date_column) || length(date_column) != 1) {
-    stop("detect_data_changes(): [date_column] must be a character scalar")
-  }
+  validate_df_type(new_data)
+  validate_character_scalar(date_column, allow_empty = FALSE, name = "date_column")
   if (!date_column %in% names(new_data)) {
     stop(paste0(
       "detect_data_changes(): [date_column] '",

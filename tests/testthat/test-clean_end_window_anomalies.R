@@ -157,28 +157,28 @@ test_that("fails when metric_cols is not character vector", {
 test_that("fails when metric_cols is empty", {
   expect_error(
     clean_end_window_anomalies(test_df, character(0)),
-    "^Argument 'metric_cols' must be non-empty character vector, received: character of length 0$"
+    "^metric_cols must not be empty \\(length 0\\)$"
   )
 })
 
 test_that("fails when end_window_size is not positive integer", {
   expect_error(
     clean_end_window_anomalies(test_df, "revenue", end_window_size = 0),
-    "^Argument 'end_window_size' must be positive integer, received: 0$"
+    "^end_window_size must be >= 1\\. Received: 0$"
   )
 })
 
 test_that("fails when threshold is not positive numeric", {
   expect_error(
     clean_end_window_anomalies(test_df, "revenue", threshold = -1),
-    "^Argument 'threshold' must be positive numeric, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
 test_that("fails when min_observations is not positive integer", {
   expect_error(
     clean_end_window_anomalies(test_df, "revenue", min_observations = 0),
-    "^Argument 'min_observations' must be positive integer, received: 0$"
+    "^min_observations must be >= 1\\. Received: 0$"
   )
 })
 

@@ -14,9 +14,7 @@
 read_cached_data <- function(cache_file, date_columns = c("date", "as_of_date")) {
   
   # Validate input
-  if (!file.exists(cache_file)) {
-    stop("Cache file does not exist: ", cache_file)
-  }
+  validate_file_exists(cache_file, name = "cache_file")
   
   # Read the CSV file
   data <- read.csv(cache_file, stringsAsFactors = FALSE)

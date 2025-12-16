@@ -16,26 +16,10 @@ set_ggplot_theme <- function(
   axis_title_size = 12,
   strip_text_size = 11
 ) {
-  if (!is.numeric(base_size) || length(base_size) != 1 || base_size <= 0) {
-    stop("Argument 'base_size' must be a positive numeric value")
-  }
-  if (!is.numeric(title_size) || length(title_size) != 1 || title_size <= 0) {
-    stop("Argument 'title_size' must be a positive numeric value")
-  }
-  if (
-    !is.numeric(axis_title_size) ||
-      length(axis_title_size) != 1 ||
-      axis_title_size <= 0
-  ) {
-    stop("Argument 'axis_title_size' must be a positive numeric value")
-  }
-  if (
-    !is.numeric(strip_text_size) ||
-      length(strip_text_size) != 1 ||
-      strip_text_size <= 0
-  ) {
-    stop("Argument 'strip_text_size' must be a positive numeric value")
-  }
+  validate_positive(base_size, name = "base_size")
+  validate_positive(title_size, name = "title_size")
+  validate_positive(axis_title_size, name = "axis_title_size")
+  validate_positive(strip_text_size, name = "strip_text_size")
 
   # Create custom theme based on theme_minimal
   financial_theme <- ggplot2::theme_minimal(base_size = base_size) +

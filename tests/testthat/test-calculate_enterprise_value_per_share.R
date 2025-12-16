@@ -78,27 +78,27 @@ test_that("calculate_enterprise_value_per_share handles multiple observations", 
 test_that("calculate_enterprise_value_per_share validates input types", {
   expect_error(
     calculate_enterprise_value_per_share("not_numeric", c(10), c(5), c(20), c(10)),
-    "^calculate_enterprise_value_per_share\\(\\): \\[price\\] must be numeric, not character$"
+    "^price must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_enterprise_value_per_share(c(100), "not_numeric", c(5), c(20), c(10)),
-    "^calculate_enterprise_value_per_share\\(\\): \\[debt_total_ps\\] must be numeric, not character$"
+    "^debt_total_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_enterprise_value_per_share(c(100), c(10), "not_numeric", c(20), c(10)),
-    "^calculate_enterprise_value_per_share\\(\\): \\[lease_obligations_ps\\] must be numeric, not character$"
+    "^lease_obligations_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_enterprise_value_per_share(c(100), c(10), c(5), "not_numeric", c(10)),
-    "^calculate_enterprise_value_per_share\\(\\): \\[cash_st_investments_ps\\] must be numeric, not character$"
+    "^cash_st_investments_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_enterprise_value_per_share(c(100), c(10), c(5), c(20), "not_numeric"),
-    "^calculate_enterprise_value_per_share\\(\\): \\[lt_investments_ps\\] must be numeric, not character$"
+    "^lt_investments_ps must be a numeric vector\\. Received: character$"
   )
 })
 

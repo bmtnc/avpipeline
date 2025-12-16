@@ -72,22 +72,22 @@ test_that("calculate_invested_capital_per_share handles multiple observations", 
 test_that("calculate_invested_capital_per_share validates input types", {
   expect_error(
     calculate_invested_capital_per_share("not_numeric", c(10), c(200)),
-    "^calculate_invested_capital_per_share\\(\\): \\[debt_total_ps\\] must be numeric, not character$"
+    "^debt_total_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_invested_capital_per_share(c(50), "not_numeric", c(200)),
-    "^calculate_invested_capital_per_share\\(\\): \\[lease_obligations_ps\\] must be numeric, not character$"
+    "^lease_obligations_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_invested_capital_per_share(c(50), c(10), "not_numeric"),
-    "^calculate_invested_capital_per_share\\(\\): \\[equity_ps\\] must be numeric, not character$"
+    "^equity_ps must be a numeric vector\\. Received: character$"
   )
-  
+
   expect_error(
     calculate_invested_capital_per_share(list(50), c(10), c(200)),
-    "^calculate_invested_capital_per_share\\(\\): \\[debt_total_ps\\] must be numeric, not list$"
+    "^debt_total_ps must be a numeric vector\\. Received: list$"
   )
 })
 

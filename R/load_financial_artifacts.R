@@ -12,24 +12,9 @@ load_financial_artifacts <- function() {
   price_path <- "cache/price_artifact.csv"
 
   # Validate files exist
-  if (!file.exists(financial_path)) {
-    stop(paste0(
-      "load_financial_artifacts(): Financial statements file not found at ",
-      financial_path
-    ))
-  }
-  if (!file.exists(market_cap_path)) {
-    stop(paste0(
-      "load_financial_artifacts(): Market cap file not found at ",
-      market_cap_path
-    ))
-  }
-  if (!file.exists(price_path)) {
-    stop(paste0(
-      "load_financial_artifacts(): Price file not found at ",
-      price_path
-    ))
-  }
+  validate_file_exists(financial_path, name = "Financial statements file")
+  validate_file_exists(market_cap_path, name = "Market cap file")
+  validate_file_exists(price_path, name = "Price file")
 
   # Load data with proper date column handling
   financial_statements <- read_cached_data(

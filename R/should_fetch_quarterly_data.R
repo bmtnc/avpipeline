@@ -16,11 +16,7 @@ should_fetch_quarterly_data <- function(
   window_days = DATA_TYPE_REFRESH_CONFIG$quarterly$window_days,
   fallback_max_days = DATA_TYPE_REFRESH_CONFIG$quarterly$fallback_max_days
 ) {
-  if (!inherits(reference_date, "Date")) {
-    stop(
-      "should_fetch_quarterly_data(): [reference_date] must be a Date object"
-    )
-  }
+  validate_date_type(reference_date, scalar = TRUE, name = "reference_date")
 
   # New ticker - no prior fetch
   if (is.na(quarterly_last_fetched_at)) {

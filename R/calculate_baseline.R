@@ -11,55 +11,15 @@
 #' @export
 calculate_baseline <- function(i, n, lookback, lookahead) {
   # Input validation - check types and lengths first
-  if (!is.numeric(i) || length(i) != 1) {
-    stop(paste0(
-      "Argument 'i' must be single numeric value, received: ",
-      toString(i)
-    ))
-  }
-
-  if (!is.numeric(n) || length(n) != 1) {
-    stop(paste0(
-      "Argument 'n' must be single numeric value, received: ",
-      toString(n)
-    ))
-  }
-
-  if (!is.numeric(lookback) || length(lookback) != 1) {
-    stop(paste0(
-      "Argument 'lookback' must be single numeric value, received: ",
-      toString(lookback)
-    ))
-  }
-
-  if (!is.numeric(lookahead) || length(lookahead) != 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be single numeric value, received: ",
-      toString(lookahead)
-    ))
-  }
+  validate_numeric_scalar(i, name = "i")
+  validate_numeric_scalar(n, name = "n")
+  validate_numeric_scalar(lookback, name = "lookback")
+  validate_numeric_scalar(lookahead, name = "lookahead")
 
   # Check individual parameter constraints
-  if (n < 1) {
-    stop(paste0(
-      "Argument 'n' must be positive integer, received: ",
-      toString(n)
-    ))
-  }
-
-  if (lookback < 1) {
-    stop(paste0(
-      "Argument 'lookback' must be positive integer, received: ",
-      toString(lookback)
-    ))
-  }
-
-  if (lookahead < 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be positive integer, received: ",
-      toString(lookahead)
-    ))
-  }
+  validate_positive(n, name = "n")
+  validate_positive(lookback, name = "lookback")
+  validate_positive(lookahead, name = "lookahead")
 
   # Now check cross-parameter constraints (i vs n)
   if (i < 1 || i > n) {

@@ -1,7 +1,7 @@
 test_that("validate_quarterly_continuity validates financial_statements parameter", {
   expect_error(
     validate_quarterly_continuity("not a df"),
-    "^validate_quarterly_continuity\\(\\): \\[financial_statements\\] must be a data.frame, not character$"
+    "^Input data must be a data\\.frame\\. Received: character$"
   )
 })
 
@@ -10,7 +10,7 @@ test_that("validate_quarterly_continuity validates required columns", {
 
   expect_error(
     validate_quarterly_continuity(test_data),
-    "^validate_quarterly_continuity\\(\\): \\[financial_statements\\] must contain columns: ticker, fiscalDateEnding$"
+    "^Required columns missing from data: ticker, fiscalDateEnding\\. Available columns: wrong_col$"
   )
 })
 

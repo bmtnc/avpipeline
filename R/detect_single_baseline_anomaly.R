@@ -16,58 +16,11 @@ detect_single_baseline_anomaly <- function(
   lookahead,
   threshold
 ) {
-  if (!is.numeric(i) || length(i) != 1) {
-    stop(paste0(
-      "Argument 'i' must be single numeric value, received: ",
-      toString(i)
-    ))
-  }
-  if (!is.numeric(values)) {
-    stop(paste0(
-      "Argument 'values' must be numeric vector, received: ",
-      class(values)[1]
-    ))
-  }
-  if (length(values) == 0) {
-    stop("Argument 'values' cannot be empty vector")
-  }
-  if (!is.numeric(lookback) || length(lookback) != 1) {
-    stop(paste0(
-      "Argument 'lookback' must be single numeric value, received: ",
-      toString(lookback)
-    ))
-  }
-  if (!is.numeric(lookahead) || length(lookahead) != 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be single numeric value, received: ",
-      toString(lookahead)
-    ))
-  }
-  if (!is.numeric(threshold) || length(threshold) != 1) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric value, received: ",
-      toString(threshold)
-    ))
-  }
-  # Check individual parameter constraints
-  if (lookback < 1) {
-    stop(paste0(
-      "Argument 'lookback' must be positive integer, received: ",
-      toString(lookback)
-    ))
-  }
-  if (lookahead < 1) {
-    stop(paste0(
-      "Argument 'lookahead' must be positive integer, received: ",
-      toString(lookahead)
-    ))
-  }
-  if (is.na(threshold) || threshold <= 0) {
-    stop(paste0(
-      "Argument 'threshold' must be positive numeric value, received: ",
-      toString(threshold)
-    ))
-  }
+  validate_numeric_scalar(i, name = "i")
+  validate_numeric_vector(values, allow_empty = FALSE, name = "values")
+  validate_numeric_scalar(lookback, name = "lookback", gte = 1)
+  validate_numeric_scalar(lookahead, name = "lookahead", gte = 1)
+  validate_positive(threshold, name = "threshold")
   # Check cross-parameter constraints (i vs values length)
   if (i < 1 || i > length(values)) {
     stop(paste0(

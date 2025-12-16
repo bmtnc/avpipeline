@@ -102,9 +102,9 @@ test_that("update_ticker_tracking adds new ticker if not exists", {
 test_that("update_ticker_tracking validates inputs", {
   tracking <- create_empty_refresh_tracking()
 
-  expect_error(update_ticker_tracking("not_df", "AAPL", list()), "tracking")
-  expect_error(update_ticker_tracking(tracking, 123, list()), "ticker")
-  expect_error(update_ticker_tracking(tracking, "AAPL", "not_list"), "updates")
+  expect_error(update_ticker_tracking("not_df", "AAPL", list()), "Input data must be a data\\.frame\\. Received: character")
+  expect_error(update_ticker_tracking(tracking, 123, list()), "ticker must be a character scalar")
+  expect_error(update_ticker_tracking(tracking, "AAPL", "not_list"), "updates.*must be a list")
 })
 
 test_that("update_tracking_after_fetch updates price timestamp", {

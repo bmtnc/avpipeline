@@ -7,9 +7,7 @@
 #' @return data.frame: Dataset with only essential columns
 #' @keywords internal
 select_essential_columns <- function(data) {
-  if (!is.data.frame(data)) {
-    stop(paste0("select_essential_columns(): [data] must be a data.frame, not ", class(data)[1]))
-  }
+  validate_df_type(data)
 
   date_cols <- c(
     "date",

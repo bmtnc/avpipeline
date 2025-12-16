@@ -20,33 +20,6 @@ detect_time_series_anomalies <- function(
       class(values)[1]
     ))
   }
-  if (!is.numeric(threshold) || length(threshold) != 1) {
-    stop(paste0(
-      "Argument 'threshold' must be a single numeric value. Received: ",
-      class(threshold)[1],
-      " of length ",
-      length(threshold)
-    ))
-  }
-  if (threshold <= 0) {
-    stop(paste0("Argument 'threshold' must be positive. Received: ", threshold))
-  }
-  if (!is.numeric(min_observations) || length(min_observations) != 1) {
-    stop(paste0(
-      "Argument 'min_observations' must be a single positive integer. Received: ",
-      class(min_observations)[1],
-      " of length ",
-      length(min_observations)
-    ))
-  }
-  if (min_observations < 1) {
-    stop(paste0(
-      "Argument 'min_observations' must be a single positive integer. Received: ",
-      class(min_observations)[1],
-      " with value ",
-      min_observations
-    ))
-  }
   if (length(values) == 0) {
     return(logical(0))
   }
@@ -59,6 +32,8 @@ detect_time_series_anomalies <- function(
       " total values."
     ))
   }
+  validate_positive(threshold, name = "threshold")
+  validate_numeric_scalar(min_observations, name = "min_observations", gte = 1)
   # Check if we have enough observations
   if (length(values) < min_observations) {
     stop(paste0(

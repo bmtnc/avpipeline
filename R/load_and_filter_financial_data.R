@@ -14,23 +14,9 @@ load_and_filter_financial_data <- function(
   file_path,
   min_date = as.Date("2004-12-31")
 ) {
-  if (!is.character(file_path) || length(file_path) != 1) {
-    stop(paste0(
-      "Input 'file_path' must be a single character string. Received: ",
-      class(file_path)[1],
-      " of length ",
-      length(file_path)
-    ))
-  }
-  if (!file.exists(file_path)) {
-    stop(paste0("File does not exist: ", file_path))
-  }
-  if (!inherits(min_date, "Date")) {
-    stop(paste0(
-      "Input 'min_date' must be a Date object. Received: ",
-      class(min_date)[1]
-    ))
-  }
+  validate_character_scalar(file_path, name = "file_path")
+  validate_file_exists(file_path, name = "File")
+  validate_date_type(min_date, scalar = TRUE, name = "min_date")
 
   # Define date columns for cached data reader
   date_columns <- c("fiscalDateEnding", "reportedDate", "as_of_date")

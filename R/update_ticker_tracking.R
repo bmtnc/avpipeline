@@ -8,12 +8,8 @@
 #' @return tibble: Updated tracking dataframe
 #' @keywords internal
 update_ticker_tracking <- function(tracking, ticker, updates) {
-  if (!is.data.frame(tracking)) {
-    stop("update_ticker_tracking(): [tracking] must be a data.frame")
-  }
-  if (!is.character(ticker) || length(ticker) != 1) {
-    stop("update_ticker_tracking(): [ticker] must be a character scalar")
-  }
+  validate_df_type(tracking)
+  validate_character_scalar(ticker, name = "ticker")
   if (!is.list(updates)) {
     stop("update_ticker_tracking(): [updates] must be a list")
   }

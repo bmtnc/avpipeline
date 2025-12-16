@@ -11,15 +11,9 @@ parse_price_response <- function(response, ticker, datatype) {
     # Parse JSON response
     content <- httr::content(response, as = "text", encoding = "UTF-8")
     data <- jsonlite::fromJSON(content)
-    
+
     # Check for API error messages
-    if ("Error Message" %in% names(data)) {
-      stop("API Error: ", data$`Error Message`)
-    }
-    
-    if ("Note" %in% names(data)) {
-      warning("API Note: ", data$Note)
-    }
+    validate_api_response(data, ticker = ticker)
     
     # Extract time series data
     time_series_key <- "Time Series (Daily)"

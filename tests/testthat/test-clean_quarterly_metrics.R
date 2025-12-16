@@ -106,7 +106,7 @@ test_that("fails when metric_cols is empty vector", {
       date_col = "date",
       ticker_col = "ticker"
     ),
-    "^Argument 'metric_cols' must be non-empty character vector, received: character of length 0$"
+    "^metric_cols must not be empty \\(length 0\\)$"
   )
 })
 
@@ -118,7 +118,7 @@ test_that("fails when date_col is not single character string", {
       date_col = c("date1", "date2"),
       ticker_col = "ticker"
     ),
-    "^Argument 'date_col' must be single character string, received: character of length 2$"
+    "^date_col must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 
@@ -130,7 +130,7 @@ test_that("fails when date_col is not character", {
       date_col = 123,
       ticker_col = "ticker"
     ),
-    "^Argument 'date_col' must be single character string, received: numeric of length 1$"
+    "^date_col must be a character scalar \\(length 1\\)\\. Received: numeric of length 1$"
   )
 })
 
@@ -142,7 +142,7 @@ test_that("fails when ticker_col is not single character string", {
       date_col = "date",
       ticker_col = c("ticker1", "ticker2")
     ),
-    "^Argument 'ticker_col' must be single character string, received: character of length 2$"
+    "^ticker_col must be a character scalar \\(length 1\\)\\. Received: character of length 2$"
   )
 })
 
@@ -154,7 +154,7 @@ test_that("fails when ticker_col is not character", {
       date_col = "date",
       ticker_col = TRUE
     ),
-    "^Argument 'ticker_col' must be single character string, received: logical of length 1$"
+    "^ticker_col must be a character scalar \\(length 1\\)\\. Received: logical of length 1$"
   )
 })
 
@@ -167,7 +167,7 @@ test_that("fails when threshold is not positive numeric", {
       ticker_col = "ticker",
       threshold = 0
     ),
-    "^Argument 'threshold' must be positive numeric, received: 0$"
+    "^threshold must be greater than 0\\. Received: 0$"
   )
 })
 
@@ -180,7 +180,7 @@ test_that("fails when threshold is negative", {
       ticker_col = "ticker",
       threshold = -1
     ),
-    "^Argument 'threshold' must be positive numeric, received: -1$"
+    "^threshold must be greater than 0\\. Received: -1$"
   )
 })
 
@@ -193,7 +193,7 @@ test_that("fails when threshold is not numeric", {
       ticker_col = "ticker",
       threshold = "invalid"
     ),
-    "^Argument 'threshold' must be positive numeric, received: invalid$"
+    "^threshold must be a numeric scalar \\(length 1\\)\\. Received: character of length 1$"
   )
 })
 
@@ -206,7 +206,7 @@ test_that("fails when lookback is not positive integer", {
       ticker_col = "ticker",
       lookback = 0
     ),
-    "^Argument 'lookback' must be positive integer, received: 0$"
+    "^lookback must be >= 1\\. Received: 0$"
   )
 })
 
@@ -219,7 +219,7 @@ test_that("fails when lookback is negative", {
       ticker_col = "ticker",
       lookback = -2
     ),
-    "^Argument 'lookback' must be positive integer, received: -2$"
+    "^lookback must be >= 1\\. Received: -2$"
   )
 })
 
@@ -232,7 +232,7 @@ test_that("fails when lookahead is not positive integer", {
       ticker_col = "ticker",
       lookahead = 0
     ),
-    "^Argument 'lookahead' must be positive integer, received: 0$"
+    "^lookahead must be >= 1\\. Received: 0$"
   )
 })
 
@@ -245,7 +245,7 @@ test_that("fails when lookahead is negative", {
       ticker_col = "ticker",
       lookahead = -3
     ),
-    "^Argument 'lookahead' must be positive integer, received: -3$"
+    "^lookahead must be >= 1\\. Received: -3$"
   )
 })
 

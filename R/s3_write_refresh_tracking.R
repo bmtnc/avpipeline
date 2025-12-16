@@ -12,14 +12,8 @@ s3_write_refresh_tracking <- function(
   bucket_name,
   region = "us-east-1"
 ) {
-  if (!is.data.frame(tracking)) {
-    stop("s3_write_refresh_tracking(): [tracking] must be a data.frame")
-  }
-  if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop(
-      "s3_write_refresh_tracking(): [bucket_name] must be a character scalar"
-    )
-  }
+  validate_df_type(tracking)
+  validate_character_scalar(bucket_name, name = "bucket_name")
 
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)

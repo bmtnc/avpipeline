@@ -14,9 +14,10 @@
 #' @export
 #'
 make_alpha_vantage_request <- function(ticker, config, api_key = NULL, ...) {
-  if (missing(ticker) || !is.character(ticker) || length(ticker) != 1) {
+  if (missing(ticker)) {
     stop("ticker must be a single character string")
   }
+  validate_character_scalar(ticker, name = "ticker")
   if (missing(config) || !is.list(config)) {
     stop("config must be a configuration list object")
   }

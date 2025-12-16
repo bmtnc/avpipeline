@@ -6,21 +6,7 @@
 #' @return tibble: Financial statements with only continuous quarterly series
 #' @keywords internal
 validate_quarterly_continuity <- function(financial_statements) {
-  if (!is.data.frame(financial_statements)) {
-    stop(paste0(
-      "validate_quarterly_continuity(): [financial_statements] must be a data.frame, not ",
-      class(financial_statements)[1]
-    ))
-  }
-
-  required_cols <- c("ticker", "fiscalDateEnding")
-  missing_cols <- setdiff(required_cols, names(financial_statements))
-  if (length(missing_cols) > 0) {
-    stop(paste0(
-      "validate_quarterly_continuity(): [financial_statements] must contain columns: ",
-      paste(required_cols, collapse = ", ")
-    ))
-  }
+  validate_df_cols(financial_statements, c("ticker", "fiscalDateEnding"))
 
   message(paste0(
     "Finding continuous quarterly series for each ticker using fiscal pattern validation..."

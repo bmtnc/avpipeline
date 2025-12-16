@@ -15,20 +15,15 @@ fetch_single_financial_type <- function(tickers, config, cache_path) {
       class(tickers)[1]
     ))
   }
+
   if (!is.list(config)) {
     stop(paste0(
       "fetch_single_financial_type(): [config] must be a list, not ",
       class(config)[1]
     ))
   }
-  if (!is.character(cache_path) || length(cache_path) != 1) {
-    stop(paste0(
-      "fetch_single_financial_type(): [cache_path] must be a character scalar, not ",
-      class(cache_path)[1],
-      " of length ",
-      length(cache_path)
-    ))
-  }
+
+  validate_character_scalar(cache_path, name = "cache_path")
 
   message(paste0("\n=== Processing ", config$data_type_name, " Data ==="))
 

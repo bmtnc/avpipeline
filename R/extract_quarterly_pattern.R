@@ -12,39 +12,11 @@
 #'   pattern for this company from first_date through last_date inclusive
 #' @export
 extract_quarterly_pattern <- function(first_date, last_date, monthly_dates) {
-  if (!inherits(first_date, "Date")) {
-    stop(paste0(
-      "Input 'first_date' must be a Date object. Received: ",
-      class(first_date)[1]
-    ))
-  }
-  if (!inherits(last_date, "Date")) {
-    stop(paste0(
-      "Input 'last_date' must be a Date object. Received: ",
-      class(last_date)[1]
-    ))
-  }
-  if (!inherits(monthly_dates, "Date")) {
-    stop(paste0(
-      "Input 'monthly_dates' must be a vector of Date objects. Received: ",
-      class(monthly_dates)[1]
-    ))
-  }
-  if (length(first_date) != 1) {
-    stop(paste0(
-      "Input 'first_date' must be a single Date value. Received length: ",
-      length(first_date)
-    ))
-  }
-  if (length(last_date) != 1) {
-    stop(paste0(
-      "Input 'last_date' must be a single Date value. Received length: ",
-      length(last_date)
-    ))
-  }
-  if (length(monthly_dates) == 0) {
-    stop("Input 'monthly_dates' cannot be empty")
-  }
+  validate_date_type(first_date, scalar = TRUE, name = "first_date")
+  validate_date_type(last_date, scalar = TRUE, name = "last_date")
+  validate_date_type(monthly_dates, scalar = FALSE, name = "monthly_dates")
+  validate_non_empty(monthly_dates, name = "monthly_dates")
+
   if (first_date > last_date) {
     stop(paste0(
       "Input 'first_date' (",

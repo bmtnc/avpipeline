@@ -49,7 +49,7 @@ test_that("clean_single_statement_anomalies validates threshold parameter", {
 
   expect_error(
     clean_single_statement_anomalies(test_data, c("metric1"), "test", threshold = -1),
-    "^clean_single_statement_anomalies\\(\\): \\[threshold\\] must be a positive numeric scalar"
+    "^clean_single_statement_anomalies\\(\\): \\[threshold\\] must be a positive numeric scalar, not numeric$"
   )
 })
 
@@ -65,7 +65,7 @@ test_that("clean_single_statement_anomalies validates min_obs parameter", {
 
   expect_error(
     clean_single_statement_anomalies(test_data, c("metric1"), "test", min_obs = 0),
-    "^clean_single_statement_anomalies\\(\\): \\[min_obs\\] must be a positive numeric scalar"
+    "^clean_single_statement_anomalies\\(\\): \\[min_obs\\] must be a positive numeric scalar, not numeric$"
   )
 })
 

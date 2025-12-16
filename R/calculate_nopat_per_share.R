@@ -17,38 +17,10 @@ calculate_nopat_per_share <- function(
   tax_rate = 0.2375
 ) {
   # Input validation
-  if (!is.numeric(ebit_ps)) {
-    stop(paste0(
-      "calculate_nopat_per_share(): [ebit_ps] must be numeric, not ",
-      class(ebit_ps)[1]
-    ))
-  }
-  if (!is.numeric(dep_amort_ps)) {
-    stop(paste0(
-      "calculate_nopat_per_share(): [dep_amort_ps] must be numeric, not ",
-      class(dep_amort_ps)[1]
-    ))
-  }
-  if (!is.numeric(depreciation_ps)) {
-    stop(paste0(
-      "calculate_nopat_per_share(): [depreciation_ps] must be numeric, not ",
-      class(depreciation_ps)[1]
-    ))
-  }
-  if (!is.numeric(tax_rate) || length(tax_rate) != 1) {
-    stop(paste0(
-      "calculate_nopat_per_share(): [tax_rate] must be a numeric scalar, not ",
-      class(tax_rate)[1],
-      " of length ",
-      length(tax_rate)
-    ))
-  }
-  if (tax_rate < 0 || tax_rate > 1) {
-    stop(paste0(
-      "calculate_nopat_per_share(): [tax_rate] must be between 0 and 1, not ",
-      tax_rate
-    ))
-  }
+  validate_numeric_vector(ebit_ps, allow_empty = TRUE, name = "ebit_ps")
+  validate_numeric_vector(dep_amort_ps, allow_empty = TRUE, name = "dep_amort_ps")
+  validate_numeric_vector(depreciation_ps, allow_empty = TRUE, name = "depreciation_ps")
+  validate_numeric_scalar(tax_rate, name = "tax_rate", gte = 0, lte = 1)
 
   # Calculate amortization (D&A minus depreciation)
   amortization_ps <- dplyr::coalesce(dep_amort_ps, 0) -
