@@ -31,7 +31,7 @@ determine_fetch_requirements <- function(
   if (fetch_mode == "price_only") {
     return(list(
       price = TRUE,
-      splits = TRUE,
+      splits = FALSE,
       quarterly = FALSE,
       overview = FALSE
     ))

@@ -1,7 +1,7 @@
 #' Read Refresh Tracking from S3
 #'
-#' Downloads the refresh tracking dataframe from S3. Returns empty tracking if not found.
-#' Handles schema evolution by adding missing columns with NA values.
+#' Downloads the refresh tracking dataframe from S3. If tracking doesn't exist
+#' but raw data does, initializes tracking from existing data.
 #'
 #' @param bucket_name character: S3 bucket name
 #' @param region character: AWS region (default: "us-east-1")
@@ -26,43 +26,17 @@ s3_read_refresh_tracking <- function(bucket_name, region = "us-east-1") {
   )
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
-    message("No existing refresh tracking found, creating empty tracking")
-    return(create_empty_refresh_tracking())
+    message("No existing refresh tracking found, checking for existing data...")
+    return(initialize_tracking_from_s3_data(bucket_name, region))
   }
 
   if (!file.exists(temp_file)) {
-    return(create_empty_refresh_tracking())
+    return(initialize_tracking_from_s3_data(bucket_name, region))
   }
 
   tracking <- arrow::read_parquet(temp_file)
 
   tracking <- migrate_tracking_schema(tracking)
-
-  tracking
-}
-
-#' Migrate Tracking Schema
-#'
-#' Adds any missing columns to tracking dataframe for schema evolution.
-#'
-#' @param tracking tibble: Existing tracking dataframe
-#' @return tibble: Tracking with all required columns
-#' @keywords internal
-migrate_tracking_schema <- function(tracking) {
-  if (!"overview_last_fetched_at" %in% names(tracking)) {
-    tracking$overview_last_fetched_at <- as.POSIXct(NA)
-    message("  Schema migration: added overview_last_fetched_at column")
-  }
-
-  if (!"price_last_date" %in% names(tracking)) {
-    tracking$price_last_date <- as.Date(NA)
-    message("  Schema migration: added price_last_date column")
-  }
-
-  if (!"price_has_full_history" %in% names(tracking)) {
-    tracking$price_has_full_history <- FALSE
-    message("  Schema migration: added price_has_full_history column")
-  }
 
   tracking
 }
