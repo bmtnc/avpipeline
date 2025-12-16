@@ -16,6 +16,7 @@ NULL (called for side effects)
 }
 \description{
 Validates that an object is a data.frame and contains all required columns.
-This function is called for its side effects and will stop execution with
-an error message if validation fails.
+Does not check if the data.frame is empty; use validate_df_not_empty() separately
+if needed. This function is called for its side effects and will stop execution
+with an error message if validation fails.
 }
