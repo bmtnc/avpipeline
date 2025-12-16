@@ -51,5 +51,11 @@ fetch_and_store_ticker_data <- function(
     }
   }
 
+  if (isTRUE(fetch_requirements$overview)) {
+    results$overview <- fetch_and_store_single_data_type(
+      ticker, "overview", bucket_name, api_key, region, delay_seconds
+    )
+  }
+
   results
 }

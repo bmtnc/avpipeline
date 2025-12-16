@@ -17,6 +17,7 @@ create_default_ticker_tracking <- function(ticker) {
     price_last_fetched_at = as.POSIXct(NA),
     splits_last_fetched_at = as.POSIXct(NA),
     quarterly_last_fetched_at = as.POSIXct(NA),
+    overview_last_fetched_at = as.POSIXct(NA),
     last_fiscal_date_ending = as.Date(NA),
     last_reported_date = as.Date(NA),
     next_estimated_report_date = as.Date(NA),

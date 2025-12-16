@@ -4,7 +4,6 @@
 # Phase 2: Generate TTM Artifacts from S3 Raw Data
 # ============================================================================
 # Reads raw data from S3 and generates the TTM per-share financial artifact.
-# Reuses existing processing functions unchanged.
 #
 # Input: s3://{bucket}/raw/{TICKER}/*.parquet
 # Output: s3://{bucket}/ttm-artifacts/{YYYY-MM-DD}/ttm_per_share_financial_artifact.parquet
@@ -33,44 +32,40 @@ end_window_size <- 5
 end_threshold <- 3
 min_obs <- 10
 
-message("=", paste(rep("=", 78), collapse = ""))
-message("PHASE 2: GENERATE TTM ARTIFACTS")
-message("=", paste(rep("=", 78), collapse = ""))
-message("Configuration:")
-message("  ETF Symbol: ", etf_symbol)
-message("  Start Date: ", start_date)
-message("  S3 Bucket: ", s3_bucket)
-message("  AWS Region: ", aws_region)
-message("")
+message("=== PHASE 2: GENERATE TTM ARTIFACTS ===")
+message("ETF: ", etf_symbol, " | Start: ", start_date)
 
 # ============================================================================
-# GET TICKER LIST
+# SETUP
 # ============================================================================
 
-message("Fetching ticker list from ", etf_symbol, " holdings...")
+api_key <- get_api_key_from_parameter_store(
+  parameter_name = "/avpipeline/alpha-vantage-api-key",
+  region = aws_region
+)
+Sys.setenv(ALPHA_VANTAGE_API_KEY = api_key)
+
 tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
 n_tickers <- length(tickers)
-message("  Found ", n_tickers, " tickers")
+
+message("Tickers: ", n_tickers)
 message("")
 
 # ============================================================================
 # PROCESS TICKERS
 # ============================================================================
 
-message("Processing tickers...")
-message("")
-
 final_artifact <- tibble::tibble()
-successful_tickers <- character()
-failed_tickers <- character()
+pipeline_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
+  start_time <- Sys.time()
+
+  print_progress(i, n_tickers, "Generate", ticker)
 
   tryCatch({
-    message(sprintf("[%d/%d] %s", i, n_tickers, ticker))
-
-    result <- process_ticker_from_s3(
+    result <- suppressMessages(process_ticker_from_s3(
       ticker = ticker,
       bucket_name = s3_bucket,
       start_date = start_date,
@@ -81,27 +76,32 @@ for (i in seq_along(tickers)) {
       end_window_size = end_window_size,
       end_threshold = end_threshold,
       min_obs = min_obs
-    )
+    ))
+
+    duration <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
 
     if (!is.null(result) && nrow(result) > 0) {
       final_artifact <- dplyr::bind_rows(final_artifact, result)
-      successful_tickers <- c(successful_tickers, ticker)
-      message("  Success (", nrow(result), " rows)")
+      pipeline_log <- add_log_entry(
+        pipeline_log, ticker, "generate", "ttm", "success",
+        rows = nrow(result), duration_seconds = duration
+      )
     } else {
-      failed_tickers <- c(failed_tickers, ticker)
-      message("  Skipped (no data)")
+      pipeline_log <- add_log_entry(
+        pipeline_log, ticker, "generate", "ttm", "skipped",
+        error_message = "No data returned", duration_seconds = duration
+      )
     }
 
-    if (i %% 10 == 0) {
-      gc(verbose = FALSE)
-    }
-    if (i %% 50 == 0) {
-      gc(full = TRUE, verbose = FALSE)
-    }
+    if (i %% 10 == 0) gc(verbose = FALSE)
+    if (i %% 50 == 0) gc(full = TRUE, verbose = FALSE)
 
   }, error = function(e) {
-    failed_tickers <<- c(failed_tickers, ticker)
-    message("  Error: ", conditionMessage(e))
+    pipeline_log <<- add_log_entry(
+      pipeline_log, ticker, "generate", "ttm", "error",
+      error_message = conditionMessage(e),
+      duration_seconds = as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    )
   })
 }
 
@@ -125,20 +125,15 @@ upload_artifact_to_s3(
   region = aws_region
 )
 
-message("  Artifact uploaded: s3://", s3_bucket, "/", s3_key)
+message("  Artifact: s3://", s3_bucket, "/", s3_key, " (", nrow(final_artifact), " rows)")
 
 # ============================================================================
 # SUMMARY
 # ============================================================================
 
 message("")
-message("=", paste(rep("=", 78), collapse = ""))
-message("PHASE 2 COMPLETE")
-message("=", paste(rep("=", 78), collapse = ""))
-message("  Total rows: ", nrow(final_artifact))
-message("  Successful: ", length(successful_tickers))
-message("  Failed: ", length(failed_tickers))
-if (length(failed_tickers) > 0) {
-  message("  Failed tickers: ", paste(failed_tickers, collapse = ", "))
-}
-message("")
+message("=== PHASE 2 COMPLETE ===")
+print_log_summary(pipeline_log, "generate")
+
+# Return log for use by run_pipeline_aws.R
+phase2_log <- pipeline_log

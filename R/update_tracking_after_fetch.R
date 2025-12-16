@@ -39,6 +39,8 @@ update_tracking_after_fetch <- function(
     if (!is.null(reported_date)) {
       updates$last_reported_date <- reported_date
     }
+  } else if (data_type == "overview") {
+    updates$overview_last_fetched_at <- now
   }
 
   if (data_changed) {

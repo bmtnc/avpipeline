@@ -131,6 +131,24 @@ SPLITS_CONFIG <- list(
   sort_desc = FALSE
 )
 
+#' Company Overview Data Configuration
+#'
+#' Configuration object for fetching company metadata from Alpha Vantage.
+#'
+#' @format A list containing configuration parameters for company overview data fetching.
+#' @export
+OVERVIEW_CONFIG <- list(
+  api_function = "OVERVIEW",
+  parser_func = "parse_overview_response",
+  additional_params = c(),
+  default_delay = 1,
+  data_type_name = "company overview",
+  primary_date_column = NULL,
+  cache_date_columns = c("as_of_date"),
+  result_sort_columns = c("ticker"),
+  sort_desc = FALSE
+)
+
 #' Data Type Refresh Configuration
 #'
 #' Configuration for smart refresh logic per data type.
@@ -147,6 +165,10 @@ DATA_TYPE_REFRESH_CONFIG <- list(
   quarterly = list(
     refresh_cadence = "earnings_driven",
     window_days = 5,
+    fallback_max_days = 90
+  ),
+  overview = list(
+    refresh_cadence = "infrequent",
     fallback_max_days = 90
   )
 )

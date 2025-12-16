@@ -44,6 +44,7 @@ process_ticker_from_s3 <- function(
   earnings <- raw_data$earnings
   price_data <- raw_data$price
   splits_data <- raw_data$splits
+  overview_data <- raw_data$overview
 
   if (is.null(earnings) || nrow(earnings) == 0) {
     return(NULL)
@@ -76,9 +77,33 @@ process_ticker_from_s3 <- function(
     start_date = start_date
   )
 
-  calculate_unified_ttm_per_share_metrics(
+  result <- calculate_unified_ttm_per_share_metrics(
     financial_statements = financial_statements,
     price_data = price_data,
     market_cap = market_cap
   )
+
+  if (!is.null(overview_data) && nrow(overview_data) > 0) {
+    result <- dplyr::mutate(
+      result,
+      cik = overview_data$cik[1],
+      exchange = overview_data$exchange[1],
+      currency = overview_data$currency[1],
+      country = overview_data$country[1],
+      sector = overview_data$sector[1],
+      industry = overview_data$industry[1]
+    )
+  } else {
+    result <- dplyr::mutate(
+      result,
+      cik = NA_character_,
+      exchange = NA_character_,
+      currency = NA_character_,
+      country = NA_character_,
+      sector = NA_character_,
+      industry = NA_character_
+    )
+  }
+
+  result
 }

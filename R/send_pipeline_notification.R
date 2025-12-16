@@ -58,9 +58,9 @@ send_pipeline_notification <- function(
       "--topic-arn",
       topic_arn,
       "--subject",
-      subject,
+      shQuote(subject),
       "--message",
-      message,
+      shQuote(message),
       "--region",
       region
     ),

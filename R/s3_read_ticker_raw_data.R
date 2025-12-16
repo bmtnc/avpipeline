@@ -21,7 +21,8 @@ s3_read_ticker_raw_data <- function(ticker, bucket_name, region = "us-east-1") {
     "cash_flow",
     "earnings",
     "price",
-    "splits"
+    "splits",
+    "overview"
   )
 
   result <- lapply(data_types, function(dt) {

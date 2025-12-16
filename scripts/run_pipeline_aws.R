@@ -10,7 +10,7 @@
 # Load package functions
 devtools::load_all("/app")
 
-message("=== Starting AWS Pipeline Execution (Two-Phase) ===")
+message("=== Starting AWS Pipeline Execution ===")
 start_time <- Sys.time()
 
 # AWS configuration from environment variables
@@ -27,15 +27,14 @@ if (SNS_TOPIC_ARN == "") {
   stop("SNS_TOPIC_ARN environment variable is required")
 }
 
-message(paste0("AWS Region: ", AWS_REGION))
-message(paste0("S3 Bucket: ", S3_BUCKET))
+message("Region: ", AWS_REGION, " | Bucket: ", S3_BUCKET)
+message("")
 
 # Step 1: Phase 1 - Fetch raw data to S3
-message("\n[1/3] Phase 1: Fetching raw data to S3...")
+message("[1/3] Running Phase 1...")
 phase1_success <- FALSE
 tryCatch({
   source("/app/scripts/run_phase1_fetch.R")
-  message("Phase 1 completed successfully")
   phase1_success <- TRUE
 }, error = function(e) {
   error_msg <- paste0("Phase 1 (Fetch) failed: ", e$message)
@@ -53,11 +52,11 @@ phase1_time <- Sys.time()
 phase1_duration <- round(as.numeric(difftime(phase1_time, start_time, units = "mins")), 2)
 
 # Step 2: Phase 2 - Generate TTM artifacts
-message("\n[2/3] Phase 2: Generating TTM artifacts...")
+message("")
+message("[2/3] Running Phase 2...")
 phase2_success <- FALSE
 tryCatch({
   source("/app/scripts/run_phase2_generate.R")
-  message("Phase 2 completed successfully")
   phase2_success <- TRUE
 }, error = function(e) {
   error_msg <- paste0("Phase 2 (Generate) failed: ", e$message)
@@ -74,22 +73,49 @@ tryCatch({
 phase2_time <- Sys.time()
 phase2_duration <- round(as.numeric(difftime(phase2_time, phase1_time, units = "mins")), 2)
 
-# Step 3: Send success notification
-message("\n[3/3] Sending success notification...")
+# Step 3: Upload combined log and send notification
+message("")
+message("[3/3] Finalizing...")
+
+# Combine logs from both phases
+combined_log <- if (exists("phase2_log")) {
+  phase2_log
+} else if (exists("phase1_log")) {
+  phase1_log
+} else {
+  create_pipeline_log()
+}
+
+# Upload log to S3
+tryCatch({
+  upload_pipeline_log(combined_log, S3_BUCKET, AWS_REGION)
+}, error = function(e) {
+  warning("Failed to upload pipeline log: ", e$message)
+})
+
 end_time <- Sys.time()
 total_duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
+
+# Calculate summary stats from log
+fetch_success <- sum(combined_log$phase == "fetch" & combined_log$status == "success")
+fetch_errors <- sum(combined_log$phase == "fetch" & combined_log$status == "error")
+generate_success <- sum(combined_log$phase == "generate" & combined_log$status == "success")
+generate_errors <- sum(combined_log$phase == "generate" & combined_log$status == "error")
+total_rows <- sum(combined_log$rows[combined_log$phase == "generate"], na.rm = TRUE)
 
 s3_key <- generate_s3_artifact_key(date = Sys.Date())
 
 success_message <- paste0(
-  "TTM Pipeline completed successfully!\n\n",
-  "Execution Time:\n",
-  "  Phase 1 (Fetch): ", phase1_duration, " minutes\n",
-  "  Phase 2 (Generate): ", phase2_duration, " minutes\n",
-  "  Total: ", total_duration, " minutes\n\n",
-  "Date: ", format(Sys.Date(), "%Y-%m-%d"), "\n",
-  "S3 Location: s3://", S3_BUCKET, "/", s3_key, "\n\n",
-  "The financial data artifact has been updated and is ready for analysis."
+  "TTM Pipeline completed!\n\n",
+  "Summary:\n",
+  "  Phase 1: ", fetch_success, " fetched, ", fetch_errors, " errors\n",
+  "  Phase 2: ", generate_success, " processed, ", generate_errors, " errors\n",
+  "  Total rows: ", total_rows, "\n\n",
+  "Timing:\n",
+  "  Phase 1: ", phase1_duration, " min\n",
+  "  Phase 2: ", phase2_duration, " min\n",
+  "  Total: ", total_duration, " min\n\n",
+  "Output: s3://", S3_BUCKET, "/", s3_key
 )
 
 tryCatch({
@@ -99,12 +125,11 @@ tryCatch({
     message = success_message,
     region = AWS_REGION
   )
-  message("Success notification sent")
+  message("Notification sent")
 }, error = function(e) {
-  warning(paste0("Failed to send success notification: ", e$message))
+  warning("Failed to send notification: ", e$message)
 })
 
-message("\n=== Pipeline Execution Complete ===")
-message(paste0("Phase 1 (Fetch): ", phase1_duration, " minutes"))
-message(paste0("Phase 2 (Generate): ", phase2_duration, " minutes"))
-message(paste0("Total execution time: ", total_duration, " minutes"))
+message("")
+message("=== PIPELINE COMPLETE ===")
+message("Phase 1: ", phase1_duration, " min | Phase 2: ", phase2_duration, " min | Total: ", total_duration, " min")

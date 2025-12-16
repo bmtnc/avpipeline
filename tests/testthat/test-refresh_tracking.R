@@ -6,7 +6,8 @@ test_that("create_empty_refresh_tracking creates correct schema", {
 
   expected_cols <- c(
     "ticker", "price_last_fetched_at", "splits_last_fetched_at",
-    "quarterly_last_fetched_at", "last_fiscal_date_ending", "last_reported_date",
+    "quarterly_last_fetched_at", "overview_last_fetched_at",
+    "last_fiscal_date_ending", "last_reported_date",
     "next_estimated_report_date", "median_report_delay_days", "last_error_message",
     "is_active_ticker", "has_data_discrepancy", "last_version_date", "data_updated_at"
   )
@@ -145,6 +146,16 @@ test_that("update_tracking_after_fetch sets data_updated_at when data changed", 
     tracking, "AAPL", "price", data_changed = TRUE
   )
   expect_false(is.na(updated_with_change$data_updated_at))
+})
+
+test_that("update_tracking_after_fetch updates overview timestamp", {
+  tracking <- create_default_ticker_tracking("AAPL")
+
+  updated <- update_tracking_after_fetch(tracking, "AAPL", "overview")
+
+  expect_false(is.na(updated$overview_last_fetched_at))
+  expect_true(is.na(updated$price_last_fetched_at))
+  expect_true(is.na(updated$quarterly_last_fetched_at))
 })
 
 test_that("update_tracking_after_error records error message", {

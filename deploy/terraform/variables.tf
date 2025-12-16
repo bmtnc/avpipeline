@@ -24,13 +24,13 @@ variable "schedule_expression" {
 variable "task_cpu" {
   description = "CPU units for ECS task (1024 = 1 vCPU)"
   type        = number
-  default     = 2048
+  default     = 1024
 }
 
 variable "task_memory" {
   description = "Memory for ECS task in MB"
   type        = number
-  default     = 16384
+  default     = 4096
 }
 
 variable "etf_symbol" {

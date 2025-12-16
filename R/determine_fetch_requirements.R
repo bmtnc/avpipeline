@@ -32,9 +32,16 @@ determine_fetch_requirements <- function(
     reference_date = reference_date
   )
 
+  # Overview: fetch if never fetched or >90 days stale
+  fetch_overview <- should_fetch_overview_data(
+    overview_last_fetched_at = ticker_tracking$overview_last_fetched_at,
+    reference_date = reference_date
+  )
+
   list(
     price = fetch_price,
     splits = fetch_splits,
-    quarterly = fetch_quarterly
+    quarterly = fetch_quarterly,
+    overview = fetch_overview
   )
 }

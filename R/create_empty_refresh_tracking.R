@@ -10,6 +10,7 @@ create_empty_refresh_tracking <- function() {
     price_last_fetched_at = as.POSIXct(character()),
     splits_last_fetched_at = as.POSIXct(character()),
     quarterly_last_fetched_at = as.POSIXct(character()),
+    overview_last_fetched_at = as.POSIXct(character()),
     last_fiscal_date_ending = as.Date(character()),
     last_reported_date = as.Date(character()),
     next_estimated_report_date = as.Date(character()),
