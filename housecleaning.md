@@ -1,6 +1,6 @@
 # Housecleaning Tasks
 
-## One Function Per File Violations
+## One Function Per File Violations (PENDING)
 
 7 files contain multiple function definitions and need to be split following the one-function-per-file convention.
 
@@ -58,9 +58,28 @@
 | `R/upload_pipeline_log.R` | `upload_pipeline_log()` | Create new file |
 | ~~`R/pipeline_logger.R`~~ | (all functions moved) | Delete |
 
-## Validations (Boilerplate Opportunities)
+## Validations (COMPLETED)
 
-Functions with boilerplate validations that could be extracted to reusable utility functions:
+All functions below have been refactored to use reusable validation helper functions.
+
+### Validation Helpers Created
+
+| Helper Function | Purpose |
+|-----------------|---------|
+| `validate_character_scalar()` | Single character string validation |
+| `validate_numeric_scalar()` | Single numeric value with optional bounds (gt, gte, lt, lte) |
+| `validate_positive()` | Positive numeric value (wrapper for validate_numeric_scalar with gt=0) |
+| `validate_numeric_vector()` | Numeric vector validation with optional empty check |
+| `validate_date_type()` | Date object validation with optional scalar check |
+| `validate_file_exists()` | File existence validation |
+| `validate_non_empty()` | Non-null, non-empty validation for vectors, lists, and data.frames |
+| `validate_api_response()` | Alpha Vantage API error response validation |
+| `validate_df_type()` | Data.frame type validation |
+| `validate_df_cols()` | Data.frame with required columns validation |
+
+### Functions Refactored
+
+The following functions have been updated to use the validation helpers:
 
 | Function | Boilerplate Validations |
 |----------|------------------------|
@@ -163,16 +182,16 @@ Functions with boilerplate validations that could be extracted to reusable utili
 | `validate_quarterly_consistency()` | null/empty check, df type check, row bounds check, required columns, column name existence |
 | `validate_quarterly_continuity()` | df type check, required columns check |
 
-### Reusable Validation Patterns
+### Reusable Validation Patterns (ALL IMPLEMENTED)
 
-Most frequently extractable patterns (with occurrence counts):
+All validation patterns have been extracted and implemented:
 
-- **Character scalar validation** (`validate_character_scalar()`): 25+ occurrences across fetch_*, load_*, get_*, s3_*, generate_* functions
-- **Numeric scalar + bounds validation** (`validate_numeric_scalar()`, `validate_positive()`): 20+ occurrences across calculate_*, detect_*, validate_* functions
-- **Data frame + required columns** (`validate_df_cols()`): 12+ occurrences (already exists)
-- **Required named list keys** (`validate_list_keys()`): 8+ occurrences across load_*, make_*, summarize_* functions
-- **File existence check** (`validate_file_exists()`): 6+ occurrences across read_*, load_*, upload_* functions
-- **API response error handling** (`validate_api_response()`): 5 occurrences across parse_* functions with identical logic
-- **Empty vector/list check** (`validate_non_empty()`): 8+ occurrences throughout
-- **Numeric vector validation** (`validate_numeric_vector()`): 5+ occurrences in detect_* functions
-- **Date type validation** (`validate_date()`): 4+ occurrences in generate_*, load_*, calculate_* functions
+- ~~**Character scalar validation** (`validate_character_scalar()`)~~: DONE
+- ~~**Numeric scalar + bounds validation** (`validate_numeric_scalar()`, `validate_positive()`)~~: DONE
+- ~~**Data frame + required columns** (`validate_df_cols()`)~~: DONE
+- **Required named list keys** (`validate_list_keys()`): NOT IMPLEMENTED (8+ occurrences - lower priority)
+- ~~**File existence check** (`validate_file_exists()`)~~: DONE
+- ~~**API response error handling** (`validate_api_response()`)~~: DONE
+- ~~**Empty vector/list check** (`validate_non_empty()`)~~: DONE
+- ~~**Numeric vector validation** (`validate_numeric_vector()`)~~: DONE
+- ~~**Date type validation** (`validate_date_type()`)~~: DONE
