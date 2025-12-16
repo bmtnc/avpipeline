@@ -1,7 +1,7 @@
 test_that("filter_essential_financial_columns validates financial_statements parameter", {
   expect_error(
     filter_essential_financial_columns("not a df"),
-    "^filter_essential_financial_columns\\(\\): \\[financial_statements\\] must be a data.frame, not character$"
+    "^Input data must be a data.frame. Received: character$"
   )
 })
 

@@ -6,12 +6,7 @@
 #' @return tibble: Financial statements with only essential columns
 #' @keywords internal
 filter_essential_financial_columns <- function(financial_statements) {
-  if (!is.data.frame(financial_statements)) {
-    stop(paste0(
-      "filter_essential_financial_columns(): [financial_statements] must be a data.frame, not ",
-      class(financial_statements)[1]
-    ))
-  }
+  validate_df_type(financial_statements)
 
   message(paste0("Filtering to essential columns only..."))
 

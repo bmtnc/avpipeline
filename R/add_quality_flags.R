@@ -6,12 +6,7 @@
 #' @return tibble: Financial statements with added quality flag columns
 #' @keywords internal
 add_quality_flags <- function(financial_statements) {
-  if (!is.data.frame(financial_statements)) {
-    stop(paste0(
-      "add_quality_flags(): [financial_statements] must be a data.frame, not ",
-      class(financial_statements)[1]
-    ))
-  }
+  validate_df_type(financial_statements)
 
   income_statement_cols <- intersect(
     get_income_statement_metrics(),

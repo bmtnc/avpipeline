@@ -1,7 +1,7 @@
 test_that("clean_single_statement_anomalies validates data parameter", {
   expect_error(
     clean_single_statement_anomalies("not a df", c("metric1"), "test"),
-    "^clean_single_statement_anomalies\\(\\): \\[data\\] must be a data.frame, not character$"
+    "^Input data must be a data.frame. Received: character$"
   )
 })
 

@@ -66,7 +66,7 @@ test_that("get_ticker_tracking validates inputs", {
   tracking <- create_empty_refresh_tracking()
 
   expect_error(get_ticker_tracking(123, tracking), "ticker")
-  expect_error(get_ticker_tracking("AAPL", "not_a_df"), "tracking")
+  expect_error(get_ticker_tracking("AAPL", "not_a_df"), "data.frame")
 })
 
 test_that("update_ticker_tracking updates existing ticker", {

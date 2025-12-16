@@ -22,9 +22,7 @@ log_data_discrepancy <- function(
   if (!is.character(data_type) || length(data_type) != 1) {
     stop("log_data_discrepancy(): [data_type] must be a character scalar")
   }
-  if (!is.data.frame(mismatches)) {
-    stop("log_data_discrepancy(): [mismatches] must be a data.frame")
-  }
+  validate_df_type(mismatches)
   if (!is.character(bucket_name) || length(bucket_name) != 1) {
     stop("log_data_discrepancy(): [bucket_name] must be a character scalar")
   }

@@ -24,12 +24,7 @@ clean_single_statement_anomalies <- function(
   end_threshold = 3,
   min_obs = 10
 ) {
-  if (!is.data.frame(data)) {
-    stop(paste0(
-      "clean_single_statement_anomalies(): [data] must be a data.frame, not ",
-      class(data)[1]
-    ))
-  }
+  validate_df_cols(data, c("ticker", "fiscalDateEnding"))
   if (!is.character(metrics)) {
     stop(paste0(
       "clean_single_statement_anomalies(): [metrics] must be a character vector, not ",

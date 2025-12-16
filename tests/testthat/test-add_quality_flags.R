@@ -1,7 +1,7 @@
 test_that("add_quality_flags validates financial_statements parameter", {
   expect_error(
     add_quality_flags("not a df"),
-    "^add_quality_flags\\(\\): \\[financial_statements\\] must be a data.frame, not character$"
+    "^Input data must be a data.frame. Received: character$"
   )
 })
 
