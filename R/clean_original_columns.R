@@ -19,7 +19,7 @@ clean_original_columns <- function(data, metric_cols) {
   }
 
   validate_df_cols(data, metric_cols)
-  validate_df_not_empty(data)
+  validate_non_empty(data, name = "data")
 
   result <- data
 

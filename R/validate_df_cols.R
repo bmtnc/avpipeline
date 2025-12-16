@@ -1,7 +1,7 @@
 #' Validate DataFrame Columns
 #'
 #' Validates that an object is a data.frame and contains all required columns.
-#' Does not check if the data.frame is empty; use validate_df_not_empty() separately
+#' Does not check if the data.frame is empty; use validate_non_empty() separately
 #' if needed. This function is called for its side effects and will stop execution
 #' with an error message if validation fails.
 #'

@@ -123,7 +123,7 @@ test_that("fails when data is empty data frame", {
   
   expect_error(
     filter_sufficient_observations(empty_df, "ticker", 3),
-    "^Input data is empty \\(0 rows\\)$"
+    "data data.frame must have at least one row"
   )
 })
 

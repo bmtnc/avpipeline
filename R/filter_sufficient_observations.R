@@ -19,7 +19,7 @@ filter_sufficient_observations <- function(data, group_col, min_obs) {
   }
 
   validate_df_cols(data, group_col)
-  validate_df_not_empty(data)
+  validate_non_empty(data, name = "data")
 
   if (!is.numeric(min_obs) || length(min_obs) != 1) {
     stop(paste0(

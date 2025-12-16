@@ -158,7 +158,6 @@ Functions with boilerplate validations that could be extracted to reusable utili
 | `validate_artifact_files()` | char vector type, file existence checks |
 | `validate_continuous_quarters()` | char scalar validation, char vector type, required columns, NA/missing value handling |
 | `validate_df_cols()` | char vector type, df type check, required columns check |
-| `validate_df_not_empty()` | length/bounds check (non-empty rows) |
 | `validate_df_type()` | df type check |
 | `validate_month_end_date()` | Date type check, scalar length check, business logic validation (month-end) |
 | `validate_quarterly_consistency()` | null/empty check, df type check, row bounds check, required columns, column name existence |

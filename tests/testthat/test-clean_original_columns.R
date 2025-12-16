@@ -92,7 +92,7 @@ test_that("handles empty data frame", {
   
   expect_error(
     clean_original_columns(empty_df, metric_cols),
-    "^Input data is empty \\(0 rows\\)$"
+    "data data.frame must have at least one row"
   )
 })
 
