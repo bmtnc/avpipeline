@@ -10,7 +10,7 @@
 # =============================================================================
 
 # ---- CONFIGURATION PARAMETERS -----------------------------------------------
-TICKER <- "UNH"
+TICKER <- "AMZN"
 
 # Data source: "s3" (read from S3) or "api" (fetch fresh from Alpha Vantage)
 DATA_SOURCE <- "api"
@@ -252,4 +252,4 @@ cat("  ", FUNDAMENTAL_METRIC, ": ",
 cat("  ", VALUATION_METRIC, ": ",
     scales::comma(latest[[VALUATION_METRIC]][1], accuracy = 0.01), "\n", sep = "")
 cat("  market_cap: ",
-    scales::comma(latest$market_cap[1], accuracy = 1, scale = 1e-9, suffix = "B"), "\n", sep = "")
+    scales::comma(latest$market_cap[1], accuracy = 1, scale = 1e-3, suffix = "B"), "\n", sep = "")
