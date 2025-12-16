@@ -9,7 +9,8 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @param delay_seconds numeric: Delay after API call (default: 1)
 #' @param create_version_snapshot logical: Whether to backup existing data (default: TRUE)
-#' @return list: success (logical), data (data.frame or NULL), error (character or NULL)
+#' @param outputsize character: For price data only - "compact" (100 days) or "full" (20+ years)
+#' @return list: success, data, error, and metadata (outputsize_used for price)
 #' @keywords internal
 fetch_and_store_single_data_type <- function(
   ticker,
@@ -18,7 +19,8 @@ fetch_and_store_single_data_type <- function(
   api_key,
   region = "us-east-1",
   delay_seconds = 1,
-  create_version_snapshot = TRUE
+  create_version_snapshot = TRUE,
+  outputsize = NULL
 ) {
   if (!is.character(ticker) || length(ticker) != 1) {
     stop("fetch_and_store_single_data_type(): [ticker] must be a character scalar")
@@ -39,18 +41,24 @@ fetch_and_store_single_data_type <- function(
     return(list(
       success = FALSE,
       data = NULL,
-      error = paste0("Unknown data_type: ", data_type)
+      error = paste0("Unknown data_type: ", data_type),
+      outputsize_used = NULL
     ))
   }
 
   tryCatch({
-    data <- fetch_single_ticker_data(ticker, config, api_key = api_key)
+    if (data_type == "price" && !is.null(outputsize)) {
+      data <- fetch_single_ticker_data(ticker, config, api_key = api_key, outputsize = outputsize)
+    } else {
+      data <- fetch_single_ticker_data(ticker, config, api_key = api_key)
+    }
 
     if (is.null(data) || nrow(data) == 0) {
       return(list(
         success = TRUE,
         data = NULL,
-        error = NULL
+        error = NULL,
+        outputsize_used = outputsize
       ))
     }
 
@@ -65,13 +73,15 @@ fetch_and_store_single_data_type <- function(
     list(
       success = TRUE,
       data = data,
-      error = NULL
+      error = NULL,
+      outputsize_used = outputsize
     )
   }, error = function(e) {
     list(
       success = FALSE,
       data = NULL,
-      error = conditionMessage(e)
+      error = conditionMessage(e),
+      outputsize_used = outputsize
     )
   })
 }

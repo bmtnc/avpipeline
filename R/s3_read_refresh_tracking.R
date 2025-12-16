@@ -54,5 +54,15 @@ migrate_tracking_schema <- function(tracking) {
     message("  Schema migration: added overview_last_fetched_at column")
   }
 
+  if (!"price_last_date" %in% names(tracking)) {
+    tracking$price_last_date <- as.Date(NA)
+    message("  Schema migration: added price_last_date column")
+  }
+
+  if (!"price_has_full_history" %in% names(tracking)) {
+    tracking$price_has_full_history <- FALSE
+    message("  Schema migration: added price_has_full_history column")
+  }
+
   tracking
 }

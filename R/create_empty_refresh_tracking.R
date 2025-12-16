@@ -8,6 +8,8 @@ create_empty_refresh_tracking <- function() {
   tibble::tibble(
     ticker = character(),
     price_last_fetched_at = as.POSIXct(character()),
+    price_last_date = as.Date(character()),
+    price_has_full_history = logical(),
     splits_last_fetched_at = as.POSIXct(character()),
     quarterly_last_fetched_at = as.POSIXct(character()),
     overview_last_fetched_at = as.POSIXct(character()),

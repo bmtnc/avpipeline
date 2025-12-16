@@ -97,24 +97,44 @@ end_time <- Sys.time()
 total_duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
 
 # Calculate summary stats from log
-fetch_success <- sum(combined_log$phase == "fetch" & combined_log$status == "success")
-fetch_errors <- sum(combined_log$phase == "fetch" & combined_log$status == "error")
-generate_success <- sum(combined_log$phase == "generate" & combined_log$status == "success")
-generate_errors <- sum(combined_log$phase == "generate" & combined_log$status == "error")
-total_rows <- sum(combined_log$rows[combined_log$phase == "generate"], na.rm = TRUE)
+fetch_log <- combined_log[combined_log$phase == "fetch", ]
+generate_log <- combined_log[combined_log$phase == "generate", ]
+
+fetch_success <- sum(fetch_log$status == "success", na.rm = TRUE)
+fetch_errors <- sum(fetch_log$status == "error", na.rm = TRUE)
+fetch_skipped <- sum(fetch_log$status == "skipped", na.rm = TRUE)
+fetch_total <- fetch_success + fetch_errors + fetch_skipped
+
+generate_success <- sum(generate_log$status == "success", na.rm = TRUE)
+generate_errors <- sum(generate_log$status == "error", na.rm = TRUE)
+generate_skipped <- sum(generate_log$status == "skipped", na.rm = TRUE)
+generate_total <- generate_success + generate_errors + generate_skipped
+
+total_rows <- sum(generate_log$rows, na.rm = TRUE)
+
+etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
+fetch_mode <- Sys.getenv("FETCH_MODE", "full")
 
 s3_key <- generate_s3_artifact_key(date = Sys.Date())
 
 success_message <- paste0(
   "TTM Pipeline completed!\n\n",
-  "Summary:\n",
-  "  Phase 1: ", fetch_success, " fetched, ", fetch_errors, " errors\n",
-  "  Phase 2: ", generate_success, " processed, ", generate_errors, " errors\n",
-  "  Total rows: ", total_rows, "\n\n",
+  "Configuration:\n",
+  "  ETF: ", etf_symbol, "\n",
+  "  Mode: ", fetch_mode, "\n\n",
+  "Phase 1 (Fetch): ", fetch_total, " tickers\n",
+  "  Success: ", fetch_success, "\n",
+  "  Errors:  ", fetch_errors, "\n",
+  "  Skipped: ", fetch_skipped, "\n\n",
+  "Phase 2 (Generate): ", generate_total, " tickers\n",
+  "  Success: ", generate_success, "\n",
+  "  Errors:  ", generate_errors, "\n",
+  "  Skipped: ", generate_skipped, "\n",
+  "  Total rows: ", format(total_rows, big.mark = ","), "\n\n",
   "Timing:\n",
   "  Phase 1: ", phase1_duration, " min\n",
   "  Phase 2: ", phase2_duration, " min\n",
-  "  Total: ", total_duration, " min\n\n",
+  "  Total:   ", total_duration, " min\n\n",
   "Output: s3://", S3_BUCKET, "/", s3_key
 )
 

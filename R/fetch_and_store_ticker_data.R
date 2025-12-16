@@ -1,18 +1,22 @@
 #' Fetch and Store All Required Data for a Ticker
 #'
 #' Orchestrates fetching all required data types for a ticker based on fetch requirements.
+#' Uses smart price fetching: compact by default if has full history and <90 days stale.
+#' If split detected in compact response, refetches with full.
 #'
 #' @param ticker character: Stock symbol
 #' @param fetch_requirements list: Output from determine_fetch_requirements()
+#' @param ticker_tracking tibble: Single row tracking data for this ticker
 #' @param bucket_name character: S3 bucket name
 #' @param api_key character: Alpha Vantage API key
 #' @param region character: AWS region (default: "us-east-1")
 #' @param delay_seconds numeric: Delay after each API call (default: 1)
-#' @return list: results per data type, each with success/data/error
+#' @return list: results per data type, each with success/data/error/metadata
 #' @keywords internal
 fetch_and_store_ticker_data <- function(
   ticker,
   fetch_requirements,
+  ticker_tracking,
   bucket_name,
   api_key,
   region = "us-east-1",
@@ -31,9 +35,24 @@ fetch_and_store_ticker_data <- function(
   results <- list()
 
   if (isTRUE(fetch_requirements$price)) {
-    results$price <- fetch_and_store_single_data_type(
-      ticker, "price", bucket_name, api_key, region, delay_seconds
+    outputsize <- determine_price_outputsize(
+      price_has_full_history = isTRUE(ticker_tracking$price_has_full_history),
+      price_last_date = ticker_tracking$price_last_date
     )
+
+    results$price <- fetch_and_store_single_data_type(
+      ticker, "price", bucket_name, api_key, region, delay_seconds,
+      outputsize = outputsize
+    )
+
+    if (isTRUE(results$price$success) && outputsize == "compact") {
+      if (price_data_contains_split(results$price$data)) {
+        results$price <- fetch_and_store_single_data_type(
+          ticker, "price", bucket_name, api_key, region, delay_seconds,
+          outputsize = "full"
+        )
+      }
+    }
   }
 
   if (isTRUE(fetch_requirements$splits)) {

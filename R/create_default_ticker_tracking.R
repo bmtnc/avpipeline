@@ -15,6 +15,8 @@ create_default_ticker_tracking <- function(ticker) {
   tibble::tibble(
     ticker = ticker,
     price_last_fetched_at = as.POSIXct(NA),
+    price_last_date = as.Date(NA),
+    price_has_full_history = FALSE,
     splits_last_fetched_at = as.POSIXct(NA),
     quarterly_last_fetched_at = as.POSIXct(NA),
     overview_last_fetched_at = as.POSIXct(NA),

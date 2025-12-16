@@ -19,13 +19,18 @@ etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
 aws_region <- Sys.getenv("AWS_REGION", "us-east-1")
 s3_bucket <- Sys.getenv("S3_BUCKET")
 delay_seconds <- as.numeric(Sys.getenv("API_DELAY_SECONDS", "1"))
+fetch_mode <- Sys.getenv("FETCH_MODE", "full")
 
 if (s3_bucket == "") {
   stop("S3_BUCKET environment variable is required")
 }
 
+if (!fetch_mode %in% c("full", "price_only", "quarterly_only")) {
+  stop("FETCH_MODE must be 'full', 'price_only', or 'quarterly_only'")
+}
+
 message("=== PHASE 1: FETCH RAW DATA ===")
-message("ETF: ", etf_symbol, " | Bucket: ", s3_bucket)
+message("ETF: ", etf_symbol, " | Bucket: ", s3_bucket, " | Mode: ", fetch_mode)
 
 # ============================================================================
 # SETUP
@@ -62,7 +67,8 @@ for (i in seq_along(tickers)) {
 
     fetch_requirements <- determine_fetch_requirements(
       ticker_tracking,
-      reference_date
+      reference_date,
+      fetch_mode = fetch_mode
     )
 
     fetch_types <- names(fetch_requirements)[unlist(fetch_requirements)]
@@ -78,6 +84,7 @@ for (i in seq_along(tickers)) {
     results <- suppressMessages(fetch_and_store_ticker_data(
       ticker = ticker,
       fetch_requirements = fetch_requirements,
+      ticker_tracking = ticker_tracking,
       bucket_name = s3_bucket,
       api_key = api_key,
       region = aws_region,
@@ -100,7 +107,19 @@ for (i in seq_along(tickers)) {
       )
     } else {
       if (isTRUE(fetch_requirements$price)) {
-        tracking <- update_tracking_after_fetch(tracking, ticker, "price")
+        price_data <- results$price$data
+        price_last_date <- if (!is.null(price_data) && nrow(price_data) > 0) {
+          max(price_data$date, na.rm = TRUE)
+        } else {
+          NULL
+        }
+        price_has_full_history <- results$price$outputsize_used == "full"
+
+        tracking <- update_tracking_after_fetch(
+          tracking, ticker, "price",
+          price_last_date = price_last_date,
+          price_has_full_history = price_has_full_history
+        )
       }
       if (isTRUE(fetch_requirements$splits)) {
         tracking <- update_tracking_after_fetch(tracking, ticker, "splits")

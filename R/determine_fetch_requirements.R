@@ -4,11 +4,13 @@
 #'
 #' @param ticker_tracking tibble: Single row from refresh tracking for this ticker
 #' @param reference_date Date: Date to check against (defaults to today)
-#' @return list: Named list with price, splits, quarterly (each TRUE/FALSE)
+#' @param fetch_mode character: "full" (default), "price_only", or "quarterly_only"
+#' @return list: Named list with price, splits, quarterly, overview (each TRUE/FALSE)
 #' @keywords internal
 determine_fetch_requirements <- function(
   ticker_tracking,
-  reference_date = Sys.Date()
+  reference_date = Sys.Date(),
+  fetch_mode = "full"
 ) {
   if (!is.data.frame(ticker_tracking) || nrow(ticker_tracking) != 1) {
     stop(
@@ -20,19 +22,42 @@ determine_fetch_requirements <- function(
       "determine_fetch_requirements(): [reference_date] must be a Date object"
     )
   }
+  if (!fetch_mode %in% c("full", "price_only", "quarterly_only")) {
+    stop(
+      "determine_fetch_requirements(): [fetch_mode] must be 'full', 'price_only', or 'quarterly_only'"
+    )
+  }
 
-  # Price and splits: always fetch on scheduled runs
+  if (fetch_mode == "price_only") {
+    return(list(
+      price = TRUE,
+      splits = TRUE,
+      quarterly = FALSE,
+      overview = FALSE
+    ))
+  }
+
+  if (fetch_mode == "quarterly_only") {
+    return(list(
+      price = FALSE,
+      splits = FALSE,
+      quarterly = TRUE,
+      overview = should_fetch_overview_data(
+        overview_last_fetched_at = ticker_tracking$overview_last_fetched_at,
+        reference_date = reference_date
+      )
+    ))
+  }
+
   fetch_price <- TRUE
   fetch_splits <- TRUE
 
-  # Quarterly: smart refresh based on earnings timing
   fetch_quarterly <- should_fetch_quarterly_data(
     next_estimated_report_date = ticker_tracking$next_estimated_report_date,
     quarterly_last_fetched_at = ticker_tracking$quarterly_last_fetched_at,
     reference_date = reference_date
   )
 
-  # Overview: fetch if never fetched or >90 days stale
   fetch_overview <- should_fetch_overview_data(
     overview_last_fetched_at = ticker_tracking$overview_last_fetched_at,
     reference_date = reference_date

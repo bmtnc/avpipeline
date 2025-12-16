@@ -5,8 +5,8 @@ test_that("create_empty_refresh_tracking creates correct schema", {
   expect_equal(nrow(tracking), 0)
 
   expected_cols <- c(
-    "ticker", "price_last_fetched_at", "splits_last_fetched_at",
-    "quarterly_last_fetched_at", "overview_last_fetched_at",
+    "ticker", "price_last_fetched_at", "price_last_date", "price_has_full_history",
+    "splits_last_fetched_at", "quarterly_last_fetched_at", "overview_last_fetched_at",
     "last_fiscal_date_ending", "last_reported_date",
     "next_estimated_report_date", "median_report_delay_days", "last_error_message",
     "is_active_ticker", "has_data_discrepancy", "last_version_date", "data_updated_at"
