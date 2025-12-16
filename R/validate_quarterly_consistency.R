@@ -18,7 +18,12 @@ validate_quarterly_consistency <- function(
     return(list(valid = TRUE, mismatches = NULL))
   }
 
-  if (!is.data.frame(new_data) || nrow(new_data) == 0) {
+  tryCatch(
+    validate_df_type(new_data),
+    error = function(e) return(list(valid = TRUE, mismatches = NULL))
+  )
+
+  if (nrow(new_data) == 0) {
     return(list(valid = TRUE, mismatches = NULL))
   }
 

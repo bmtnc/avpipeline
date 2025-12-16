@@ -6,19 +6,11 @@
 #' @return integer: Median delay in days, or NA if insufficient data
 #' @keywords internal
 calculate_median_report_delay <- function(earnings_data) {
-  if (!is.data.frame(earnings_data)) {
-    stop(
-      "calculate_median_report_delay(): [earnings_data] must be a data.frame"
-    )
-  }
+  required_cols <- c("fiscalDateEnding", "reportedDate")
+  validate_df_cols(earnings_data, required_cols)
+
   if (nrow(earnings_data) == 0) {
     return(NA_integer_)
-  }
-  required_cols <- c("fiscalDateEnding", "reportedDate")
-  if (!all(required_cols %in% names(earnings_data))) {
-    stop(
-      "calculate_median_report_delay(): [earnings_data] must have fiscalDateEnding and reportedDate columns"
-    )
   }
 
   valid_rows <- earnings_data[

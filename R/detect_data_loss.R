@@ -19,9 +19,7 @@ detect_data_loss <- function(
       new_count = nrow(new_data)
     ))
   }
-  if (!is.data.frame(new_data)) {
-    stop("detect_data_loss(): [new_data] must be a data.frame")
-  }
+  validate_df_type(new_data)
   if (
     !date_column %in% names(existing_data) || !date_column %in% names(new_data)
   ) {
