@@ -4,15 +4,21 @@
 \alias{determine_fetch_requirements}
 \title{Determine Fetch Requirements for a Ticker}
 \usage{
-determine_fetch_requirements(ticker_tracking, reference_date = Sys.Date())
+determine_fetch_requirements(
+  ticker_tracking,
+  reference_date = Sys.Date(),
+  fetch_mode = "full"
+)
 }
 \arguments{
 \item{ticker_tracking}{tibble: Single row from refresh tracking for this ticker}
 
 \item{reference_date}{Date: Date to check against (defaults to today)}
+
+\item{fetch_mode}{character: "full" (default), "price_only", or "quarterly_only"}
 }
 \value{
-list: Named list with price, splits, quarterly (each TRUE/FALSE)
+list: Named list with price, splits, quarterly, overview (each TRUE/FALSE)
 }
 \description{
 Determines which data types need to be fetched for a ticker based on tracking state.

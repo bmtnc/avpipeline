@@ -10,6 +10,8 @@ update_tracking_after_fetch(
   data_type,
   fiscal_date_ending = NULL,
   reported_date = NULL,
+  price_last_date = NULL,
+  price_has_full_history = NULL,
   data_changed = FALSE
 )
 }
@@ -23,6 +25,10 @@ update_tracking_after_fetch(
 \item{fiscal_date_ending}{Date: Most recent fiscalDateEnding (for quarterly only)}
 
 \item{reported_date}{Date: Most recent reportedDate (for quarterly only)}
+
+\item{price_last_date}{Date: Most recent date in price data (for price only)}
+
+\item{price_has_full_history}{logical: Whether full history was fetched (for price only)}
 
 \item{data_changed}{logical: Whether data actually changed from previous fetch}
 }

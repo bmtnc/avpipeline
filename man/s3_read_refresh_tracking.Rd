@@ -16,5 +16,6 @@ tibble: Refresh tracking dataframe
 }
 \description{
 Downloads the refresh tracking dataframe from S3. Returns empty tracking if not found.
+Handles schema evolution by adding missing columns with NA values.
 }
 \keyword{internal}
