@@ -39,8 +39,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "artifacts" {
   bucket = aws_s3_bucket.artifacts.id
 
   rule {
-    id     = "delete-old-artifacts"
+    id     = "delete-old-ttm-artifacts"
     status = "Enabled"
+
+    filter {
+      prefix = "ttm-artifacts/"
+    }
 
     expiration {
       days = 30
@@ -48,6 +52,23 @@ resource "aws_s3_bucket_lifecycle_configuration" "artifacts" {
 
     noncurrent_version_expiration {
       noncurrent_days = 30
+    }
+  }
+
+  rule {
+    id     = "delete-old-raw-data"
+    status = "Enabled"
+
+    filter {
+      prefix = "raw/"
+    }
+
+    expiration {
+      days = 365
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 365
     }
   }
 }

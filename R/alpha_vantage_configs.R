@@ -130,3 +130,23 @@ SPLITS_CONFIG <- list(
   result_sort_columns = c("ticker", "effective_date"),
   sort_desc = FALSE
 )
+
+#' Data Type Refresh Configuration
+#'
+#' Configuration for smart refresh logic per data type.
+#'
+#' @format A list containing refresh cadence settings for each data type.
+#' @export
+DATA_TYPE_REFRESH_CONFIG <- list(
+  price = list(
+    refresh_cadence = "scheduled"
+  ),
+  splits = list(
+    refresh_cadence = "scheduled"
+  ),
+  quarterly = list(
+    refresh_cadence = "earnings_driven",
+    window_days = 5,
+    fallback_max_days = 90
+  )
+)
