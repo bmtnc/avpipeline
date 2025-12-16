@@ -6,17 +6,7 @@
 #' @return tibble: Financial statements with added calendar_quarter_ending column
 #' @keywords internal
 standardize_to_calendar_quarters <- function(financial_statements) {
-  if (!is.data.frame(financial_statements)) {
-    stop(paste0(
-      "standardize_to_calendar_quarters(): [financial_statements] must be a data.frame, not ",
-      class(financial_statements)[1]
-    ))
-  }
-  if (!"fiscalDateEnding" %in% names(financial_statements)) {
-    stop(paste0(
-      "standardize_to_calendar_quarters(): [financial_statements] must contain fiscalDateEnding column"
-    ))
-  }
+  validate_df_cols(financial_statements, c("fiscalDateEnding"))
 
   message(paste0("Standardizing fiscal dates to calendar quarters..."))
 

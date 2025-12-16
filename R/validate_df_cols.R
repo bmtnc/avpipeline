@@ -1,8 +1,9 @@
 #' Validate DataFrame Columns
 #'
 #' Validates that an object is a data.frame and contains all required columns.
-#' This function is called for its side effects and will stop execution with
-#' an error message if validation fails.
+#' Does not check if the data.frame is empty; use validate_df_not_empty() separately
+#' if needed. This function is called for its side effects and will stop execution
+#' with an error message if validation fails.
 #'
 #' @param data Object to validate as a data.frame
 #' @param required_cols Character vector of required column names
@@ -17,13 +18,7 @@ validate_df_cols <- function(data, required_cols) {
     ))
   }
 
-  if (!is.data.frame(data)) {
-    stop(paste0("Input data must be a data.frame. Received: ", class(data)[1]))
-  }
-
-  if (nrow(data) == 0) {
-    stop("Input data is empty (0 rows)")
-  }
+  validate_df_type(data)
 
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {

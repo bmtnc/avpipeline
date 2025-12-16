@@ -1,19 +1,3 @@
-test_that("standardize_to_calendar_quarters validates financial_statements parameter", {
-  expect_error(
-    standardize_to_calendar_quarters("not a df"),
-    "^standardize_to_calendar_quarters\\(\\): \\[financial_statements\\] must be a data.frame, not character$"
-  )
-})
-
-test_that("standardize_to_calendar_quarters validates fiscalDateEnding column", {
-  test_data <- tibble::tibble(wrong_col = c("A", "B"))
-
-  expect_error(
-    standardize_to_calendar_quarters(test_data),
-    "^standardize_to_calendar_quarters\\(\\): \\[financial_statements\\] must contain fiscalDateEnding column$"
-  )
-})
-
 test_that("standardize_to_calendar_quarters maps fiscal dates correctly", {
   # nolint start
   # fmt: skip

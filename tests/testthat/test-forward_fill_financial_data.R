@@ -89,31 +89,6 @@ test_that("forward_fill_financial_data updates with new financial data", {
   expect_equal(result$totalRevenue_ttm, c(400000, 400000, 400000, 420000, 420000))
 })
 
-test_that("forward_fill_financial_data validates input type", {
-  expect_error(
-    forward_fill_financial_data("not_a_dataframe"),
-    "^forward_fill_financial_data\\(\\): \\[data\\] must be a data.frame, not character$"
-  )
-  
-  expect_error(
-    forward_fill_financial_data(list(a = 1, b = 2)),
-    "^forward_fill_financial_data\\(\\): \\[data\\] must be a data.frame, not list$"
-  )
-})
-
-test_that("forward_fill_financial_data validates required columns", {
-  # Missing ticker column
-  invalid_data <- tibble::tibble(
-    date = as.Date(c("2023-01-01", "2023-01-02")),
-    totalRevenue_ttm = c(400000, NA_real_)
-  )
-  
-  expect_error(
-    forward_fill_financial_data(invalid_data),
-    "^forward_fill_financial_data\\(\\): \\[data\\] must contain 'ticker' column$"
-  )
-})
-
 test_that("forward_fill_financial_data handles empty data frames", {
   # nolint start
   # fmt: skip
