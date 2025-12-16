@@ -24,7 +24,11 @@ load_all_artifact_statements <- function() {
   message(paste0("Initial data loaded:"))
   message(paste0("- Earnings: ", nrow(earnings), " observations"))
   message(paste0("- Cash flow: ", nrow(cash_flow), " observations"))
-  message(paste0("- Income statement: ", nrow(income_statement), " observations"))
+  message(paste0(
+    "- Income statement: ",
+    nrow(income_statement),
+    " observations"
+  ))
   message(paste0("- Balance sheet: ", nrow(balance_sheet), " observations"))
 
   list(

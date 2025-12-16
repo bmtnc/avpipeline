@@ -8,7 +8,12 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @return logical: TRUE if snapshot created, FALSE if no existing data
 #' @keywords internal
-s3_write_version_snapshot <- function(ticker, data_type, bucket_name, region = "us-east-1") {
+s3_write_version_snapshot <- function(
+  ticker,
+  data_type,
+  bucket_name,
+  region = "us-east-1"
+) {
   if (!is.character(ticker) || length(ticker) != 1) {
     stop("s3_write_version_snapshot(): [ticker] must be a character scalar")
   }
@@ -16,10 +21,17 @@ s3_write_version_snapshot <- function(ticker, data_type, bucket_name, region = "
     stop("s3_write_version_snapshot(): [data_type] must be a character scalar")
   }
   if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop("s3_write_version_snapshot(): [bucket_name] must be a character scalar")
+    stop(
+      "s3_write_version_snapshot(): [bucket_name] must be a character scalar"
+    )
   }
 
-  existing_data <- s3_read_ticker_raw_data_single(ticker, data_type, bucket_name, region)
+  existing_data <- s3_read_ticker_raw_data_single(
+    ticker,
+    data_type,
+    bucket_name,
+    region
+  )
 
   if (is.null(existing_data)) {
     return(FALSE)

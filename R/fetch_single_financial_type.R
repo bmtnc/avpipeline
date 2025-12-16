@@ -10,19 +10,28 @@
 #' @keywords internal
 fetch_single_financial_type <- function(tickers, config, cache_path) {
   if (!is.character(tickers)) {
-    stop(paste0("fetch_single_financial_type(): [tickers] must be a character vector, not ", class(tickers)[1]))
+    stop(paste0(
+      "fetch_single_financial_type(): [tickers] must be a character vector, not ",
+      class(tickers)[1]
+    ))
   }
-  
   if (!is.list(config)) {
-    stop(paste0("fetch_single_financial_type(): [config] must be a list, not ", class(config)[1]))
+    stop(paste0(
+      "fetch_single_financial_type(): [config] must be a list, not ",
+      class(config)[1]
+    ))
   }
-  
   if (!is.character(cache_path) || length(cache_path) != 1) {
-    stop(paste0("fetch_single_financial_type(): [cache_path] must be a character scalar, not ", class(cache_path)[1], " of length ", length(cache_path)))
+    stop(paste0(
+      "fetch_single_financial_type(): [cache_path] must be a character scalar, not ",
+      class(cache_path)[1],
+      " of length ",
+      length(cache_path)
+    ))
   }
-  
+
   message(paste0("\n=== Processing ", config$data_type_name, " Data ==="))
-  
+
   fetch_multiple_tickers_with_cache(
     tickers = tickers,
     cache_file = cache_path,
@@ -33,6 +42,6 @@ fetch_single_financial_type <- function(tickers, config, cache_path) {
     data_type_name = config$data_type_name,
     delay_seconds = config$default_delay
   )
-  
+
   invisible(NULL)
 }

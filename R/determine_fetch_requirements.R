@@ -6,12 +6,19 @@
 #' @param reference_date Date: Date to check against (defaults to today)
 #' @return list: Named list with price, splits, quarterly (each TRUE/FALSE)
 #' @keywords internal
-determine_fetch_requirements <- function(ticker_tracking, reference_date = Sys.Date()) {
+determine_fetch_requirements <- function(
+  ticker_tracking,
+  reference_date = Sys.Date()
+) {
   if (!is.data.frame(ticker_tracking) || nrow(ticker_tracking) != 1) {
-    stop("determine_fetch_requirements(): [ticker_tracking] must be a single-row data.frame")
+    stop(
+      "determine_fetch_requirements(): [ticker_tracking] must be a single-row data.frame"
+    )
   }
   if (!inherits(reference_date, "Date")) {
-    stop("determine_fetch_requirements(): [reference_date] must be a Date object")
+    stop(
+      "determine_fetch_requirements(): [reference_date] must be a Date object"
+    )
   }
 
   # Price and splits: always fetch on scheduled runs

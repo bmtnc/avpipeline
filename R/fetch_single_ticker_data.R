@@ -11,29 +11,27 @@
 #'
 #' @return A tibble with the requested data type
 #' @export
-#' 
+#'
 fetch_single_ticker_data <- function(ticker, config, api_key = NULL, ...) {
-  
-  # Validate inputs
   if (missing(ticker) || !is.character(ticker) || length(ticker) != 1) {
     stop("ticker must be a single character string")
   }
-  
+
   if (missing(config) || !is.list(config)) {
     stop("config must be a configuration list object")
   }
-  
+
   if (!"parser_func" %in% names(config)) {
     stop("config must contain a 'parser_func' element")
   }
-  
+
   # Step 1: Make API request
   response <- make_alpha_vantage_request(ticker, config, api_key, ...)
-  
+
   # Step 2: Parse response using config-specified parser
   parser_func_name <- config$parser_func
   parser_func <- get(parser_func_name)
-  
+
   # Handle different parser function signatures
   if (config$api_function == "TIME_SERIES_DAILY_ADJUSTED") {
     # Price data parser needs datatype parameter
@@ -48,7 +46,7 @@ fetch_single_ticker_data <- function(ticker, config, api_key = NULL, ...) {
     # Other parsers just need response and ticker
     parsed_data <- parser_func(response, ticker)
   }
-  
+
   return(parsed_data)
 }
 

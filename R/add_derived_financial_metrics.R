@@ -15,7 +15,7 @@ add_derived_financial_metrics <- function(data) {
       class(data)[1]
     ))
   }
-  
+
   # Define required columns
   required_cols <- c(
     "operatingCashflow_ttm_per_share",
@@ -32,7 +32,7 @@ add_derived_financial_metrics <- function(data) {
     "totalRevenue_ttm_per_share",
     "totalAssets_per_share"
   )
-  
+
   missing_cols <- setdiff(required_cols, names(data))
   if (length(missing_cols) > 0) {
     stop(paste0(
@@ -40,7 +40,7 @@ add_derived_financial_metrics <- function(data) {
       paste(missing_cols, collapse = ", ")
     ))
   }
-  
+
   # Calculate derived metrics
   data %>%
     dplyr::mutate(
@@ -65,8 +65,7 @@ add_derived_financial_metrics <- function(data) {
         capitalLeaseObligations_per_share,
         totalShareholderEquity_per_share
       ),
-      has_complete_financial_data = 
-        !is.na(totalRevenue_ttm_per_share) &
+      has_complete_financial_data = !is.na(totalRevenue_ttm_per_share) &
         !is.na(totalAssets_per_share) &
         !is.na(operatingCashflow_ttm_per_share)
     )

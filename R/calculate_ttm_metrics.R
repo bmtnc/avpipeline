@@ -14,7 +14,7 @@ calculate_ttm_metrics <- function(data, flow_metrics) {
             dplyr::coalesce(., 0),
             width = 4,
             FUN = sum,
-            align = "right", 
+            align = "right",
             fill = NA,
             na.rm = TRUE
           ),

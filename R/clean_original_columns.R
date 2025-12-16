@@ -9,40 +9,54 @@
 #' @return Data frame with cleaned metric columns (anomaly flag columns preserved)
 #' @export
 clean_original_columns <- function(data, metric_cols) {
-  
-  # Input validation
   if (!is.character(metric_cols) || length(metric_cols) == 0) {
-    stop(paste0("Argument 'metric_cols' must be non-empty character vector, received: ",
-                class(metric_cols)[1], " of length ", length(metric_cols)))
+    stop(paste0(
+      "Argument 'metric_cols' must be non-empty character vector, received: ",
+      class(metric_cols)[1],
+      " of length ",
+      length(metric_cols)
+    ))
   }
-  
-  # Validate data frame and required columns
+
   validate_df_cols(data, metric_cols)
-  
-  # Clean each metric column with error handling
+
   result <- data
-  
+
   for (metric in metric_cols) {
     anomaly_col <- paste0(metric, "_anomaly")
-    
+
     # Check if anomaly column exists
     if (anomaly_col %in% names(result)) {
-      tryCatch({
-        result <- result %>%
-          dplyr::mutate(
-            !!rlang::sym(metric) := zoo::na.approx(
-              ifelse(!!rlang::sym(anomaly_col), NA, !!rlang::sym(metric)),
-              na.rm = FALSE
+      tryCatch(
+        {
+          result <- result %>%
+            dplyr::mutate(
+              !!rlang::sym(metric) := zoo::na.approx(
+                ifelse(!!rlang::sym(anomaly_col), NA, !!rlang::sym(metric)),
+                na.rm = FALSE
+              )
             )
-          )
-      }, error = function(e) {
-        warning(paste0("Failed to clean column '", metric, "'. Error: ", e$message))
-        # Keep original data for this column if cleaning fails
-      })
+        },
+        error = function(e) {
+          warning(paste0(
+            "Failed to clean column '",
+            metric,
+            "'. Error: ",
+            e$message
+          ))
+          # Keep original data for this column if cleaning fails
+        }
+      )
     } else {
-      warning(paste0("Anomaly column '", anomaly_col, "' not found for metric '", metric, "'. Skipping cleaning."))
+      warning(paste0(
+        "Anomaly column '",
+        anomaly_col,
+        "' not found for metric '",
+        metric,
+        "'. Skipping cleaning."
+      ))
     }
   }
-  
+
   result
 }

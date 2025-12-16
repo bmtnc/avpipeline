@@ -9,7 +9,13 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @return logical: TRUE if upload successful
 #' @keywords internal
-s3_write_ticker_raw_data <- function(data, ticker, data_type, bucket_name, region = "us-east-1") {
+s3_write_ticker_raw_data <- function(
+  data,
+  ticker,
+  data_type,
+  bucket_name,
+  region = "us-east-1"
+) {
   if (!is.data.frame(data)) {
     stop("s3_write_ticker_raw_data(): [data] must be a data.frame")
   }

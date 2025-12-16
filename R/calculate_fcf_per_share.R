@@ -15,14 +15,14 @@ calculate_fcf_per_share <- function(operating_cf_ps, capex_ps) {
       class(operating_cf_ps)[1]
     ))
   }
-  
+
   if (!is.numeric(capex_ps)) {
     stop(paste0(
       "calculate_fcf_per_share(): [capex_ps] must be numeric, not ",
       class(capex_ps)[1]
     ))
   }
-  
+
   dplyr::if_else(
     !is.na(operating_cf_ps) & !is.na(capex_ps),
     operating_cf_ps - capex_ps,

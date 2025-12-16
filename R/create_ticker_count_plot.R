@@ -8,17 +8,25 @@
 #' @keywords internal
 create_ticker_count_plot <- function(financial_statements) {
   if (!is.data.frame(financial_statements)) {
-    stop(paste0("create_ticker_count_plot(): [financial_statements] must be a data.frame, not ", class(financial_statements)[1]))
+    stop(paste0(
+      "create_ticker_count_plot(): [financial_statements] must be a data.frame, not ",
+      class(financial_statements)[1]
+    ))
   }
-  
+
   required_cols <- c("ticker", "calendar_quarter_ending")
   missing_cols <- setdiff(required_cols, names(financial_statements))
   if (length(missing_cols) > 0) {
-    stop(paste0("create_ticker_count_plot(): [financial_statements] missing required columns: ", paste(missing_cols, collapse = ", ")))
+    stop(paste0(
+      "create_ticker_count_plot(): [financial_statements] missing required columns: ",
+      paste(missing_cols, collapse = ", ")
+    ))
   }
-  
-  message(paste0("Creating ticker count visualization with standardized dates..."))
-  
+
+  message(paste0(
+    "Creating ticker count visualization with standardized dates..."
+  ))
+
   standardized_ticker_counts <- financial_statements %>%
     dplyr::group_by(calendar_quarter_ending) %>%
     dplyr::summarise(
@@ -26,9 +34,12 @@ create_ticker_count_plot <- function(financial_statements) {
       .groups = "drop"
     ) %>%
     dplyr::arrange(calendar_quarter_ending)
-  
+
   standardized_plot <- standardized_ticker_counts %>%
-    ggplot2::ggplot(ggplot2::aes(x = calendar_quarter_ending, y = ticker_count)) +
+    ggplot2::ggplot(ggplot2::aes(
+      x = calendar_quarter_ending,
+      y = ticker_count
+    )) +
     ggplot2::geom_col(fill = "steelblue", alpha = 0.7) +
     ggplot2::labs(
       title = "Number of Tickers by Calendar Quarter (Standardized)",
@@ -49,6 +60,6 @@ create_ticker_count_plot <- function(financial_statements) {
       expand = c(0, 0),
       limits = c(0, max(standardized_ticker_counts$ticker_count) * 1.05)
     )
-  
+
   standardized_plot
 }

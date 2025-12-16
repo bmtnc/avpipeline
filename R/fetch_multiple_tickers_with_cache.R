@@ -16,37 +16,38 @@
 #' @param ... Additional parameters passed to single_fetch_func
 #' @return Invisible NULL (data is written to cache file)
 #' @export
-fetch_multiple_tickers_with_cache <- function(tickers,
-                                                          cache_file,
-                                                          single_fetch_func,
-                                                          cache_reader_func,
-                                                          data_type_name = "data",
-                                                          delay_seconds = 1,
-                                                          max_retries = 3,
-                                                          as_of_date = Sys.Date(),
-                                                          ...) {
-  
-  # Validate inputs
+fetch_multiple_tickers_with_cache <- function(
+  tickers,
+  cache_file,
+  single_fetch_func,
+  cache_reader_func,
+  data_type_name = "data",
+  delay_seconds = 1,
+  max_retries = 3,
+  as_of_date = Sys.Date(),
+  ...
+) {
   if (length(tickers) == 0) {
     stop("No tickers provided")
   }
-  
   if (missing(cache_file)) {
     stop("cache_file parameter is required")
   }
-  
   if (missing(single_fetch_func)) {
     stop("single_fetch_func parameter is required")
   }
-  
   if (missing(cache_reader_func)) {
     stop("cache_reader_func parameter is required")
   }
-  
+
   # Check cache and filter tickers
   if (file.exists(cache_file)) {
     existing_data <- cache_reader_func(cache_file)
-    tickers <- determine_missing_symbols(tickers, existing_data, symbol_column = "ticker")
+    tickers <- determine_missing_symbols(
+      tickers,
+      existing_data,
+      symbol_column = "ticker"
+    )
     if (length(tickers) == 0) {
       cat("All tickers already in cache\n")
       return(invisible(TRUE))
@@ -57,66 +58,106 @@ fetch_multiple_tickers_with_cache <- function(tickers,
   total_tickers <- length(tickers)
   successful_results <- list()
   failed_tickers <- list()
-  
-  cat("Processing", total_tickers, "tickers for", data_type_name, "data with batch caching...\n")
-  
+
+  cat(
+    "Processing",
+    total_tickers,
+    "tickers for",
+    data_type_name,
+    "data with batch caching...\n"
+  )
+
   # Process each ticker individually
   for (i in seq_along(tickers)) {
     ticker <- tickers[i]
     ticker_data <- NULL
     success <- FALSE
-    
-    cat("[", i, "/", total_tickers, "] Fetching", data_type_name, "data for symbol:", ticker, "\n")
-    
+
+    cat(
+      "[",
+      i,
+      "/",
+      total_tickers,
+      "] Fetching",
+      data_type_name,
+      "data for symbol:",
+      ticker,
+      "\n"
+    )
+
     # Try API call with retry logic
     for (attempt in 1:max_retries) {
-      tryCatch({
-        # Fetch data for current ticker
-        ticker_data <- single_fetch_func(ticker = ticker, ...)
-        
-        # Add as_of_date metadata
-        if (nrow(ticker_data) > 0) {
-          ticker_data$as_of_date <- as_of_date
+      tryCatch(
+        {
+          # Fetch data for current ticker
+          ticker_data <- single_fetch_func(ticker = ticker, ...)
+
+          # Add as_of_date metadata
+          if (nrow(ticker_data) > 0) {
+            ticker_data$as_of_date <- as_of_date
+          }
+
+          # Success - break out of retry loop
+          success <- TRUE
+          break
+        },
+        error = function(e) {
+          if (attempt < max_retries) {
+            # Calculate retry delay (5 seconds for first retry, 10 for second)
+            retry_delay <- if (attempt == 1) 5 else 10
+            cat(
+              "  Attempt",
+              attempt,
+              "failed for",
+              ticker,
+              "- waiting",
+              retry_delay,
+              "seconds before retry\n"
+            )
+            Sys.sleep(retry_delay)
+          } else {
+            # Final failure after all retries
+            cat(
+              "  All",
+              max_retries,
+              "attempts failed for",
+              ticker,
+              ":",
+              e$message,
+              "\n"
+            )
+            failed_tickers[[ticker]] <<- e$message
+          }
         }
-        
-        # Success - break out of retry loop
-        success <- TRUE
-        break
-        
-      }, error = function(e) {
-        if (attempt < max_retries) {
-          # Calculate retry delay (5 seconds for first retry, 10 for second)
-          retry_delay <- if (attempt == 1) 5 else 10
-          cat("  Attempt", attempt, "failed for", ticker, "- waiting", retry_delay, "seconds before retry\n")
-          Sys.sleep(retry_delay)
-        } else {
-          # Final failure after all retries
-          cat("  All", max_retries, "attempts failed for", ticker, ":", e$message, "\n")
-          failed_tickers[[ticker]] <<- e$message
-        }
-      })
+      )
     }
-    
+
     # If successful, add to results
     if (success) {
       successful_results[[ticker]] <- ticker_data
-      cat("Success: Data for", ticker, "collected (", nrow(ticker_data), "rows)\n")
+      cat(
+        "Success: Data for",
+        ticker,
+        "collected (",
+        nrow(ticker_data),
+        "rows)\n"
+      )
     }
-    
+
     # Add delay between requests (except for the last one)
     if (i < total_tickers && delay_seconds > 0) {
       Sys.sleep(delay_seconds)
     }
   }
-  
+
   # Process results
   successful_count <- length(successful_results)
   failed_count <- length(failed_tickers)
-  
+
   cat("\n=== API Fetch Complete ===\n")
   cat("Successfully fetched:", successful_count, "tickers\n")
   cat("Failed to fetch:", failed_count, "tickers\n")
-  
+
   # Report failed tickers
   if (failed_count > 0) {
     cat("\nFailed tickers:\n")
@@ -124,14 +165,18 @@ fetch_multiple_tickers_with_cache <- function(tickers,
       cat("  -", ticker, ":", failed_tickers[[ticker]], "\n")
     }
   }
-  
+
   # Combine successful results and write to cache
   if (successful_count > 0) {
-    cat("\nCombining and writing", successful_count, "successful results to cache...\n")
-    
+    cat(
+      "\nCombining and writing",
+      successful_count,
+      "successful results to cache...\n"
+    )
+
     # Combine all successful results
     new_data <- dplyr::bind_rows(successful_results)
-    
+
     # Read existing cache data if it exists
     if (file.exists(cache_file)) {
       existing_data <- cache_reader_func(cache_file)
@@ -139,9 +184,11 @@ fetch_multiple_tickers_with_cache <- function(tickers,
     } else {
       combined_data <- new_data
     }
-    
+
     # Remove duplicates based on appropriate columns
-    if (grepl("income|balance|cash|earnings", data_type_name, ignore.case = TRUE)) {
+    if (
+      grepl("income|balance|cash|earnings", data_type_name, ignore.case = TRUE)
+    ) {
       # For financial statements, deduplicate on ticker and fiscalDateEnding
       combined_data <- combined_data %>%
         dplyr::distinct(ticker, fiscalDateEnding, .keep_all = TRUE)
@@ -154,21 +201,20 @@ fetch_multiple_tickers_with_cache <- function(tickers,
       combined_data <- combined_data %>%
         dplyr::distinct(ticker, date, .keep_all = TRUE)
     }
-    
+
     # Write combined data to cache (parquet format)
     arrow::write_parquet(combined_data, cache_file)
-    
+
     cat("Success: All data written to cache:", cache_file, "\n")
     cat("Total rows in cache:", nrow(combined_data), "\n")
-    
   } else {
     cat("No successful data to write to cache.\n")
   }
-  
+
   # Final summary
   cat("\n=== Batch Caching Complete ===\n")
   cat("Successfully processed:", successful_count, "tickers\n")
   cat("Failed to process:", failed_count, "tickers\n")
-  
+
   return(invisible(TRUE))
 }

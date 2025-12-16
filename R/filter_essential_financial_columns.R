@@ -7,7 +7,10 @@
 #' @keywords internal
 filter_essential_financial_columns <- function(financial_statements) {
   if (!is.data.frame(financial_statements)) {
-    stop(paste0("filter_essential_financial_columns(): [financial_statements] must be a data.frame, not ", class(financial_statements)[1]))
+    stop(paste0(
+      "filter_essential_financial_columns(): [financial_statements] must be a data.frame, not ",
+      class(financial_statements)[1]
+    ))
   }
 
   message(paste0("Filtering to essential columns only..."))
@@ -22,7 +25,10 @@ filter_essential_financial_columns <- function(financial_statements) {
   meta_cols <- c("ticker", "reportedCurrency")
 
   essential_cols <- c(financial_metrics, date_cols, meta_cols)
-  existing_essential_cols <- intersect(essential_cols, names(financial_statements))
+  existing_essential_cols <- intersect(
+    essential_cols,
+    names(financial_statements)
+  )
 
   original_col_count <- ncol(financial_statements)
 
@@ -32,7 +38,10 @@ filter_essential_financial_columns <- function(financial_statements) {
   message(paste0("Column filtering summary:"))
   message(paste0("- Original columns: ", original_col_count))
   message(paste0("- Kept columns: ", length(existing_essential_cols)))
-  message(paste0("- Removed columns: ", original_col_count - length(existing_essential_cols)))
+  message(paste0(
+    "- Removed columns: ",
+    original_col_count - length(existing_essential_cols)
+  ))
 
   filtered_data
 }

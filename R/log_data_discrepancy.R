@@ -9,7 +9,13 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @return logical: TRUE if logged successfully
 #' @keywords internal
-log_data_discrepancy <- function(ticker, data_type, mismatches, bucket_name, region = "us-east-1") {
+log_data_discrepancy <- function(
+  ticker,
+  data_type,
+  mismatches,
+  bucket_name,
+  region = "us-east-1"
+) {
   if (!is.character(ticker) || length(ticker) != 1) {
     stop("log_data_discrepancy(): [ticker] must be a character scalar")
   }
@@ -35,10 +41,12 @@ log_data_discrepancy <- function(ticker, data_type, mismatches, bucket_name, reg
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)
 
-  result <- system2("aws",
-                    args = c("s3", "cp", s3_uri, temp_file, "--region", region),
-                    stdout = TRUE,
-                    stderr = TRUE)
+  result <- system2(
+    "aws",
+    args = c("s3", "cp", s3_uri, temp_file, "--region", region),
+    stdout = TRUE,
+    stderr = TRUE
+  )
 
   if (is.null(attr(result, "status")) || attr(result, "status") == 0) {
     if (file.exists(temp_file)) {

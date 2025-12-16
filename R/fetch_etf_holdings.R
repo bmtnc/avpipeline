@@ -9,27 +9,37 @@
 #'
 #' @return Character vector of ticker symbols from the ETF holdings
 #' @export
-#' 
+#'
 fetch_etf_holdings <- function(etf_symbol, api_key = NULL) {
-  # Input validation
-  if (is.null(etf_symbol) || !is.character(etf_symbol) || length(etf_symbol) != 1) {
+  if (
+    is.null(etf_symbol) || !is.character(etf_symbol) || length(etf_symbol) != 1
+  ) {
     stop("etf_symbol must be a single character string")
   }
-  
   if (nchar(etf_symbol) == 0) {
     stop("etf_symbol cannot be empty")
   }
-  
+
   # Convert to uppercase for consistency
   etf_symbol <- toupper(etf_symbol)
-  
+
   # Make API request using configuration-based approach
-  response <- make_alpha_vantage_request(etf_symbol, ETF_PROFILE_CONFIG, api_key)
-  
+  response <- make_alpha_vantage_request(
+    etf_symbol,
+    ETF_PROFILE_CONFIG,
+    api_key
+  )
+
   # Parse response and extract ticker symbols
   tickers <- parse_etf_profile_response(response)
-  
-  cat("Successfully fetched", length(tickers), "holdings for ETF:", etf_symbol, "\n")
-  
+
+  cat(
+    "Successfully fetched",
+    length(tickers),
+    "holdings for ETF:",
+    etf_symbol,
+    "\n"
+  )
+
   return(tickers)
 }

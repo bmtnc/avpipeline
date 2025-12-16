@@ -17,10 +17,12 @@ s3_read_refresh_tracking <- function(bucket_name, region = "us-east-1") {
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)
 
-  result <- system2("aws",
-                    args = c("s3", "cp", s3_uri, temp_file, "--region", region),
-                    stdout = TRUE,
-                    stderr = TRUE)
+  result <- system2(
+    "aws",
+    args = c("s3", "cp", s3_uri, temp_file, "--region", region),
+    stdout = TRUE,
+    stderr = TRUE
+  )
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
     message("No existing refresh tracking found, creating empty tracking")

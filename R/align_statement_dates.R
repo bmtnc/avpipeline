@@ -7,13 +7,19 @@
 #' @keywords internal
 align_statement_dates <- function(statements) {
   if (!is.list(statements)) {
-    stop(paste0("align_statement_dates(): [statements] must be a list, not ", class(statements)[1]))
+    stop(paste0(
+      "align_statement_dates(): [statements] must be a list, not ",
+      class(statements)[1]
+    ))
   }
 
   required_names <- c("cash_flow", "income_statement", "balance_sheet")
   missing_names <- setdiff(required_names, names(statements))
   if (length(missing_names) > 0) {
-    stop(paste0("align_statement_dates(): [statements] must contain: ", paste(required_names, collapse = ", ")))
+    stop(paste0(
+      "align_statement_dates(): [statements] must contain: ",
+      paste(required_names, collapse = ", ")
+    ))
   }
 
   cash_flow_dates <- statements$cash_flow %>%
@@ -32,8 +38,14 @@ align_statement_dates <- function(statements) {
     dplyr::mutate(in_balance_sheet = TRUE)
 
   date_alignment <- cash_flow_dates %>%
-    dplyr::full_join(income_statement_dates, by = c("ticker", "fiscalDateEnding")) %>%
-    dplyr::full_join(balance_sheet_dates, by = c("ticker", "fiscalDateEnding")) %>%
+    dplyr::full_join(
+      income_statement_dates,
+      by = c("ticker", "fiscalDateEnding")
+    ) %>%
+    dplyr::full_join(
+      balance_sheet_dates,
+      by = c("ticker", "fiscalDateEnding")
+    ) %>%
     dplyr::mutate(
       in_cash_flow = dplyr::coalesce(in_cash_flow, FALSE),
       in_income_statement = dplyr::coalesce(in_income_statement, FALSE),
@@ -46,7 +58,11 @@ align_statement_dates <- function(statements) {
   removed_observations <- total_observations - valid_observations
 
   if (removed_observations > 0) {
-    message(paste0("Removed ", removed_observations, " observations with misaligned fiscalDateEnding dates across the 3 financial statement files"))
+    message(paste0(
+      "Removed ",
+      removed_observations,
+      " observations with misaligned fiscalDateEnding dates across the 3 financial statement files"
+    ))
   }
 
   valid_dates <- date_alignment %>%
@@ -54,7 +70,13 @@ align_statement_dates <- function(statements) {
     dplyr::select(ticker, fiscalDateEnding)
 
   final_tickers <- unique(valid_dates$ticker)
-  message(paste0("Final dataset includes ", length(final_tickers), " tickers with ", nrow(valid_dates), " aligned observations"))
+  message(paste0(
+    "Final dataset includes ",
+    length(final_tickers),
+    " tickers with ",
+    nrow(valid_dates),
+    " aligned observations"
+  ))
 
   valid_dates
 }

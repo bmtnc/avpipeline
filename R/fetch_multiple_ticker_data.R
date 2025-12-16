@@ -13,31 +13,29 @@
 #' @return A tibble with data for all tickers in long format
 #' @export
 #'
-fetch_multiple_ticker_data <- function(tickers, config, api_key = NULL, delay_seconds = NULL, ...) {
-  
-  # Step 1: Validate inputs
+fetch_multiple_ticker_data <- function(
+  tickers,
+  config,
+  api_key = NULL,
+  delay_seconds = NULL,
+  ...
+) {
   if (missing(tickers) || !is.character(tickers) || length(tickers) == 0) {
     stop("tickers must be a non-empty character vector")
   }
-  
   if (missing(config) || !is.list(config)) {
     stop("config must be a configuration list object")
   }
-  
-  # Use config default delay if not provided
   if (is.null(delay_seconds)) {
     delay_seconds <- config$default_delay %||% 1
   }
-  
   if (!is.numeric(delay_seconds) || delay_seconds < 0) {
     stop("delay_seconds must be a non-negative number")
   }
-  
   # Step 2: Get API key once
   if (is.null(api_key)) {
     api_key <- get_api_key()
   }
-  
   # Step 3: Process all tickers with progress tracking
   results_list <- fetch_tickers_with_progress(
     tickers = tickers,
@@ -46,10 +44,9 @@ fetch_multiple_ticker_data <- function(tickers, config, api_key = NULL, delay_se
     delay_seconds = delay_seconds,
     ...
   )
-  
   # Step 4: Combine and process results
   combined_data <- combine_ticker_results(results_list, tickers, config)
-  
+
   return(combined_data)
 }
 

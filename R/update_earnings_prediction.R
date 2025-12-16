@@ -17,7 +17,6 @@ update_earnings_prediction <- function(tracking, ticker, earnings_data) {
   if (!is.data.frame(earnings_data)) {
     stop("update_earnings_prediction(): [earnings_data] must be a data.frame")
   }
-
   if (nrow(earnings_data) == 0) {
     return(tracking)
   }
@@ -37,10 +36,14 @@ update_earnings_prediction <- function(tracking, ticker, earnings_data) {
   )
 
   # Update tracking
-  update_ticker_tracking(tracking, ticker, list(
-    last_fiscal_date_ending = last_fiscal,
-    last_reported_date = last_reported,
-    median_report_delay_days = median_delay,
-    next_estimated_report_date = next_estimated
-  ))
+  update_ticker_tracking(
+    tracking,
+    ticker,
+    list(
+      last_fiscal_date_ending = last_fiscal,
+      last_reported_date = last_reported,
+      median_report_delay_days = median_delay,
+      next_estimated_report_date = next_estimated
+    )
+  )
 }

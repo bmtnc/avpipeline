@@ -15,20 +15,29 @@ detect_data_changes <- function(existing_data, new_data, date_column) {
     stop("detect_data_changes(): [date_column] must be a character scalar")
   }
   if (!date_column %in% names(new_data)) {
-    stop(paste0("detect_data_changes(): [date_column] '", date_column, "' not found in new_data"))
+    stop(paste0(
+      "detect_data_changes(): [date_column] '",
+      date_column,
+      "' not found in new_data"
+    ))
   }
-
-  # No existing data - everything is new
   if (is.null(existing_data) || nrow(existing_data) == 0) {
     return(list(
       has_changes = TRUE,
       new_records_count = nrow(new_data),
-      latest_date = if (nrow(new_data) > 0) max(new_data[[date_column]], na.rm = TRUE) else NULL
+      latest_date = if (nrow(new_data) > 0) {
+        max(new_data[[date_column]], na.rm = TRUE)
+      } else {
+        NULL
+      }
     ))
   }
-
   if (!date_column %in% names(existing_data)) {
-    stop(paste0("detect_data_changes(): [date_column] '", date_column, "' not found in existing_data"))
+    stop(paste0(
+      "detect_data_changes(): [date_column] '",
+      date_column,
+      "' not found in existing_data"
+    ))
   }
 
   existing_dates <- existing_data[[date_column]]

@@ -9,13 +9,17 @@
 #' @param fallback_max_days integer: Force fetch if data older than this (default: 90)
 #' @return logical: TRUE if quarterly data should be fetched
 #' @keywords internal
-should_fetch_quarterly_data <- function(next_estimated_report_date,
-                                         quarterly_last_fetched_at,
-                                         reference_date = Sys.Date(),
-                                         window_days = DATA_TYPE_REFRESH_CONFIG$quarterly$window_days,
-                                         fallback_max_days = DATA_TYPE_REFRESH_CONFIG$quarterly$fallback_max_days) {
+should_fetch_quarterly_data <- function(
+  next_estimated_report_date,
+  quarterly_last_fetched_at,
+  reference_date = Sys.Date(),
+  window_days = DATA_TYPE_REFRESH_CONFIG$quarterly$window_days,
+  fallback_max_days = DATA_TYPE_REFRESH_CONFIG$quarterly$fallback_max_days
+) {
   if (!inherits(reference_date, "Date")) {
-    stop("should_fetch_quarterly_data(): [reference_date] must be a Date object")
+    stop(
+      "should_fetch_quarterly_data(): [reference_date] must be a Date object"
+    )
   }
 
   # New ticker - no prior fetch
@@ -24,7 +28,11 @@ should_fetch_quarterly_data <- function(next_estimated_report_date,
   }
 
   # Fallback: fetch if data is too old
-  days_since_fetch <- as.numeric(difftime(reference_date, as.Date(quarterly_last_fetched_at), units = "days"))
+  days_since_fetch <- as.numeric(difftime(
+    reference_date,
+    as.Date(quarterly_last_fetched_at),
+    units = "days"
+  ))
   if (days_since_fetch > fallback_max_days) {
     return(TRUE)
   }
@@ -35,6 +43,10 @@ should_fetch_quarterly_data <- function(next_estimated_report_date,
   }
 
   # Within ±window_days of predicted earnings
-  days_until_earnings <- as.numeric(difftime(next_estimated_report_date, reference_date, units = "days"))
+  days_until_earnings <- as.numeric(difftime(
+    next_estimated_report_date,
+    reference_date,
+    units = "days"
+  ))
   abs(days_until_earnings) <= window_days
 }

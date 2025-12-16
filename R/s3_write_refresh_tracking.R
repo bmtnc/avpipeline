@@ -7,12 +7,18 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @return logical: TRUE if upload successful
 #' @keywords internal
-s3_write_refresh_tracking <- function(tracking, bucket_name, region = "us-east-1") {
+s3_write_refresh_tracking <- function(
+  tracking,
+  bucket_name,
+  region = "us-east-1"
+) {
   if (!is.data.frame(tracking)) {
     stop("s3_write_refresh_tracking(): [tracking] must be a data.frame")
   }
   if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop("s3_write_refresh_tracking(): [bucket_name] must be a character scalar")
+    stop(
+      "s3_write_refresh_tracking(): [bucket_name] must be a character scalar"
+    )
   }
 
   temp_file <- tempfile(fileext = ".parquet")

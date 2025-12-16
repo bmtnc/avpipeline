@@ -7,12 +7,29 @@
 #' @export
 get_income_statement_metrics <- function() {
   c(
-    "grossProfit", "totalRevenue", "costOfRevenue", "costofGoodsAndServicesSold",
-    "operatingIncome", "sellingGeneralAndAdministrative", "researchAndDevelopment",
-    "operatingExpenses", "investmentIncomeNet", "netInterestIncome", "interestIncome",
-    "interestExpense", "nonInterestIncome", "otherNonOperatingIncome", "depreciation",
-    "depreciationAndAmortization", "incomeBeforeTax", "incomeTaxExpense",
-    "interestAndDebtExpense", "netIncomeFromContinuingOperations", "comprehensiveIncomeNetOfTax",
-    "ebit", "ebitda", "netIncome"
+    "grossProfit",
+    "totalRevenue",
+    "costOfRevenue",
+    "costofGoodsAndServicesSold",
+    "operatingIncome",
+    "sellingGeneralAndAdministrative",
+    "researchAndDevelopment",
+    "operatingExpenses",
+    "investmentIncomeNet",
+    "netInterestIncome",
+    "interestIncome",
+    "interestExpense",
+    "nonInterestIncome",
+    "otherNonOperatingIncome",
+    "depreciation",
+    "depreciationAndAmortization",
+    "incomeBeforeTax",
+    "incomeTaxExpense",
+    "interestAndDebtExpense",
+    "netIncomeFromContinuingOperations",
+    "comprehensiveIncomeNetOfTax",
+    "ebit",
+    "ebitda",
+    "netIncome"
   )
 }

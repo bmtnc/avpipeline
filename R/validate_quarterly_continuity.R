@@ -7,16 +7,24 @@
 #' @keywords internal
 validate_quarterly_continuity <- function(financial_statements) {
   if (!is.data.frame(financial_statements)) {
-    stop(paste0("validate_quarterly_continuity(): [financial_statements] must be a data.frame, not ", class(financial_statements)[1]))
+    stop(paste0(
+      "validate_quarterly_continuity(): [financial_statements] must be a data.frame, not ",
+      class(financial_statements)[1]
+    ))
   }
 
   required_cols <- c("ticker", "fiscalDateEnding")
   missing_cols <- setdiff(required_cols, names(financial_statements))
   if (length(missing_cols) > 0) {
-    stop(paste0("validate_quarterly_continuity(): [financial_statements] must contain columns: ", paste(required_cols, collapse = ", ")))
+    stop(paste0(
+      "validate_quarterly_continuity(): [financial_statements] must contain columns: ",
+      paste(required_cols, collapse = ", ")
+    ))
   }
 
-  message(paste0("Finding continuous quarterly series for each ticker using fiscal pattern validation..."))
+  message(paste0(
+    "Finding continuous quarterly series for each ticker using fiscal pattern validation..."
+  ))
 
   original_data <- financial_statements %>%
     dplyr::select(ticker, fiscalDateEnding) %>%
@@ -36,14 +44,25 @@ validate_quarterly_continuity <- function(financial_statements) {
     dplyr::arrange(ticker, fiscalDateEnding)
 
   removed_obs <- nrow(original_data) - nrow(final_data)
-  completely_removed_tickers <- setdiff(unique(original_data$ticker), unique(final_data$ticker))
+  completely_removed_tickers <- setdiff(
+    unique(original_data$ticker),
+    unique(final_data$ticker)
+  )
 
   if (removed_obs > 0) {
-    message(paste0("Removed ", removed_obs, " observations to ensure continuous quarterly spacing"))
+    message(paste0(
+      "Removed ",
+      removed_obs,
+      " observations to ensure continuous quarterly spacing"
+    ))
   }
 
   if (length(completely_removed_tickers) > 0) {
-    message(paste0("Removed ", length(completely_removed_tickers), " tickers with no continuous quarterly series:"))
+    message(paste0(
+      "Removed ",
+      length(completely_removed_tickers),
+      " tickers with no continuous quarterly series:"
+    ))
     message(paste(completely_removed_tickers, collapse = ", "))
   }
 

@@ -7,7 +7,9 @@
 #' @keywords internal
 create_default_ticker_tracking <- function(ticker) {
   if (!is.character(ticker) || length(ticker) != 1 || nchar(ticker) == 0) {
-    stop("create_default_ticker_tracking(): [ticker] must be a non-empty character scalar")
+    stop(
+      "create_default_ticker_tracking(): [ticker] must be a non-empty character scalar"
+    )
   }
 
   tibble::tibble(

@@ -8,10 +8,12 @@
 #' @param tolerance numeric: Allowed difference threshold (default: 0.01)
 #' @return list: valid (logical), mismatches (data.frame or NULL)
 #' @keywords internal
-validate_quarterly_consistency <- function(existing_data,
-                                            new_data,
-                                            key_metrics = c("totalRevenue", "netIncome"),
-                                            tolerance = 0.01) {
+validate_quarterly_consistency <- function(
+  existing_data,
+  new_data,
+  key_metrics = c("totalRevenue", "netIncome"),
+  tolerance = 0.01
+) {
   if (is.null(existing_data) || nrow(existing_data) == 0) {
     return(list(valid = TRUE, mismatches = NULL))
   }
@@ -30,14 +32,19 @@ validate_quarterly_consistency <- function(existing_data,
   }
 
   # Filter to metrics that exist in both datasets
-  available_metrics <- key_metrics[key_metrics %in% existing_cols & key_metrics %in% new_cols]
+  available_metrics <- key_metrics[
+    key_metrics %in% existing_cols & key_metrics %in% new_cols
+  ]
 
   if (length(available_metrics) == 0) {
     return(list(valid = TRUE, mismatches = NULL))
   }
 
   # Select only needed columns for comparison
-  existing_subset <- existing_data[, c(join_cols, available_metrics), drop = FALSE]
+  existing_subset <- existing_data[,
+    c(join_cols, available_metrics),
+    drop = FALSE
+  ]
   new_subset <- new_data[, c(join_cols, available_metrics), drop = FALSE]
 
   overlap <- dplyr::inner_join(
@@ -64,7 +71,9 @@ validate_quarterly_consistency <- function(existing_data,
     one_na <- xor(is.na(old_vals), is.na(new_vals))
 
     # For numeric comparisons, check absolute difference
-    numeric_diff <- !is.na(old_vals) & !is.na(new_vals) & abs(old_vals - new_vals) > tolerance
+    numeric_diff <- !is.na(old_vals) &
+      !is.na(new_vals) &
+      abs(old_vals - new_vals) > tolerance
 
     one_na | numeric_diff
   })

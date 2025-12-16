@@ -32,8 +32,13 @@ update_ticker_tracking <- function(tracking, ticker, updates) {
 
   for (col in names(updates)) {
     if (col %in% names(tracking)) {
-      tracking <- dplyr::mutate(tracking,
-        !!col := dplyr::if_else(ticker == !!ticker, updates[[col]], .data[[col]])
+      tracking <- dplyr::mutate(
+        tracking,
+        !!col := dplyr::if_else(
+          ticker == !!ticker,
+          updates[[col]],
+          .data[[col]]
+        )
       )
     }
   }

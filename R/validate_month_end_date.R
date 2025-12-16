@@ -10,25 +10,37 @@
 #' @return NULL (called for side effects)
 #' @export
 validate_month_end_date <- function(date, param_name) {
-  
-  # Input validation
   if (!inherits(date, "Date")) {
-    stop(paste0("Input '", param_name, "' must be a Date object. Received: ", 
-                class(date)[1]))
+    stop(paste0(
+      "Input '",
+      param_name,
+      "' must be a Date object. Received: ",
+      class(date)[1]
+    ))
   }
-  
+
   if (length(date) != 1) {
-    stop(paste0("Input '", param_name, "' must be a single Date value. Received length: ", 
-                length(date)))
+    stop(paste0(
+      "Input '",
+      param_name,
+      "' must be a single Date value. Received length: ",
+      length(date)
+    ))
   }
-  
+
   # Check if date is a month-end date
   day <- lubridate::day(date)
   last_day_of_month <- lubridate::days_in_month(date)
-  
+
   if (day != last_day_of_month) {
     expected_date <- lubridate::ceiling_date(date, "month") - lubridate::days(1)
-    stop(paste0("Input '", param_name, "' (", as.character(date), 
-                ") must be a month-end date. Expected: ", as.character(expected_date)))
+    stop(paste0(
+      "Input '",
+      param_name,
+      "' (",
+      as.character(date),
+      ") must be a month-end date. Expected: ",
+      as.character(expected_date)
+    ))
   }
 }

@@ -10,12 +10,18 @@
 #' @param data_changed logical: Whether data actually changed from previous fetch
 #' @return tibble: Updated tracking dataframe
 #' @keywords internal
-update_tracking_after_fetch <- function(tracking, ticker, data_type,
-                                         fiscal_date_ending = NULL,
-                                         reported_date = NULL,
-                                         data_changed = FALSE) {
+update_tracking_after_fetch <- function(
+  tracking,
+  ticker,
+  data_type,
+  fiscal_date_ending = NULL,
+  reported_date = NULL,
+  data_changed = FALSE
+) {
   if (!is.character(data_type) || length(data_type) != 1) {
-    stop("update_tracking_after_fetch(): [data_type] must be a character scalar")
+    stop(
+      "update_tracking_after_fetch(): [data_type] must be a character scalar"
+    )
   }
 
   now <- Sys.time()

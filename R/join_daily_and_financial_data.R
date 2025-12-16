@@ -8,52 +8,48 @@
 #' @param ttm_data tibble: TTM financial data with ticker and date columns
 #' @return tibble: Joined dataset with all financial metrics
 #' @keywords internal
-join_daily_and_financial_data <- function(price_data, market_cap_data, ttm_data) {
-  # Input validation
+join_daily_and_financial_data <- function(
+  price_data,
+  market_cap_data,
+  ttm_data
+) {
   if (!is.data.frame(price_data)) {
     stop(paste0(
       "join_daily_and_financial_data(): [price_data] must be a data.frame, not ",
       class(price_data)[1]
     ))
   }
-  
   if (!is.data.frame(market_cap_data)) {
     stop(paste0(
       "join_daily_and_financial_data(): [market_cap_data] must be a data.frame, not ",
       class(market_cap_data)[1]
     ))
   }
-  
   if (!is.data.frame(ttm_data)) {
     stop(paste0(
       "join_daily_and_financial_data(): [ttm_data] must be a data.frame, not ",
       class(ttm_data)[1]
     ))
   }
-  
-  # Validate required join keys
   if (!all(c("ticker", "date") %in% names(price_data))) {
     stop(paste0(
       "join_daily_and_financial_data(): [price_data] must contain 'ticker' and 'date' columns"
     ))
   }
-  
   if (!all(c("ticker", "date") %in% names(market_cap_data))) {
     stop(paste0(
       "join_daily_and_financial_data(): [market_cap_data] must contain 'ticker' and 'date' columns"
     ))
   }
-  
   if (!all(c("ticker", "date") %in% names(ttm_data))) {
     stop(paste0(
       "join_daily_and_financial_data(): [ttm_data] must contain 'ticker' and 'date' columns"
     ))
   }
-  
-  # Remove unnecessary columns before joining
+
   price_clean <- price_data %>%
     dplyr::select(-dplyr::any_of("as_of_date"))
-  
+
   market_cap_clean <- market_cap_data %>%
     dplyr::select(
       -dplyr::any_of(c(
@@ -65,7 +61,7 @@ join_daily_and_financial_data <- function(price_data, market_cap_data, ttm_data)
         "reportedDate"
       ))
     )
-  
+
   # Join datasets
   price_clean %>%
     dplyr::left_join(market_cap_clean, by = c("ticker", "date")) %>%

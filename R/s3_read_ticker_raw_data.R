@@ -15,7 +15,14 @@ s3_read_ticker_raw_data <- function(ticker, bucket_name, region = "us-east-1") {
     stop("s3_read_ticker_raw_data(): [bucket_name] must be a character scalar")
   }
 
-  data_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings", "price", "splits")
+  data_types <- c(
+    "balance_sheet",
+    "income_statement",
+    "cash_flow",
+    "earnings",
+    "price",
+    "splits"
+  )
 
   result <- lapply(data_types, function(dt) {
     s3_read_ticker_raw_data_single(ticker, dt, bucket_name, region)
