@@ -49,18 +49,29 @@ make_alpha_vantage_request <- function(ticker, config, api_key = NULL, ...) {
     query_params <- c(query_params, additional_params)
   }
 
-  # Make API request
+  # Make API request with retry logic for transient failures
   message("Fetching ", config$data_type_name, " data for ticker: ", ticker)
 
-  response <- httr::GET(
-    url = base_url,
-    query = query_params
-  )
+  response <- with_retry(
+    {
+      resp <- httr::GET(
+        url = base_url,
+        query = query_params,
+        httr::timeout(60)
+      )
 
-  # Check if request was successful
-  if (httr::status_code(response) != 200) {
-    stop("API request failed with status code: ", httr::status_code(response))
-  }
+      # Check if request was successful
+      if (httr::status_code(resp) != 200) {
+        stop("API request failed with status code: ", httr::status_code(resp))
+      }
+
+      resp
+    },
+    max_attempts = 3,
+    initial_delay = 5,
+    backoff_multiplier = 2,
+    retryable_errors = "rate limit|timeout|connection|timed out|429"
+  )
 
   return(response)
 }

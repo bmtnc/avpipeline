@@ -18,14 +18,16 @@ s3_read_refresh_tracking <- function(bucket_name, region = "us-east-1") {
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)
 
-  result <- system2(
+  result <- system2_with_timeout(
     "aws",
     args = c("s3", "cp", s3_uri, temp_file, "--region", region),
+    timeout_seconds = 30,
     stdout = TRUE,
     stderr = TRUE
   )
 
-  if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
+  if (is_timeout_result(result) ||
+      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
     message("No existing refresh tracking found, checking for existing data...")
     return(initialize_tracking_from_s3_data(bucket_name, region))
   }

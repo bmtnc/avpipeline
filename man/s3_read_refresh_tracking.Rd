@@ -15,7 +15,7 @@ s3_read_refresh_tracking(bucket_name, region = "us-east-1")
 tibble: Refresh tracking dataframe
 }
 \description{
-Downloads the refresh tracking dataframe from S3. Returns empty tracking if not found.
-Handles schema evolution by adding missing columns with NA values.
+Downloads the refresh tracking dataframe from S3. If tracking doesn't exist
+but raw data does, initializes tracking from existing data.
 }
 \keyword{internal}

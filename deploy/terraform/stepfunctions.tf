@@ -84,8 +84,9 @@ resource "aws_sfn_state_machine" "pipeline" {
     StartAt = "Phase1Fetch"
     States = {
       Phase1Fetch = {
-        Type     = "Task"
-        Resource = "arn:aws:states:::ecs:runTask.sync"
+        Type           = "Task"
+        Resource       = "arn:aws:states:::ecs:runTask.sync"
+        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
@@ -99,6 +100,12 @@ resource "aws_sfn_state_machine" "pipeline" {
         }
         ResultPath = "$.phase1Result"
         Next       = "Phase2Generate"
+        Retry = [{
+          ErrorEquals     = ["States.Timeout", "States.TaskFailed"]
+          IntervalSeconds = 60
+          MaxAttempts     = 2
+          BackoffRate     = 2.0
+        }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
           Next        = "PipelineFailed"
@@ -106,8 +113,9 @@ resource "aws_sfn_state_machine" "pipeline" {
         }]
       }
       Phase2Generate = {
-        Type     = "Task"
-        Resource = "arn:aws:states:::ecs:runTask.sync"
+        Type           = "Task"
+        Resource       = "arn:aws:states:::ecs:runTask.sync"
+        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
@@ -121,6 +129,12 @@ resource "aws_sfn_state_machine" "pipeline" {
         }
         ResultPath = "$.phase2Result"
         End        = true
+        Retry = [{
+          ErrorEquals     = ["States.Timeout", "States.TaskFailed"]
+          IntervalSeconds = 60
+          MaxAttempts     = 2
+          BackoffRate     = 2.0
+        }]
         Catch = [{
           ErrorEquals = ["States.ALL"]
           Next        = "PipelineFailed"

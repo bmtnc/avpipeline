@@ -29,8 +29,10 @@ if (!fetch_mode %in% c("full", "price_only", "quarterly_only")) {
   stop("FETCH_MODE must be 'full', 'price_only', or 'quarterly_only'")
 }
 
-message("=== PHASE 1: FETCH RAW DATA ===")
-message("ETF: ", etf_symbol, " | Bucket: ", s3_bucket, " | Mode: ", fetch_mode)
+phase_start_time <- Sys.time()
+log_phase_start("PHASE 1: FETCH RAW DATA",
+  sprintf("ETF: %s | Bucket: %s | Mode: %s", etf_symbol, s3_bucket, fetch_mode)
+)
 
 # ============================================================================
 # SETUP
@@ -47,12 +49,22 @@ tracking <- s3_read_refresh_tracking(s3_bucket, aws_region)
 # Get tickers from both ETF holdings AND existing S3 data
 etf_tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
 s3_tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
-tickers <- unique(c(etf_tickers, s3_tickers))
-n_tickers <- length(tickers)
+all_tickers <- unique(c(etf_tickers, s3_tickers))
 
-message("Tickers: ", n_tickers, " (", length(etf_tickers), " ETF + ",
-        length(setdiff(s3_tickers, etf_tickers)), " additional from S3)")
-message("")
+# Load checkpoint and filter to unprocessed tickers
+checkpoint <- s3_read_checkpoint(s3_bucket, "phase1", aws_region)
+already_processed <- checkpoint$processed_tickers %||% character(0)
+tickers <- setdiff(all_tickers, already_processed)
+n_tickers <- length(tickers)
+n_total <- length(all_tickers)
+
+log_pipeline(sprintf("Total tickers: %d (%d ETF + %d additional from S3)",
+        n_total, length(etf_tickers), length(setdiff(s3_tickers, etf_tickers))))
+
+if (length(already_processed) > 0) {
+  log_pipeline(sprintf("Resuming from checkpoint: %d already processed, %d remaining",
+          length(already_processed), n_tickers))
+}
 
 # ============================================================================
 # PROCESS TICKERS
@@ -60,12 +72,13 @@ message("")
 
 pipeline_log <- create_pipeline_log()
 reference_date <- Sys.Date()
+success_count <- 0
+error_count <- 0
+skip_count <- 0
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
   ticker_start <- Sys.time()
-
-  print_progress(i, n_tickers, "Fetch", ticker)
 
   tryCatch({
     ticker_tracking <- get_ticker_tracking(ticker, tracking)
@@ -79,7 +92,8 @@ for (i in seq_along(tickers)) {
     fetch_types <- names(fetch_requirements)[unlist(fetch_requirements)]
 
     if (length(fetch_types) == 0) {
-      cat(sprintf("[%d/%d] %s: skipped\n", i, n_tickers, ticker))
+      skip_count <- skip_count + 1
+      checkpoint <- update_checkpoint(checkpoint, ticker, success = TRUE)
       pipeline_log <- add_log_entry(
         pipeline_log, ticker, "fetch", "all", "skipped",
         duration_seconds = as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
@@ -87,7 +101,7 @@ for (i in seq_along(tickers)) {
       next
     }
 
-    results <- suppressMessages(fetch_and_store_ticker_data(
+    results <- fetch_and_store_ticker_data(
       ticker = ticker,
       fetch_requirements = fetch_requirements,
       ticker_tracking = ticker_tracking,
@@ -95,28 +109,27 @@ for (i in seq_along(tickers)) {
       api_key = api_key,
       region = aws_region,
       delay_seconds = delay_seconds
-    ))
+    )
 
     any_error <- any(sapply(results, function(r) !isTRUE(r$success)))
     duration <- as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
 
-    cat(sprintf("[%d/%d] %s: %s (%.1fs)\n",
-        i, n_tickers, ticker,
-        paste(fetch_types, collapse = ","),
-        duration))
-
     if (any_error) {
+      error_count <- error_count + 1
       error_msgs <- sapply(results, function(r) r$error)
       error_msgs <- error_msgs[!sapply(error_msgs, is.null)]
+      log_error(ticker, paste(error_msgs, collapse = "; "))
       tracking <- update_tracking_after_error(
         tracking, ticker, paste(error_msgs, collapse = "; ")
       )
+      checkpoint <- update_checkpoint(checkpoint, ticker, success = FALSE)
       pipeline_log <- add_log_entry(
         pipeline_log, ticker, "fetch", paste(fetch_types, collapse = ","),
         "error", error_message = paste(error_msgs, collapse = "; "),
         duration_seconds = duration
       )
     } else {
+      success_count <- success_count + 1
       if (isTRUE(fetch_requirements$price)) {
         price_data <- results$price$data
         price_last_date <- if (!is.null(price_data) && nrow(price_data) > 0) {
@@ -156,16 +169,25 @@ for (i in seq_along(tickers)) {
         if (!is.null(r$data)) nrow(r$data) else 0L
       }))
 
+      checkpoint <- update_checkpoint(checkpoint, ticker, success = TRUE)
       pipeline_log <- add_log_entry(
         pipeline_log, ticker, "fetch", paste(fetch_types, collapse = ","),
         "success", rows = total_rows, duration_seconds = duration
       )
     }
 
-    if (i %% 10 == 0) gc(verbose = FALSE)
+    # Log progress and save checkpoint every 10 tickers
+    if (i %% 10 == 0) {
+      log_progress_summary(i, n_tickers, success_count, error_count, "Fetch")
+      s3_write_checkpoint(checkpoint, s3_bucket, "phase1", aws_region)
+      gc(verbose = FALSE)
+    }
 
   }, error = function(e) {
+    error_count <<- error_count + 1
+    log_error(ticker, conditionMessage(e))
     tracking <<- update_tracking_after_error(tracking, ticker, conditionMessage(e))
+    checkpoint <<- update_checkpoint(checkpoint, ticker, success = FALSE)
     pipeline_log <<- add_log_entry(
       pipeline_log, ticker, "fetch", "unknown", "error",
       error_message = conditionMessage(e),
@@ -178,17 +200,24 @@ for (i in seq_along(tickers)) {
 # SAVE TRACKING & LOG
 # ============================================================================
 
-message("")
 s3_write_refresh_tracking(tracking, s3_bucket, aws_region)
-message("Tracking saved")
+log_pipeline("Tracking saved to S3")
+
+# Clear checkpoint on successful completion
+s3_clear_checkpoint(s3_bucket, "phase1", aws_region)
+log_pipeline("Checkpoint cleared (phase complete)")
 
 # ============================================================================
 # SUMMARY
 # ============================================================================
 
-message("")
-message("=== PHASE 1 COMPLETE ===")
-print_log_summary(pipeline_log, "fetch")
+phase_duration <- as.numeric(difftime(Sys.time(), phase_start_time, units = "secs"))
+log_phase_end("PHASE 1: FETCH RAW DATA",
+  total = n_tickers,
+  successful = success_count + skip_count,
+  failed = error_count,
+  duration_seconds = phase_duration
+)
 
 # Return log for use by run_pipeline_aws.R
 phase1_log <- pipeline_log

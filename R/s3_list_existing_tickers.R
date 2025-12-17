@@ -13,14 +13,16 @@ s3_list_existing_tickers <- function(bucket_name, region = "us-east-1") {
 
   s3_prefix <- paste0("s3://", bucket_name, "/raw/")
 
-  result <- system2(
+  result <- system2_with_timeout(
     "aws",
     args = c("s3", "ls", s3_prefix, "--region", region),
+    timeout_seconds = 60,
     stdout = TRUE,
     stderr = TRUE
   )
 
-  if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
+  if (is_timeout_result(result) ||
+      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
     return(character(0))
   }
 

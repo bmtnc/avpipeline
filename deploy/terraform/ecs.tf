@@ -332,3 +332,51 @@ resource "aws_cloudwatch_event_target" "step_functions" {
   arn       = aws_sfn_state_machine.pipeline.arn
   role_arn  = aws_iam_role.eventbridge_sfn_role.arn
 }
+
+# CloudWatch Alarms for Pipeline Monitoring
+
+resource "aws_cloudwatch_metric_alarm" "pipeline_execution_failed" {
+  alarm_name          = "avpipeline-execution-failed"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ExecutionsFailed"
+  namespace           = "AWS/States"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 0
+  alarm_description   = "Pipeline execution failed - check CloudWatch logs"
+  alarm_actions       = [aws_sns_topic.pipeline_notifications.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    StateMachineArn = aws_sfn_state_machine.pipeline.arn
+  }
+
+  tags = {
+    Name      = "avpipeline-execution-failed-alarm"
+    ManagedBy = "terraform"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "pipeline_execution_timed_out" {
+  alarm_name          = "avpipeline-execution-timed-out"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "ExecutionsTimedOut"
+  namespace           = "AWS/States"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 0
+  alarm_description   = "Pipeline execution timed out - task may be stuck"
+  alarm_actions       = [aws_sns_topic.pipeline_notifications.arn]
+  treat_missing_data  = "notBreaching"
+
+  dimensions = {
+    StateMachineArn = aws_sfn_state_machine.pipeline.arn
+  }
+
+  tags = {
+    Name      = "avpipeline-execution-timed-out-alarm"
+    ManagedBy = "terraform"
+  }
+}

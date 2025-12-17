@@ -24,12 +24,17 @@ upload_artifact_to_s3 <- function(
 
   message(paste0("Uploading ", local_path, " to ", s3_uri))
 
-  result <- system2(
+  result <- system2_with_timeout(
     "aws",
     args = c("s3", "cp", local_path, s3_uri, "--region", region),
+    timeout_seconds = 60,
     stdout = TRUE,
     stderr = TRUE
   )
+
+  if (is_timeout_result(result)) {
+    stop("upload_artifact_to_s3(): S3 upload timed out after 60 seconds")
+  }
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
     stop(paste0(

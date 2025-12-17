@@ -19,7 +19,7 @@ get_api_key_from_parameter_store <- function(
     shQuote(region)
   )
 
-  result <- system2(
+  result <- system2_with_timeout(
     "aws",
     args = c(
       "ssm",
@@ -34,9 +34,14 @@ get_api_key_from_parameter_store <- function(
       "--output",
       "text"
     ),
+    timeout_seconds = 30,
     stdout = TRUE,
     stderr = TRUE
   )
+
+  if (is_timeout_result(result)) {
+    stop("get_api_key_from_parameter_store(): Parameter Store request timed out after 30 seconds")
+  }
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
     stop(paste0(

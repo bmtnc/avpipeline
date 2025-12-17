@@ -24,14 +24,16 @@ s3_read_ticker_raw_data_single <- function(
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)
 
-  result <- system2(
+  result <- system2_with_timeout(
     "aws",
     args = c("s3", "cp", s3_uri, temp_file, "--region", region),
+    timeout_seconds = 30,
     stdout = TRUE,
     stderr = TRUE
   )
 
-  if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
+  if (is_timeout_result(result) ||
+      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
     return(NULL)
   }
 
