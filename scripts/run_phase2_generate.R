@@ -15,7 +15,6 @@ devtools::load_all()
 # CONFIGURATION
 # ============================================================================
 
-etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
 start_date_str <- Sys.getenv("START_DATE", "2004-12-31")
 start_date <- as.Date(start_date_str)
 aws_region <- Sys.getenv("AWS_REGION", "us-east-1")
@@ -33,22 +32,17 @@ end_threshold <- 3
 min_obs <- 10
 
 message("=== PHASE 2: GENERATE TTM ARTIFACTS ===")
-message("ETF: ", etf_symbol, " | Start: ", start_date)
+message("Start: ", start_date)
 
 # ============================================================================
 # SETUP
 # ============================================================================
 
-api_key <- get_api_key_from_parameter_store(
-  parameter_name = "/avpipeline/alpha-vantage-api-key",
-  region = aws_region
-)
-Sys.setenv(ALPHA_VANTAGE_API_KEY = api_key)
-
-tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
+# Get all tickers with data in S3 (includes current + historical ETF members)
+tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
 n_tickers <- length(tickers)
 
-message("Tickers: ", n_tickers)
+message("Tickers in S3: ", n_tickers)
 message("")
 
 # ============================================================================

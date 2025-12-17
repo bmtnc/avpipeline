@@ -43,10 +43,15 @@ api_key <- get_api_key_from_parameter_store(
 Sys.setenv(ALPHA_VANTAGE_API_KEY = api_key)
 
 tracking <- s3_read_refresh_tracking(s3_bucket, aws_region)
-tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
+
+# Get tickers from both ETF holdings AND existing S3 data
+etf_tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
+s3_tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
+tickers <- unique(c(etf_tickers, s3_tickers))
 n_tickers <- length(tickers)
 
-message("Tickers: ", n_tickers, " | Tracking: ", nrow(tracking), " existing")
+message("Tickers: ", n_tickers, " (", length(etf_tickers), " ETF + ",
+        length(setdiff(s3_tickers, etf_tickers)), " additional from S3)")
 message("")
 
 # ============================================================================
