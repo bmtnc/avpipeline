@@ -58,7 +58,7 @@ reference_date <- Sys.Date()
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
-  start_time <- Sys.time()
+  ticker_start <- Sys.time()
 
   print_progress(i, n_tickers, "Fetch", ticker)
 
@@ -74,9 +74,10 @@ for (i in seq_along(tickers)) {
     fetch_types <- names(fetch_requirements)[unlist(fetch_requirements)]
 
     if (length(fetch_types) == 0) {
+      cat(sprintf("[%d/%d] %s: skipped\n", i, n_tickers, ticker))
       pipeline_log <- add_log_entry(
         pipeline_log, ticker, "fetch", "all", "skipped",
-        duration_seconds = as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+        duration_seconds = as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
       )
       next
     }
@@ -92,7 +93,12 @@ for (i in seq_along(tickers)) {
     ))
 
     any_error <- any(sapply(results, function(r) !isTRUE(r$success)))
-    duration <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    duration <- as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
+
+    cat(sprintf("[%d/%d] %s: %s (%.1fs)\n",
+        i, n_tickers, ticker,
+        paste(fetch_types, collapse = ","),
+        duration))
 
     if (any_error) {
       error_msgs <- sapply(results, function(r) r$error)
@@ -158,7 +164,7 @@ for (i in seq_along(tickers)) {
     pipeline_log <<- add_log_entry(
       pipeline_log, ticker, "fetch", "unknown", "error",
       error_message = conditionMessage(e),
-      duration_seconds = as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+      duration_seconds = as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
     )
   })
 }

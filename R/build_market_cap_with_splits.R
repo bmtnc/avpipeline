@@ -19,12 +19,21 @@ build_market_cap_with_splits <- function(
   # Input validation
   validate_date_type(start_date, scalar = TRUE, name = "start_date")
 
-  # Clean splits data
-  splits_clean <- splits_data %>%
-    dplyr::mutate(split_factor = as.numeric(split_factor)) %>%
-    dplyr::filter(!is.na(split_factor) & split_factor > 0) %>%
-    dplyr::select(ticker, date = effective_date, split_factor) %>%
-    dplyr::arrange(date)
+  # Clean splits data - handle NULL (no splits history)
+  if (is.null(splits_data) || nrow(splits_data) == 0) {
+    splits_clean <- data.frame(
+      ticker = character(0),
+      date = as.Date(character(0)),
+      split_factor = numeric(0),
+      stringsAsFactors = FALSE
+    )
+  } else {
+    splits_clean <- splits_data %>%
+      dplyr::mutate(split_factor = as.numeric(split_factor)) %>%
+      dplyr::filter(!is.na(split_factor) & split_factor > 0) %>%
+      dplyr::select(ticker, date = effective_date, split_factor) %>%
+      dplyr::arrange(date)
+  }
 
   # Clean price data
   prices_clean <- price_data %>%

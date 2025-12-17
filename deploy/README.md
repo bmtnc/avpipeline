@@ -111,20 +111,24 @@ aws logs tail /ecs/avpipeline --follow --region us-east-1
 
 ### Manual Task Execution
 
-Test the pipeline before the scheduled run:
+Use the `run_task.sh` script to manually trigger the pipeline:
 
 ```bash
-# Get subnet IDs from your default VPC
-SUBNET_ID=$(aws ec2 describe-subnets --filters "Name=default-for-az,Values=true" --query "Subnets[0].SubnetId" --output text --region us-east-1)
+# Run with defaults (QQQ ETF, full fetch mode)
+bash deploy/run_task.sh
 
-# Run task manually
-aws ecs run-task \
-    --cluster avpipeline-cluster \
-    --task-definition avpipeline \
-    --launch-type FARGATE \
-    --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],assignPublicIp=ENABLED}" \
-    --region us-east-1
+# Run for a specific ETF
+bash deploy/run_task.sh SPY
+
+# Run with specific fetch mode (full, price_only, quarterly_only)
+bash deploy/run_task.sh QQQ price_only
 ```
+
+The script automatically:
+- Gets S3 bucket and SNS topic from Terraform outputs
+- Finds the default VPC subnet
+- Passes all required environment variables
+- Returns the task ID for monitoring
 
 ### Check S3 Artifacts
 

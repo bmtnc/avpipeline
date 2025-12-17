@@ -44,7 +44,7 @@ parse_income_statement_response <- function(response, ticker) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
   
-  cat("Parsed", nrow(result), "quarterly reports for", ticker, "\n")
+  message("Parsed ", nrow(result), " quarterly income statement reports for ", ticker)
   
   return(result)
 }

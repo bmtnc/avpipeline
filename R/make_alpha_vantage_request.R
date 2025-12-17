@@ -50,7 +50,7 @@ make_alpha_vantage_request <- function(ticker, config, api_key = NULL, ...) {
   }
 
   # Make API request
-  cat("Fetching", config$data_type_name, "data for ticker:", ticker, "\n")
+  message("Fetching ", config$data_type_name, " data for ticker: ", ticker)
 
   response <- httr::GET(
     url = base_url,

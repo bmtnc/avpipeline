@@ -60,7 +60,7 @@ pipeline_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
-  start_time <- Sys.time()
+  ticker_start <- Sys.time()
 
   print_progress(i, n_tickers, "Generate", ticker)
 
@@ -78,7 +78,7 @@ for (i in seq_along(tickers)) {
       min_obs = min_obs
     ))
 
-    duration <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+    duration <- as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
 
     if (!is.null(result) && nrow(result) > 0) {
       final_artifact <- dplyr::bind_rows(final_artifact, result)
@@ -100,7 +100,7 @@ for (i in seq_along(tickers)) {
     pipeline_log <<- add_log_entry(
       pipeline_log, ticker, "generate", "ttm", "error",
       error_message = conditionMessage(e),
-      duration_seconds = as.numeric(difftime(Sys.time(), start_time, units = "secs"))
+      duration_seconds = as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
     )
   })
 }

@@ -53,7 +53,7 @@ parse_earnings_response <- function(response, ticker) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
   
-  cat("Parsed", nrow(result), "quarterly earnings reports for", ticker, "\n")
+  message("Parsed ", nrow(result), " quarterly earnings reports for ", ticker)
   
   return(result)
 }
