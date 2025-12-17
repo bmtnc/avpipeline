@@ -44,3 +44,9 @@ variable "start_date" {
   type        = string
   default     = "2004-12-31"
 }
+
+variable "fetch_mode" {
+  description = "Fetch mode for Phase 1 (full, price_only, quarterly_only)"
+  type        = string
+  default     = "full"
+}

@@ -20,9 +20,24 @@ output "ecs_cluster_name" {
   value       = aws_ecs_cluster.avpipeline.name
 }
 
-output "ecs_task_definition_arn" {
-  description = "ECS task definition ARN"
-  value       = aws_ecs_task_definition.avpipeline.arn
+output "ecs_task_definition_phase1_arn" {
+  description = "ECS task definition ARN for Phase 1"
+  value       = aws_ecs_task_definition.phase1.arn
+}
+
+output "ecs_task_definition_phase2_arn" {
+  description = "ECS task definition ARN for Phase 2"
+  value       = aws_ecs_task_definition.phase2.arn
+}
+
+output "ecs_task_definition_full_arn" {
+  description = "ECS task definition ARN for full pipeline"
+  value       = aws_ecs_task_definition.full.arn
+}
+
+output "step_functions_arn" {
+  description = "Step Functions state machine ARN"
+  value       = aws_sfn_state_machine.pipeline.arn
 }
 
 output "sns_topic_arn" {

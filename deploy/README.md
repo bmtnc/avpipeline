@@ -5,13 +5,27 @@ This directory contains all necessary files for deploying the avpipeline financi
 ## Architecture Overview
 
 The deployment uses:
-- **ECS Fargate**: Serverless container execution
+- **Step Functions**: Orchestrates Phase 1 (Fetch) → Phase 2 (Generate) workflow
+- **ECS Fargate**: Serverless container execution (separate tasks for each phase)
 - **ECR**: Docker image storage
-- **S3**: Artifact storage with 30-day lifecycle
+- **S3**: Artifact storage (raw data 365-day, TTM artifacts 30-day lifecycle)
 - **Parameter Store**: Secure API key storage
 - **SNS**: Email notifications
-- **EventBridge**: Weekly scheduling (Sundays at 2am ET)
+- **EventBridge**: Weekly scheduling (triggers Step Functions)
 - **CloudWatch Logs**: Execution logging
+
+### Two-Phase Pipeline
+
+The pipeline runs in two independent phases:
+
+1. **Phase 1 (Fetch)**: Fetches raw data from Alpha Vantage API → stores in S3 (`raw/{TICKER}/*.parquet`)
+2. **Phase 2 (Generate)**: Reads raw data from S3 → generates TTM artifacts → uploads to S3
+
+**Benefits of this architecture:**
+- Run Phase 2 independently to regenerate artifacts without re-fetching
+- Better fault isolation: Phase 1 success is "banked" in S3
+- Can run phases on different schedules
+- Easier debugging: separate log streams for each phase
 
 ## Prerequisites
 
@@ -114,21 +128,48 @@ aws logs tail /ecs/avpipeline --follow --region us-east-1
 Use the `run_task.sh` script to manually trigger the pipeline:
 
 ```bash
-# Run with defaults (QQQ ETF, full fetch mode)
+# Run via Step Functions (recommended) - Phase 1 then Phase 2
 bash deploy/run_task.sh
 
-# Run for a specific ETF
-bash deploy/run_task.sh SPY
+# Run only Phase 1 (fetch raw data to S3)
+bash deploy/run_task.sh phase1
 
-# Run with specific fetch mode (full, price_only, quarterly_only)
-bash deploy/run_task.sh QQQ price_only
+# Run only Phase 2 (generate TTM artifacts from S3 data)
+bash deploy/run_task.sh phase2
+
+# Run as single task (legacy mode - both phases in one container)
+bash deploy/run_task.sh full
 ```
 
+**Common use cases:**
+- `./run_task.sh` - Normal weekly run (Step Functions orchestrates both phases)
+- `./run_task.sh phase2` - Regenerate artifacts after fixing a bug (no re-fetch)
+- `./run_task.sh phase1` - Just fetch new data (e.g., for new tickers)
+
 The script automatically:
-- Gets S3 bucket and SNS topic from Terraform outputs
-- Finds the default VPC subnet
-- Passes all required environment variables
-- Returns the task ID for monitoring
+- Gets configuration from Terraform outputs
+- Starts Step Functions execution or ECS task
+- Returns URLs/IDs for monitoring
+
+### Monitoring Step Functions Execution
+
+After starting via Step Functions:
+
+```bash
+# View execution in AWS Console (URL provided by run_task.sh)
+# Or check status via CLI:
+aws stepfunctions describe-execution \
+    --execution-arn <execution-arn> \
+    --query 'status'
+
+# View logs (both phases write to same log group)
+aws logs tail /ecs/avpipeline --follow --region us-east-1
+```
+
+Log stream prefixes:
+- `phase1/*` - Phase 1 (Fetch) logs
+- `phase2/*` - Phase 2 (Generate) logs
+- `ecs/*` - Full pipeline (legacy mode) logs
 
 ### Check S3 Artifacts
 

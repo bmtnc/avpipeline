@@ -61,11 +61,17 @@ COPY man/ ./man/
 # Copy scripts directory
 COPY scripts/ ./scripts/
 
+# Make entrypoint executable
+RUN chmod +x ./scripts/entrypoint.sh
+
 # Create cache directory
 RUN mkdir -p cache
 
 # Disable renv autoloader - use pre-installed packages from Docker build
 ENV RENV_CONFIG_AUTOLOADER_ENABLED=FALSE
 
-# Set entrypoint to run the AWS pipeline script
-CMD ["Rscript", "scripts/run_pipeline_aws.R"]
+# Default to full pipeline (can be overridden: phase1, phase2, full)
+ENV PIPELINE_PHASE=full
+
+# Set entrypoint to route to appropriate phase script
+ENTRYPOINT ["./scripts/entrypoint.sh"]

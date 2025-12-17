@@ -101,10 +101,10 @@ resource "aws_iam_role_policy" "ecs_task_policy" {
   })
 }
 
-# ECS Task Definition
+# ECS Task Definition - Phase 1 (Fetch)
 
-resource "aws_ecs_task_definition" "avpipeline" {
-  family                   = "avpipeline"
+resource "aws_ecs_task_definition" "phase1" {
+  family                   = "avpipeline-phase1"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
@@ -118,6 +118,73 @@ resource "aws_ecs_task_definition" "avpipeline" {
     essential = true
 
     environment = [
+      {
+        name  = "PIPELINE_PHASE"
+        value = "phase1"
+      },
+      {
+        name  = "AWS_REGION"
+        value = var.aws_region
+      },
+      {
+        name  = "S3_BUCKET"
+        value = aws_s3_bucket.artifacts.id
+      },
+      {
+        name  = "SNS_TOPIC_ARN"
+        value = aws_sns_topic.pipeline_notifications.arn
+      },
+      {
+        name  = "ETF_SYMBOL"
+        value = var.etf_symbol
+      },
+      {
+        name  = "FETCH_MODE"
+        value = var.fetch_mode
+      },
+      {
+        name  = "START_DATE"
+        value = var.start_date
+      }
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.avpipeline.name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "phase1"
+      }
+    }
+  }])
+
+  tags = {
+    Name      = "avpipeline-phase1-task"
+    ManagedBy = "terraform"
+  }
+}
+
+# ECS Task Definition - Phase 2 (Generate)
+
+resource "aws_ecs_task_definition" "phase2" {
+  family                   = "avpipeline-phase2"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "avpipeline"
+    image     = "${aws_ecr_repository.avpipeline.repository_url}:latest"
+    essential = true
+
+    environment = [
+      {
+        name  = "PIPELINE_PHASE"
+        value = "phase2"
+      },
       {
         name  = "AWS_REGION"
         value = var.aws_region
@@ -145,14 +212,77 @@ resource "aws_ecs_task_definition" "avpipeline" {
       options = {
         "awslogs-group"         = aws_cloudwatch_log_group.avpipeline.name
         "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "phase2"
+      }
+    }
+  }])
+
+  tags = {
+    Name      = "avpipeline-phase2-task"
+    ManagedBy = "terraform"
+  }
+}
+
+# ECS Task Definition - Full Pipeline (for manual runs / backwards compatibility)
+
+resource "aws_ecs_task_definition" "full" {
+  family                   = "avpipeline"
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([{
+    name      = "avpipeline"
+    image     = "${aws_ecr_repository.avpipeline.repository_url}:latest"
+    essential = true
+
+    environment = [
+      {
+        name  = "PIPELINE_PHASE"
+        value = "full"
+      },
+      {
+        name  = "AWS_REGION"
+        value = var.aws_region
+      },
+      {
+        name  = "S3_BUCKET"
+        value = aws_s3_bucket.artifacts.id
+      },
+      {
+        name  = "SNS_TOPIC_ARN"
+        value = aws_sns_topic.pipeline_notifications.arn
+      },
+      {
+        name  = "ETF_SYMBOL"
+        value = var.etf_symbol
+      },
+      {
+        name  = "FETCH_MODE"
+        value = var.fetch_mode
+      },
+      {
+        name  = "START_DATE"
+        value = var.start_date
+      }
+    ]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.avpipeline.name
+        "awslogs-region"        = var.aws_region
         "awslogs-stream-prefix" = "ecs"
       }
     }
   }])
 
   tags = {
-    Name        = "avpipeline-task"
-    ManagedBy   = "terraform"
+    Name      = "avpipeline-full-task"
+    ManagedBy = "terraform"
   }
 }
 
@@ -168,53 +298,7 @@ resource "aws_cloudwatch_log_group" "avpipeline" {
   }
 }
 
-# IAM Role for EventBridge to trigger ECS
-
-resource "aws_iam_role" "eventbridge_ecs_role" {
-  name = "avpipeline-eventbridge-ecs-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "events.amazonaws.com"
-      }
-    }]
-  })
-
-  tags = {
-    Name        = "avpipeline-eventbridge-ecs-role"
-    ManagedBy   = "terraform"
-  }
-}
-
-resource "aws_iam_role_policy" "eventbridge_ecs_policy" {
-  name = "avpipeline-eventbridge-ecs-policy"
-  role = aws_iam_role.eventbridge_ecs_role.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "ecs:RunTask"
-      ]
-      Resource = aws_ecs_task_definition.avpipeline.arn
-    },
-    {
-      Effect = "Allow"
-      Action = [
-        "iam:PassRole"
-      ]
-      Resource = [
-        aws_iam_role.ecs_task_execution_role.arn,
-        aws_iam_role.ecs_task_role.arn
-      ]
-    }]
-  })
-}
+# Note: EventBridge IAM role for Step Functions is defined in stepfunctions.tf
 
 # Get default VPC and subnets for ECS tasks
 
@@ -242,21 +326,9 @@ resource "aws_cloudwatch_event_rule" "pipeline_schedule" {
   }
 }
 
-resource "aws_cloudwatch_event_target" "ecs_task" {
+resource "aws_cloudwatch_event_target" "step_functions" {
   rule      = aws_cloudwatch_event_rule.pipeline_schedule.name
-  target_id = "avpipeline-ecs-task"
-  arn       = aws_ecs_cluster.avpipeline.arn
-  role_arn  = aws_iam_role.eventbridge_ecs_role.arn
-
-  ecs_target {
-    task_count          = 1
-    task_definition_arn = aws_ecs_task_definition.avpipeline.arn
-    launch_type         = "FARGATE"
-    platform_version    = "LATEST"
-
-    network_configuration {
-      subnets          = data.aws_subnets.default.ids
-      assign_public_ip = true
-    }
-  }
+  target_id = "avpipeline-stepfunctions"
+  arn       = aws_sfn_state_machine.pipeline.arn
+  role_arn  = aws_iam_role.eventbridge_sfn_role.arn
 }
