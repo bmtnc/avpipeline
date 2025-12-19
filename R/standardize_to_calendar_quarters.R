@@ -8,8 +8,6 @@
 standardize_to_calendar_quarters <- function(financial_statements) {
   validate_df_cols(financial_statements, c("fiscalDateEnding"))
 
-  message(paste0("Standardizing fiscal dates to calendar quarters..."))
-
   financial_statements %>%
     dplyr::mutate(
       fiscal_month = lubridate::month(fiscalDateEnding),

@@ -25,8 +25,6 @@ fetch_single_financial_type <- function(tickers, config, cache_path) {
 
   validate_character_scalar(cache_path, name = "cache_path")
 
-  message(paste0("\n=== Processing ", config$data_type_name, " Data ==="))
-
   fetch_multiple_tickers_with_cache(
     tickers = tickers,
     cache_file = cache_path,

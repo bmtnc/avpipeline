@@ -75,6 +75,5 @@ send_pipeline_notification <- function(
     ))
   }
 
-  message(paste0("Successfully sent notification: ", subject))
   TRUE
 }

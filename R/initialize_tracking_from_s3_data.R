@@ -14,11 +14,8 @@ initialize_tracking_from_s3_data <- function(bucket_name, region = "us-east-1") 
   tickers <- s3_list_existing_tickers(bucket_name, region)
 
   if (length(tickers) == 0) {
-    message("No existing ticker data found in S3, creating empty tracking")
     return(create_empty_refresh_tracking())
   }
-
-  message("Initializing tracking from ", length(tickers), " existing tickers in S3...")
 
   tracking_rows <- lapply(tickers, function(ticker) {
     tryCatch({
@@ -27,14 +24,11 @@ initialize_tracking_from_s3_data <- function(bucket_name, region = "us-east-1") 
 
       extract_tracking_from_ticker_data(ticker, price_data, earnings_data)
     }, error = function(e) {
-      message("  Warning: Could not read data for ", ticker, ": ", e$message)
       create_default_ticker_tracking(ticker)
     })
   })
 
   tracking <- dplyr::bind_rows(tracking_rows)
-
-  message("Initialized tracking for ", nrow(tracking), " tickers")
 
   tracking
 }

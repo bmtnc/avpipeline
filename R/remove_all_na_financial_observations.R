@@ -16,8 +16,6 @@ remove_all_na_financial_observations <- function(statements) {
     stop(paste0("remove_all_na_financial_observations(): [statements] must contain: ", paste(required_names, collapse = ", ")))
   }
 
-  message(paste0("Identifying and removing observations with all NA financial columns..."))
-
   common_metadata_cols <- c("ticker", "fiscalDateEnding", "as_of_date", "reportedCurrency")
 
   cash_flow_financial_cols <- setdiff(names(statements$cash_flow), common_metadata_cols)
@@ -27,11 +25,6 @@ remove_all_na_financial_observations <- function(statements) {
   cash_flow_cleaned <- identify_all_na_rows(statements$cash_flow, cash_flow_financial_cols, "cash flow")
   income_statement_cleaned <- identify_all_na_rows(statements$income_statement, income_statement_financial_cols, "income statement")
   balance_sheet_cleaned <- identify_all_na_rows(statements$balance_sheet, balance_sheet_financial_cols, "balance sheet")
-
-  message(paste0("Data after removing all-NA observations:"))
-  message(paste0("- Cash flow: ", nrow(cash_flow_cleaned), " observations"))
-  message(paste0("- Income statement: ", nrow(income_statement_cleaned), " observations"))
-  message(paste0("- Balance sheet: ", nrow(balance_sheet_cleaned), " observations"))
 
   list(
     cash_flow = cash_flow_cleaned,

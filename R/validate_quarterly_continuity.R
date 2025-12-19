@@ -8,10 +8,6 @@
 validate_quarterly_continuity <- function(financial_statements) {
   validate_df_cols(financial_statements, c("ticker", "fiscalDateEnding"))
 
-  message(paste0(
-    "Finding continuous quarterly series for each ticker using fiscal pattern validation..."
-  ))
-
   original_data <- financial_statements %>%
     dplyr::select(ticker, fiscalDateEnding) %>%
     dplyr::arrange(ticker, fiscalDateEnding)
@@ -34,23 +30,6 @@ validate_quarterly_continuity <- function(financial_statements) {
     unique(original_data$ticker),
     unique(final_data$ticker)
   )
-
-  if (removed_obs > 0) {
-    message(paste0(
-      "Removed ",
-      removed_obs,
-      " observations to ensure continuous quarterly spacing"
-    ))
-  }
-
-  if (length(completely_removed_tickers) > 0) {
-    message(paste0(
-      "Removed ",
-      length(completely_removed_tickers),
-      " tickers with no continuous quarterly series:"
-    ))
-    message(paste(completely_removed_tickers, collapse = ", "))
-  }
 
   quarterly_results
 }

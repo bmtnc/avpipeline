@@ -22,8 +22,6 @@ upload_artifact_to_s3 <- function(
 
   s3_uri <- paste0("s3://", bucket_name, "/", s3_key)
 
-  message(paste0("Uploading ", local_path, " to ", s3_uri))
-
   result <- system2_with_timeout(
     "aws",
     args = c("s3", "cp", local_path, s3_uri, "--region", region),
@@ -43,6 +41,5 @@ upload_artifact_to_s3 <- function(
     ))
   }
 
-  message(paste0("Successfully uploaded to ", s3_uri))
   TRUE
 }

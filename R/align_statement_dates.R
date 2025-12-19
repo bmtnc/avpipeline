@@ -57,26 +57,9 @@ align_statement_dates <- function(statements) {
   valid_observations <- sum(date_alignment$in_all_three)
   removed_observations <- total_observations - valid_observations
 
-  if (removed_observations > 0) {
-    message(paste0(
-      "Removed ",
-      removed_observations,
-      " observations with misaligned fiscalDateEnding dates across the 3 financial statement files"
-    ))
-  }
-
   valid_dates <- date_alignment %>%
     dplyr::filter(in_all_three) %>%
     dplyr::select(ticker, fiscalDateEnding)
-
-  final_tickers <- unique(valid_dates$ticker)
-  message(paste0(
-    "Final dataset includes ",
-    length(final_tickers),
-    " tickers with ",
-    nrow(valid_dates),
-    " aligned observations"
-  ))
 
   valid_dates
 }

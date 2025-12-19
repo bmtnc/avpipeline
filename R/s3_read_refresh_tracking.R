@@ -28,7 +28,6 @@ s3_read_refresh_tracking <- function(bucket_name, region = "us-east-1") {
 
   if (is_timeout_result(result) ||
       (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
-    message("No existing refresh tracking found, checking for existing data...")
     return(initialize_tracking_from_s3_data(bucket_name, region))
   }
 

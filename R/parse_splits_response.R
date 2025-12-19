@@ -24,7 +24,6 @@ parse_splits_response <- function(response, ticker) {
   
   if (is.null(response_content$data) || length(response_content$data) == 0) {
     # No split data available - return empty data.frame with correct structure
-    message("No split events found for ticker: ", ticker)
     return(data.frame(
       ticker = character(0),
       effective_date = as.Date(character(0)),

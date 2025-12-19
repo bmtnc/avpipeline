@@ -8,8 +8,6 @@
 filter_essential_financial_columns <- function(financial_statements) {
   validate_df_type(financial_statements)
 
-  message(paste0("Filtering to essential columns only..."))
-
   financial_metrics <- c(
     get_cash_flow_metrics(),
     get_income_statement_metrics(),
@@ -25,18 +23,8 @@ filter_essential_financial_columns <- function(financial_statements) {
     names(financial_statements)
   )
 
-  original_col_count <- ncol(financial_statements)
-
   filtered_data <- financial_statements %>%
     dplyr::select(dplyr::all_of(existing_essential_cols))
-
-  message(paste0("Column filtering summary:"))
-  message(paste0("- Original columns: ", original_col_count))
-  message(paste0("- Kept columns: ", length(existing_essential_cols)))
-  message(paste0(
-    "- Removed columns: ",
-    original_col_count - length(existing_essential_cols)
-  ))
 
   filtered_data
 }

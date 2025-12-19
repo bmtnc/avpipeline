@@ -38,24 +38,6 @@ clean_all_statement_anomalies <- function(
 
   validate_positive(threshold, name = "threshold")
 
-  message(paste0("Cleaning quarterly anomalies in financial metrics..."))
-  message(paste0(
-    "Parameters: threshold=",
-    threshold,
-    ", lookback=",
-    lookback,
-    ", lookahead=",
-    lookahead
-  ))
-  message(paste0(
-    "End-window parameters: window_size=",
-    end_window_size,
-    ", threshold=",
-    end_threshold,
-    ", min_obs=",
-    min_obs
-  ))
-
   metadata_cols <- c(
     "ticker",
     "fiscalDateEnding",
@@ -98,23 +80,6 @@ clean_all_statement_anomalies <- function(
       min_obs = min_obs
     )
   }
-
-  message(paste0("Data after two-stage anomaly cleaning:"))
-  message(paste0(
-    "- Income statement: ",
-    nrow(cleaned_statements$income_statement),
-    " observations"
-  ))
-  message(paste0(
-    "- Cash flow: ",
-    nrow(cleaned_statements$cash_flow),
-    " observations"
-  ))
-  message(paste0(
-    "- Balance sheet: ",
-    nrow(cleaned_statements$balance_sheet),
-    " observations"
-  ))
 
   cleaned_statements
 }

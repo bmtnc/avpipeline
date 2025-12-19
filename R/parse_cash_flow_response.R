@@ -48,7 +48,5 @@ parse_cash_flow_response <- function(response, ticker) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
 
-  message("Parsed ", nrow(result), " quarterly cash flow reports for ", ticker)
-
   return(result)
 }

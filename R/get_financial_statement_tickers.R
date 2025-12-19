@@ -29,21 +29,8 @@ get_financial_statement_tickers <- function(
     }
   }
   if (!is.null(manual_tickers)) {
-    message(paste0(
-      "Using ",
-      length(manual_tickers),
-      " manually provided tickers"
-    ))
     manual_tickers
   } else {
-    message(paste0("Fetching holdings for ETF: ", etf_symbol))
-    tickers <- fetch_etf_holdings(etf_symbol)
-    message(paste0(
-      "Retrieved ",
-      length(tickers),
-      " tickers from ETF: ",
-      etf_symbol
-    ))
-    tickers
+    fetch_etf_holdings(etf_symbol)
   }
 }

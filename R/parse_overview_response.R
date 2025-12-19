@@ -40,7 +40,5 @@ parse_overview_response <- function(response, ticker) {
     dplyr::across(dplyr::where(is.character), ~ dplyr::na_if(.x, "None"))
   )
 
-  message("Parsed overview data for ", ticker)
-
   result
 }

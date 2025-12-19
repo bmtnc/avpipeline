@@ -48,15 +48,6 @@ align_statement_tickers <- function(statements) {
   ))
   removed_tickers <- setdiff(all_unique_tickers, common_tickers)
 
-  if (length(removed_tickers) > 0) {
-    message(paste0(
-      "Removed ",
-      length(removed_tickers),
-      " tickers not present in all 4 files:"
-    ))
-    message(paste(removed_tickers, collapse = ", "))
-  }
-
   list(
     earnings = statements$earnings %>%
       dplyr::filter(ticker %in% common_tickers),

@@ -52,16 +52,9 @@ clean_single_statement_anomalies <- function(
     ))
   }
 
-  message(paste0("Cleaning ", statement_name, " metrics..."))
-
   data_filtered <- filter_sufficient_observations(data, "ticker", min_obs)
 
   if (nrow(data_filtered) == 0) {
-    message(paste0(
-      "⚠ No ",
-      statement_name,
-      " data with sufficient observations"
-    ))
     return(data)
   }
 
@@ -78,11 +71,6 @@ clean_single_statement_anomalies <- function(
       )
     },
     error = function(e) {
-      message(paste0(
-        statement_name,
-        " quarterly cleaning failed, keeping original data. Error: ",
-        e$message
-      ))
       return(data)
     }
   )
@@ -101,16 +89,9 @@ clean_single_statement_anomalies <- function(
         dplyr::ungroup()
     },
     error = function(e) {
-      message(paste0(
-        statement_name,
-        " end-window cleaning failed, keeping stage 1 data. Error: ",
-        e$message
-      ))
       return(data_cleaned)
     }
   )
-
-  message(paste0("✓ ", statement_name, " cleaned successfully"))
 
   data_cleaned
 }

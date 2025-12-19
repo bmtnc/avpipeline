@@ -117,22 +117,12 @@ print_log_summary <- function(log, phase = NULL) {
 
     total_rows <- sum(phase_summary$total_rows)
 
-    message(sprintf(
-      "  %s: %d success, %d errors, %d skipped (%d rows)",
+    cat(sprintf(
+      "  %s: %d success, %d errors, %d skipped (%d rows)\n",
       tools::toTitleCase(p), success_count, error_count, skipped_count, total_rows
     ))
   }
 
-  errors <- dplyr::filter(log, status == "error")
-  if (nrow(errors) > 0) {
-    failed_tickers <- unique(errors$ticker)
-    if (length(failed_tickers) <= 10) {
-      message("  Failed: ", paste(failed_tickers, collapse = ", "))
-    } else {
-      message("  Failed: ", paste(head(failed_tickers, 10), collapse = ", "),
-              " (and ", length(failed_tickers) - 10, " more)")
-    }
-  }
 }
 
 #' Upload Pipeline Log to S3
@@ -153,6 +143,5 @@ upload_pipeline_log <- function(log, bucket_name, region = "us-east-1") {
   s3_key <- paste0("logs/", Sys.Date(), "/processing_log.parquet")
   upload_artifact_to_s3(temp_file, bucket_name, s3_key, region)
 
-  message("  Log uploaded: s3://", bucket_name, "/", s3_key)
   TRUE
 }
