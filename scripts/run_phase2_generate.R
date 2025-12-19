@@ -65,6 +65,8 @@ pipeline_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
 success_count <- 0
 error_count <- 0
 skip_count <- 0
+failed_tickers <- character(0)
+loop_start_time <- Sys.time()
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
@@ -103,9 +105,11 @@ for (i in seq_along(tickers)) {
       )
     }
 
-    # Log progress and save checkpoint every 10 tickers
-    if (i %% 10 == 0) {
-      log_progress_summary(i, n_tickers, success_count, error_count, "Generate")
+    # Log progress and save checkpoint every 25 tickers
+    if (i %% 25 == 0) {
+      elapsed <- as.numeric(difftime(Sys.time(), loop_start_time, units = "secs"))
+      log_progress_summary(i, n_tickers, success_count, error_count,
+                           elapsed_seconds = elapsed)
       s3_write_checkpoint(checkpoint, s3_bucket, "phase2", aws_region)
       gc(verbose = FALSE)
     }
@@ -113,7 +117,7 @@ for (i in seq_along(tickers)) {
 
   }, error = function(e) {
     error_count <<- error_count + 1
-    log_error(ticker, conditionMessage(e))
+    failed_tickers <<- c(failed_tickers, ticker)
     checkpoint <<- update_checkpoint(checkpoint, ticker, success = FALSE)
     pipeline_log <<- add_log_entry(
       pipeline_log, ticker, "generate", "ttm", "error",
@@ -159,6 +163,7 @@ log_phase_end("PHASE 2: GENERATE TTM ARTIFACTS",
   failed = error_count,
   duration_seconds = phase_duration
 )
+log_failed_tickers(failed_tickers)
 
 # Return log for use by run_pipeline_aws.R
 phase2_log <- pipeline_log

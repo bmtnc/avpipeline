@@ -1,5 +1,36 @@
 # Step Functions State Machine for Pipeline Orchestration
 
+# CloudWatch Log Group for Step Functions execution logs
+resource "aws_cloudwatch_log_group" "sfn_logs" {
+  name              = "/aws/states/avpipeline-orchestrator"
+  retention_in_days = 30
+
+  tags = {
+    Name      = "avpipeline-stepfunctions-logs"
+    ManagedBy = "terraform"
+  }
+}
+
+# Resource policy to allow Step Functions to write to the log group
+resource "aws_cloudwatch_log_resource_policy" "sfn_logs_policy" {
+  policy_name = "avpipeline-stepfunctions-logs-policy"
+
+  policy_document = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "states.amazonaws.com"
+      }
+      Action = [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+      Resource = "${aws_cloudwatch_log_group.sfn_logs.arn}:*"
+    }]
+  })
+}
+
 # IAM Role for Step Functions
 resource "aws_iam_role" "sfn_role" {
   name = "avpipeline-stepfunctions-role"
@@ -69,6 +100,20 @@ resource "aws_iam_role_policy" "sfn_policy" {
           "events:DescribeRule"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogDelivery",
+          "logs:GetLogDelivery",
+          "logs:UpdateLogDelivery",
+          "logs:DeleteLogDelivery",
+          "logs:ListLogDeliveries",
+          "logs:PutResourcePolicy",
+          "logs:DescribeResourcePolicies",
+          "logs:DescribeLogGroups"
+        ]
+        Resource = "*"
       }
     ]
   })
@@ -78,6 +123,12 @@ resource "aws_iam_role_policy" "sfn_policy" {
 resource "aws_sfn_state_machine" "pipeline" {
   name     = "avpipeline-orchestrator"
   role_arn = aws_iam_role.sfn_role.arn
+
+  logging_configuration {
+    log_destination        = "${aws_cloudwatch_log_group.sfn_logs.arn}:*"
+    level                  = "ERROR"
+    include_execution_data = true
+  }
 
   definition = jsonencode({
     Comment = "AV Pipeline: Phase 1 (Fetch) -> Phase 2 (Generate)"

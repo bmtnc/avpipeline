@@ -50,8 +50,6 @@ make_alpha_vantage_request <- function(ticker, config, api_key = NULL, ...) {
   }
 
   # Make API request with retry logic for transient failures
-  message("Fetching ", config$data_type_name, " data for ticker: ", ticker)
-
   response <- with_retry(
     {
       resp <- httr::GET(

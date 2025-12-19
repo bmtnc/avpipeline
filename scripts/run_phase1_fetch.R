@@ -75,6 +75,8 @@ reference_date <- Sys.Date()
 success_count <- 0
 error_count <- 0
 skip_count <- 0
+failed_tickers <- character(0)
+loop_start_time <- Sys.time()
 
 for (i in seq_along(tickers)) {
   ticker <- tickers[i]
@@ -116,9 +118,9 @@ for (i in seq_along(tickers)) {
 
     if (any_error) {
       error_count <- error_count + 1
+      failed_tickers <- c(failed_tickers, ticker)
       error_msgs <- sapply(results, function(r) r$error)
       error_msgs <- error_msgs[!sapply(error_msgs, is.null)]
-      log_error(ticker, paste(error_msgs, collapse = "; "))
       tracking <- update_tracking_after_error(
         tracking, ticker, paste(error_msgs, collapse = "; ")
       )
@@ -176,16 +178,18 @@ for (i in seq_along(tickers)) {
       )
     }
 
-    # Log progress and save checkpoint every 10 tickers
-    if (i %% 10 == 0) {
-      log_progress_summary(i, n_tickers, success_count, error_count, "Fetch")
+    # Log progress and save checkpoint every 25 tickers
+    if (i %% 25 == 0) {
+      elapsed <- as.numeric(difftime(Sys.time(), loop_start_time, units = "secs"))
+      log_progress_summary(i, n_tickers, success_count, error_count,
+                           elapsed_seconds = elapsed)
       s3_write_checkpoint(checkpoint, s3_bucket, "phase1", aws_region)
       gc(verbose = FALSE)
     }
 
   }, error = function(e) {
     error_count <<- error_count + 1
-    log_error(ticker, conditionMessage(e))
+    failed_tickers <<- c(failed_tickers, ticker)
     tracking <<- update_tracking_after_error(tracking, ticker, conditionMessage(e))
     checkpoint <<- update_checkpoint(checkpoint, ticker, success = FALSE)
     pipeline_log <<- add_log_entry(
@@ -218,6 +222,7 @@ log_phase_end("PHASE 1: FETCH RAW DATA",
   failed = error_count,
   duration_seconds = phase_duration
 )
+log_failed_tickers(failed_tickers)
 
 # Return log for use by run_pipeline_aws.R
 phase1_log <- pipeline_log

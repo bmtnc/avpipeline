@@ -3,6 +3,11 @@
 resource "aws_ecs_cluster" "avpipeline" {
   name = "avpipeline-cluster"
 
+  setting {
+    name  = "containerInsights"
+    value = "enabled"
+  }
+
   tags = {
     Name        = "avpipeline-cluster"
     Environment = "production"
@@ -290,7 +295,7 @@ resource "aws_ecs_task_definition" "full" {
 
 resource "aws_cloudwatch_log_group" "avpipeline" {
   name              = "/ecs/avpipeline"
-  retention_in_days = 7
+  retention_in_days = 30
 
   tags = {
     Name        = "avpipeline-logs"
