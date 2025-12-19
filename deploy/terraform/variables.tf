@@ -28,9 +28,21 @@ variable "task_cpu" {
 }
 
 variable "task_memory" {
-  description = "Memory for ECS task in MB"
+  description = "Memory for Phase 1 ECS task in MB (4GB sufficient for ticker-by-ticker fetch)"
   type        = number
   default     = 4096
+}
+
+variable "phase2_cpu" {
+  description = "CPU units for Phase 2 ECS task (4096 = 4 vCPU for parallel processing)"
+  type        = number
+  default     = 4096
+}
+
+variable "phase2_memory" {
+  description = "Memory for Phase 2 ECS task in MB (16GB needed for 2000+ tickers)"
+  type        = number
+  default     = 16384
 }
 
 variable "etf_symbol" {

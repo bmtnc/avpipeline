@@ -170,8 +170,8 @@ resource "aws_ecs_task_definition" "phase2" {
   family                   = "avpipeline-phase2"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
+  cpu                      = var.phase2_cpu
+  memory                   = var.phase2_memory
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
