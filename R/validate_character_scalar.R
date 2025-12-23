@@ -8,7 +8,7 @@
 #' @param name Optional name for the parameter (used in error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_character_scalar <- function(x, allow_empty = TRUE, name = "Input") {
   if (!is.character(x) || length(x) != 1) {
     stop(paste0(

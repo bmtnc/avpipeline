@@ -26,4 +26,3 @@ list: valid (logical), mismatches (data.frame or NULL)
 \description{
 Compares overlapping quarters between old and new data to detect unexpected changes.
 }
-\keyword{internal}

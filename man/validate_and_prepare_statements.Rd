@@ -46,4 +46,3 @@ Orchestrates the complete data cleaning and validation pipeline for financial
 statements. Removes invalid data, detects anomalies, aligns tickers and dates,
 joins statements with earnings timing, and standardizes to calendar quarters.
 }
-\keyword{internal}

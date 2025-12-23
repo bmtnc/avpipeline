@@ -15,4 +15,3 @@ tibble: Financial statements with only continuous quarterly series
 \description{
 Orchestrates quarterly continuity validation across all tickers using split-apply-combine.
 }
-\keyword{internal}

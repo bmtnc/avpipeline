@@ -7,7 +7,7 @@
 #' @param key_metrics character: Metric columns to compare (default: totalRevenue, netIncome)
 #' @param tolerance numeric: Allowed difference threshold (default: 0.01)
 #' @return list: valid (logical), mismatches (data.frame or NULL)
-#' @keywords internal
+#' @export
 validate_quarterly_consistency <- function(
   existing_data,
   new_data,

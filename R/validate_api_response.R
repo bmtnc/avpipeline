@@ -7,7 +7,7 @@
 #' @param ticker Character scalar ticker symbol (for error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_api_response <- function(parsed_data, ticker = "unknown") {
   if ("Error Message" %in% names(parsed_data)) {
     stop("Alpha Vantage API error: ", parsed_data$`Error Message`)

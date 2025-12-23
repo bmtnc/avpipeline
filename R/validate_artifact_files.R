@@ -4,7 +4,7 @@
 #'
 #' @param file_paths character: Vector of file paths to validate
 #' @return invisible NULL (stops with error if files are missing)
-#' @keywords internal
+#' @export
 validate_artifact_files <- function(file_paths) {
   if (!is.character(file_paths)) {
     stop(paste0(

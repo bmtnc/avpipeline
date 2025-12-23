@@ -33,4 +33,3 @@ NULL (called for side effects)
 Validates that an object is a single numeric value.
 Optionally checks bounds (greater than, greater or equal, less than, etc.).
 }
-\keyword{internal}

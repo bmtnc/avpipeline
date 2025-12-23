@@ -20,4 +20,3 @@ NULL (called for side effects)
 Validates that an object is a numeric vector.
 Optionally checks that the vector is non-empty.
 }
-\keyword{internal}

@@ -8,7 +8,7 @@
 #' @param name Optional name for the parameter (used in error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_non_empty <- function(x, name = "Input") {
   if (is.null(x)) {
     stop(paste0(name, " must not be NULL"))

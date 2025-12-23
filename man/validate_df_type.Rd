@@ -17,4 +17,3 @@ Validates that an object is a data.frame.
 This function is called for its side effects and will stop execution with
 an error message if validation fails.
 }
-\keyword{internal}

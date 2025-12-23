@@ -11,7 +11,7 @@
 #' @param lte Less than or equal bound. Default NULL (no check).
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_numeric_scalar <- function(x, name = "Input", gt = NULL, gte = NULL,
                                     lt = NULL, lte = NULL) {
   if (!is.numeric(x) || length(x) != 1) {

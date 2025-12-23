@@ -17,4 +17,3 @@ NULL (called for side effects)
 \description{
 Validates that a file exists at the specified path.
 }
-\keyword{internal}

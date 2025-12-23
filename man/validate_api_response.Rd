@@ -18,4 +18,3 @@ NULL (called for side effects)
 Validates that an API response does not contain error messages or rate limit notes.
 This function should be called after parsing the JSON response.
 }
-\keyword{internal}

@@ -7,7 +7,7 @@
 #' @param name Optional name for the parameter (used in error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_date_type <- function(x, scalar = TRUE, name = "Input") {
   if (!inherits(x, "Date")) {
     stop(paste0(

@@ -15,7 +15,7 @@
 #' @param end_threshold numeric: Threshold for end-of-series anomaly detection (default 3)
 #' @param min_obs integer: Minimum observations required for anomaly detection (default 10)
 #' @return tibble: Cleaned financial statements with quality flags and standardized calendar quarters
-#' @keywords internal
+#' @export
 validate_and_prepare_statements <- function(
   cash_flow,
   income_statement,

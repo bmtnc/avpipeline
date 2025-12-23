@@ -6,7 +6,7 @@
 #' @param name Optional name for the parameter (used in error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_file_exists <- function(file_path, name = "File") {
   validate_character_scalar(file_path, allow_empty = FALSE, name = name)
   if (!file.exists(file_path)) {

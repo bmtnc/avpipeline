@@ -19,4 +19,3 @@ NULL (called for side effects)
 \description{
 Validates that an object is a Date. Optionally checks that it is a scalar (length 1).
 }
-\keyword{internal}

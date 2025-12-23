@@ -19,4 +19,3 @@ Validates that an object is not NULL, not empty (length > 0), and for
 data.frames, has at least one row. Use this for general non-empty checks
 on vectors, lists, and data.frames.
 }
-\keyword{internal}

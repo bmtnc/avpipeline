@@ -18,4 +18,3 @@ NULL (called for side effects)
 Validates that a numeric value is positive (greater than zero).
 A convenience wrapper around validate_numeric_scalar with gt = 0.
 }
-\keyword{internal}

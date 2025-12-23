@@ -20,4 +20,3 @@ NULL (called for side effects)
 Validates that an object is a single character string.
 Optionally checks that the string is non-empty.
 }
-\keyword{internal}

@@ -7,7 +7,7 @@
 #' @param data Object to validate as a data.frame
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_df_type <- function(data) {
   if (!is.data.frame(data)) {
     stop(paste0("Input data must be a data.frame. Received: ", class(data)[1]))

@@ -4,7 +4,7 @@
 #'
 #' @param financial_statements tibble: Financial statements data
 #' @return tibble: Financial statements with only continuous quarterly series
-#' @keywords internal
+#' @export
 validate_quarterly_continuity <- function(financial_statements) {
   validate_df_cols(financial_statements, c("ticker", "fiscalDateEnding"))
 

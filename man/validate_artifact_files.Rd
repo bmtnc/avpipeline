@@ -15,4 +15,3 @@ invisible NULL (stops with error if files are missing)
 \description{
 Validates that all required cache files exist before loading financial data.
 }
-\keyword{internal}

@@ -8,7 +8,7 @@
 #' @param name Optional name for the parameter (used in error messages)
 #'
 #' @return NULL (called for side effects)
-#' @keywords internal
+#' @export
 validate_numeric_vector <- function(x, allow_empty = FALSE, name = "Input") {
   if (!is.numeric(x)) {
     stop(paste0(
