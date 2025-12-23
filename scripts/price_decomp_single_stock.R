@@ -15,10 +15,10 @@
 TICKER <- "AMZN"
 
 # Data source: "s3" (read from S3) or "api" (fetch fresh from Alpha Vantage)
-DATA_SOURCE <- "api"
+DATA_SOURCE <- "s3"
 
 # S3 configuration (only needed if DATA_SOURCE = "s3")
-S3_BUCKET <- Sys.getenv("S3_BUCKET", "")
+S3_BUCKET <- Sys.getenv("S3_BUCKET", "avpipeline-artifacts-prod")
 AWS_REGION <- Sys.getenv("AWS_REGION", "us-east-1")
 
 # Pipeline parameters

@@ -13,7 +13,7 @@
 #' @param end_threshold numeric: Threshold for end-of-series detection (default: 3)
 #' @param min_obs integer: Minimum observations for anomaly detection (default: 10)
 #' @return tibble or NULL: TTM per-share financial data
-#' @keywords internal
+#' @export
 process_ticker_from_s3 <- function(
   ticker,
   bucket_name,

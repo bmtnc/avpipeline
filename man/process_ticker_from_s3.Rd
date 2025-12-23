@@ -44,4 +44,3 @@ tibble or NULL: TTM per-share financial data
 \description{
 Reads raw data from S3 and processes through TTM pipeline.
 }
-\keyword{internal}
