@@ -60,7 +60,12 @@ if (length(already_processed) > 0) {
 # PROCESS TICKERS
 # ============================================================================
 
-final_artifact <- tibble::tibble()
+# Load intermediate artifact if resuming from checkpoint
+final_artifact <- if (length(already_processed) > 0) {
+  s3_read_checkpoint_artifact(s3_bucket, "phase2", aws_region)
+} else {
+  tibble::tibble()
+}
 pipeline_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
 success_count <- 0
 error_count <- 0
@@ -111,6 +116,7 @@ for (i in seq_along(tickers)) {
       log_progress_summary(i, n_tickers, success_count, error_count,
                            elapsed_seconds = elapsed)
       s3_write_checkpoint(checkpoint, s3_bucket, "phase2", aws_region)
+      s3_write_checkpoint_artifact(final_artifact, s3_bucket, "phase2", aws_region)
       gc(verbose = FALSE)
     }
     if (i %% 50 == 0) gc(full = TRUE, verbose = FALSE)
@@ -150,6 +156,7 @@ log_pipeline(sprintf("Artifact: s3://%s/%s (%d rows)", s3_bucket, s3_key, nrow(f
 
 # Clear checkpoint on successful completion
 s3_clear_checkpoint(s3_bucket, "phase2", aws_region)
+s3_clear_checkpoint_artifact(s3_bucket, "phase2", aws_region)
 log_pipeline("Checkpoint cleared (phase complete)")
 
 # ============================================================================
