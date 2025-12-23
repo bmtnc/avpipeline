@@ -18,10 +18,9 @@ get_data_status_summary <- function(tracking, reference_date = Sys.Date()) {
     return(tibble::tibble(
       ticker = character(),
       price_days_stale = numeric(),
-      price_has_full = logical(),
       quarterly_days_stale = numeric(),
       overview_days_stale = numeric(),
-      needs_price_full = logical(),
+      needs_price = logical(),
       needs_quarterly = logical()
     ))
   }
@@ -37,16 +36,15 @@ get_data_status_summary <- function(tracking, reference_date = Sys.Date()) {
       overview_days_stale = as.numeric(difftime(
         reference_date, as.Date(overview_last_fetched_at), units = "days"
       )),
-      needs_price_full = is.na(price_has_full_history) | !price_has_full_history | price_days_stale > 90,
+      needs_price = is.na(price_last_date) | price_days_stale > 7,
       needs_quarterly = is.na(quarterly_last_fetched_at) | quarterly_days_stale > 90
     ) %>%
     dplyr::select(
       ticker,
       price_days_stale,
-      price_has_full = price_has_full_history,
       quarterly_days_stale,
       overview_days_stale,
-      needs_price_full,
+      needs_price,
       needs_quarterly
     )
 }

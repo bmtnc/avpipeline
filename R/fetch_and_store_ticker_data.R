@@ -35,24 +35,11 @@ fetch_and_store_ticker_data <- function(
   results <- list()
 
   if (isTRUE(fetch_requirements$price)) {
-    outputsize <- determine_price_outputsize(
-      price_has_full_history = isTRUE(ticker_tracking$price_has_full_history),
-      price_last_date = ticker_tracking$price_last_date
-    )
-
+    # Always fetch full price history to avoid data loss from compact overwrites
     results$price <- fetch_and_store_single_data_type(
       ticker, "price", bucket_name, api_key, region, delay_seconds,
-      outputsize = outputsize
+      outputsize = "full"
     )
-
-    if (isTRUE(results$price$success) && outputsize == "compact") {
-      if (price_data_contains_split(results$price$data)) {
-        results$price <- fetch_and_store_single_data_type(
-          ticker, "price", bucket_name, api_key, region, delay_seconds,
-          outputsize = "full"
-        )
-      }
-    }
   }
 
   if (isTRUE(fetch_requirements$splits)) {

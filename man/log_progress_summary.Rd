@@ -4,7 +4,14 @@
 \alias{log_progress_summary}
 \title{Log Progress Summary}
 \usage{
-log_progress_summary(current, total, successful, failed, phase = "Fetch")
+log_progress_summary(
+  current,
+  total,
+  successful,
+  failed,
+  phase = "Fetch",
+  elapsed_seconds = NULL
+)
 }
 \arguments{
 \item{current}{Integer. Current ticker index}
@@ -16,11 +23,14 @@ log_progress_summary(current, total, successful, failed, phase = "Fetch")
 \item{failed}{Integer. Count of failed tickers}
 
 \item{phase}{Character. Phase name for display (default: "Fetch")}
+
+\item{elapsed_seconds}{Numeric. Total elapsed time in seconds (optional)}
 }
 \value{
 NULL (called for side effects)
 }
 \description{
-Logs a formatted progress summary showing completion percentage and counts.
+Logs a formatted progress summary showing completion percentage, counts,
+and optional timing information.
 }
 \keyword{internal}

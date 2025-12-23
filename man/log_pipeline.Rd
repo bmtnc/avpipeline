@@ -15,6 +15,7 @@ log_pipeline(..., level = "INFO")
 NULL (called for side effects)
 }
 \description{
-Logs a timestamped message and flushes output for CloudWatch visibility.
+Logs a timestamped message with execution ID and flushes output for
+CloudWatch visibility.
 }
 \keyword{internal}

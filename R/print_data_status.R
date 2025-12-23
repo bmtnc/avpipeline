@@ -19,8 +19,7 @@ print_data_status <- function(tracking, reference_date = Sys.Date()) {
 
   summary <- get_data_status_summary(tracking, reference_date)
 
-  has_full_price <- sum(isTRUE(summary$price_has_full), na.rm = TRUE)
-  needs_full_price <- sum(isTRUE(summary$needs_price_full), na.rm = TRUE)
+  needs_price <- sum(isTRUE(summary$needs_price), na.rm = TRUE)
   needs_quarterly <- sum(isTRUE(summary$needs_quarterly), na.rm = TRUE)
 
   price_fresh <- sum(summary$price_days_stale <= 7, na.rm = TRUE)
@@ -41,8 +40,7 @@ print_data_status <- function(tracking, reference_date = Sys.Date()) {
   message("  Stale (8-90d):    ", price_stale)
   message("  Very stale (>90d): ", price_very_stale)
   message("  Missing:          ", price_missing)
-  message("  Has full history: ", has_full_price)
-  message("  Needs full fetch: ", needs_full_price)
+  message("  Needs refresh:    ", needs_price)
   message("")
   message("QUARTERLY DATA:")
   message("  Fresh (<=30d):    ", quarterly_fresh)
