@@ -24,6 +24,6 @@ s3_read_ticker_raw_data_single(
 data.frame or NULL if file doesn't exist
 }
 \description{
-Downloads a single data type parquet file for a ticker from S3.
+Reads a single data type parquet file for a ticker from S3 using arrow's native S3 support.
 }
 \keyword{internal}

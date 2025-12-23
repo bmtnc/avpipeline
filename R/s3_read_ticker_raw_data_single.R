@@ -1,6 +1,6 @@
 #' Read Single Ticker Raw Data from S3
 #'
-#' Downloads a single data type parquet file for a ticker from S3.
+#' Reads a single data type parquet file for a ticker from S3 using arrow's native S3 support.
 #'
 #' @param ticker character: Stock symbol
 #' @param data_type character: Type of data (e.g., "balance_sheet", "price")
@@ -19,27 +19,10 @@ s3_read_ticker_raw_data_single <- function(
   validate_character_scalar(bucket_name, name = "bucket_name")
 
   s3_key <- generate_raw_data_s3_key(ticker, data_type)
-  s3_uri <- paste0("s3://", bucket_name, "/", s3_key)
+  s3_uri <- paste0("s3://", bucket_name, "/", s3_key, "?region=", region)
 
-  temp_file <- tempfile(fileext = ".parquet")
-  on.exit(unlink(temp_file), add = TRUE)
-
-  result <- system2_with_timeout(
-    "aws",
-    args = c("s3", "cp", s3_uri, temp_file, "--region", region),
-    timeout_seconds = 30,
-    stdout = TRUE,
-    stderr = TRUE
+  tryCatch(
+    arrow::read_parquet(s3_uri),
+    error = function(e) NULL
   )
-
-  if (is_timeout_result(result) ||
-      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
-    return(NULL)
-  }
-
-  if (!file.exists(temp_file)) {
-    return(NULL)
-  }
-
-  arrow::read_parquet(temp_file)
 }
