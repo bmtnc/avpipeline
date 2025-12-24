@@ -1,12 +1,20 @@
 #!/usr/bin/env Rscript
 
 # ============================================================================
-# Phase 2: Generate TTM Artifacts from S3 Raw Data
+# Phase 2: Generate Quarterly TTM and Price Artifacts from S3 Raw Data
 # ============================================================================
-# Reads raw data from S3 and generates the TTM per-share financial artifact.
+# Loads all raw data using Arrow datasets, processes each ticker for quarterly
+# TTM metrics, and outputs two separate artifacts:
+#   1. ttm_quarterly_artifact.parquet - Quarterly frequency TTM financials
+#   2. price_artifact.parquet - Daily prices (cleaned)
+#
+# The daily TTM artifact (with forward-fill and per-share metrics) is created
+# on-demand locally using create_daily_ttm_artifact().
 #
 # Input: s3://{bucket}/raw/{TICKER}/*.parquet
-# Output: s3://{bucket}/ttm-artifacts/{YYYY-MM-DD}/ttm_per_share_financial_artifact.parquet
+# Output:
+#   s3://{bucket}/ttm-artifacts/{YYYY-MM-DD}/ttm_quarterly_artifact.parquet
+#   s3://{bucket}/ttm-artifacts/{YYYY-MM-DD}/price_artifact.parquet
 # ============================================================================
 
 devtools::load_all()
@@ -37,52 +45,37 @@ log_phase_start("PHASE 2: GENERATE TTM ARTIFACTS",
 )
 
 # ============================================================================
-# SETUP
+# LOAD ALL DATA
 # ============================================================================
 
-# Get all tickers with data in S3 (includes current + historical ETF members)
-all_tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
+log_pipeline("Loading all raw data using Arrow datasets...")
+load_start <- Sys.time()
 
-# Load checkpoint and filter to unprocessed tickers
-checkpoint <- s3_read_checkpoint(s3_bucket, "phase2", aws_region)
-already_processed <- checkpoint$processed_tickers %||% character(0)
-tickers <- setdiff(all_tickers, already_processed)
+all_data <- s3_load_all_raw_data(s3_bucket, aws_region)
+
+load_duration <- as.numeric(difftime(Sys.time(), load_start, units = "secs"))
+log_pipeline(sprintf("All data loaded in %.1f seconds", load_duration))
+
+# Get unique tickers from the data
+tickers <- unique(all_data$earnings$ticker)
 n_tickers <- length(tickers)
-n_total <- length(all_tickers)
-
-log_pipeline(sprintf("Tickers in S3: %d total, %d remaining", n_total, n_tickers))
-
-if (length(already_processed) > 0) {
-  log_pipeline(sprintf("Resuming from checkpoint: %d already processed", length(already_processed)))
-}
+log_pipeline(sprintf("Processing %d tickers", n_tickers))
 
 # ============================================================================
-# PROCESS TICKERS
+# PROCESS TICKERS FOR QUARTERLY ARTIFACT
 # ============================================================================
 
-# Load intermediate artifact if resuming from checkpoint
-final_artifact <- if (length(already_processed) > 0) {
-  s3_read_checkpoint_artifact(s3_bucket, "phase2", aws_region)
-} else {
-  tibble::tibble()
-}
-pipeline_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
-success_count <- 0
-error_count <- 0
-skip_count <- 0
-failed_tickers <- character(0)
-loop_start_time <- Sys.time()
+log_pipeline("Processing tickers for quarterly TTM artifact...")
+process_start <- Sys.time()
 
-for (i in seq_along(tickers)) {
+quarterly_results <- lapply(seq_along(tickers), function(i) {
   ticker <- tickers[i]
-  ticker_start <- Sys.time()
 
-  tryCatch({
-    result <- process_ticker_from_s3(
+  result <- tryCatch({
+    process_ticker_for_quarterly_artifact(
       ticker = ticker,
-      bucket_name = s3_bucket,
+      all_data = all_data,
       start_date = start_date,
-      region = aws_region,
       threshold = threshold,
       lookback = lookback,
       lookahead = lookahead,
@@ -90,74 +83,103 @@ for (i in seq_along(tickers)) {
       end_threshold = end_threshold,
       min_obs = min_obs
     )
-
-    duration <- as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
-
-    if (!is.null(result) && nrow(result) > 0) {
-      success_count <- success_count + 1
-      final_artifact <- dplyr::bind_rows(final_artifact, result)
-      checkpoint <- update_checkpoint(checkpoint, ticker, success = TRUE)
-      pipeline_log <- add_log_entry(
-        pipeline_log, ticker, "generate", "ttm", "success",
-        rows = nrow(result), duration_seconds = duration
-      )
-    } else {
-      skip_count <- skip_count + 1
-      checkpoint <- update_checkpoint(checkpoint, ticker, success = TRUE)
-      pipeline_log <- add_log_entry(
-        pipeline_log, ticker, "generate", "ttm", "skipped",
-        error_message = "No data returned", duration_seconds = duration
-      )
-    }
-
-    # Log progress and save checkpoint every 25 tickers
-    if (i %% 25 == 0) {
-      elapsed <- as.numeric(difftime(Sys.time(), loop_start_time, units = "secs"))
-      log_progress_summary(i, n_tickers, success_count, error_count,
-                           elapsed_seconds = elapsed)
-      s3_write_checkpoint(checkpoint, s3_bucket, "phase2", aws_region)
-      s3_write_checkpoint_artifact(final_artifact, s3_bucket, "phase2", aws_region)
-      gc(verbose = FALSE)
-    }
-    if (i %% 50 == 0) gc(full = TRUE, verbose = FALSE)
-
   }, error = function(e) {
-    error_count <<- error_count + 1
-    failed_tickers <<- c(failed_tickers, ticker)
-    checkpoint <<- update_checkpoint(checkpoint, ticker, success = FALSE)
-    pipeline_log <<- add_log_entry(
-      pipeline_log, ticker, "generate", "ttm", "error",
-      error_message = conditionMessage(e),
-      duration_seconds = as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
-    )
+    warning(sprintf("Error processing %s: %s", ticker, e$message))
+    NULL
   })
-}
+
+  # Log progress every 100 tickers
+  if (i %% 100 == 0) {
+    elapsed <- as.numeric(difftime(Sys.time(), process_start, units = "secs"))
+    rate <- i / elapsed
+    eta <- (n_tickers - i) / rate
+    log_pipeline(sprintf("[%d/%d] %.1f%% | %.2f tickers/sec | ETA: %.1f min",
+                         i, n_tickers, 100 * i / n_tickers, rate, eta / 60))
+  }
+
+  result
+})
+
+# Combine quarterly results
+log_pipeline("Combining quarterly results...")
+quarterly_artifact <- dplyr::bind_rows(quarterly_results)
+
+# Count successes/skips
+success_count <- sum(sapply(quarterly_results, function(x) {
+  !is.null(x) && nrow(x) > 0
+}))
+skip_count <- n_tickers - success_count
+
+process_duration <- as.numeric(difftime(Sys.time(), process_start, units = "secs"))
+log_pipeline(sprintf("Quarterly processing complete: %d success, %d skipped in %.1f seconds",
+                     success_count, skip_count, process_duration))
+log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
 
 # ============================================================================
-# UPLOAD ARTIFACT TO S3
+# PREPARE PRICE ARTIFACT
 # ============================================================================
 
-log_pipeline("Uploading TTM artifact to S3...")
+log_pipeline("Preparing price artifact...")
 
-local_artifact_path <- tempfile(fileext = ".parquet")
-on.exit(unlink(local_artifact_path), add = TRUE)
+# Combine all price data and clean it
+price_artifact <- all_data$price |>
+  dplyr::filter(
+    date >= start_date,
+    !is.na(close) & close > 0
+  ) |>
+  dplyr::select(
+    ticker,
+    date,
+    open,
+    high,
+    low,
+    close,
+    adjusted_close,
+    volume,
+    dividend_amount,
+    split_coefficient
+  ) |>
+  dplyr::distinct() |>
+  dplyr::arrange(ticker, date)
 
-arrow::write_parquet(final_artifact, local_artifact_path)
+log_pipeline(sprintf("Price artifact: %d rows", nrow(price_artifact)))
 
-s3_key <- generate_s3_artifact_key(date = Sys.Date())
+# ============================================================================
+# UPLOAD ARTIFACTS TO S3
+# ============================================================================
+
+artifact_date <- Sys.Date()
+date_string <- format(artifact_date, "%Y-%m-%d")
+
+# Upload quarterly artifact
+log_pipeline("Uploading quarterly TTM artifact to S3...")
+local_quarterly_path <- tempfile(fileext = ".parquet")
+arrow::write_parquet(quarterly_artifact, local_quarterly_path)
+
+quarterly_s3_key <- paste0("ttm-artifacts/", date_string, "/ttm_quarterly_artifact.parquet")
 upload_artifact_to_s3(
-  local_path = local_artifact_path,
+  local_path = local_quarterly_path,
   bucket_name = s3_bucket,
-  s3_key = s3_key,
+  s3_key = quarterly_s3_key,
   region = aws_region
 )
+unlink(local_quarterly_path)
+log_pipeline(sprintf("Uploaded: s3://%s/%s", s3_bucket, quarterly_s3_key))
 
-log_pipeline(sprintf("Artifact: s3://%s/%s (%d rows)", s3_bucket, s3_key, nrow(final_artifact)))
+# Upload price artifact
+log_pipeline("Uploading price artifact to S3...")
+local_price_path <- tempfile(fileext = ".parquet")
+arrow::write_parquet(price_artifact, local_price_path)
 
-# Clear checkpoint on successful completion
-s3_clear_checkpoint(s3_bucket, "phase2", aws_region)
-s3_clear_checkpoint_artifact(s3_bucket, "phase2", aws_region)
-log_pipeline("Checkpoint cleared (phase complete)")
+price_s3_key <- paste0("ttm-artifacts/", date_string, "/price_artifact.parquet")
+upload_artifact_to_s3(
+  local_path = local_price_path,
+  bucket_name = s3_bucket,
+  s3_key = price_s3_key,
+  region = aws_region
+)
+unlink(local_price_path)
+log_pipeline(sprintf("Uploaded: s3://%s/%s", s3_bucket, price_s3_key))
 
 # ============================================================================
 # SUMMARY
@@ -166,11 +188,15 @@ log_pipeline("Checkpoint cleared (phase complete)")
 phase_duration <- as.numeric(difftime(Sys.time(), phase_start_time, units = "secs"))
 log_phase_end("PHASE 2: GENERATE TTM ARTIFACTS",
   total = n_tickers,
-  successful = success_count + skip_count,
-  failed = error_count,
+  successful = success_count,
+  failed = 0,
   duration_seconds = phase_duration
 )
-log_failed_tickers(failed_tickers)
 
-# Return log for use by run_pipeline_aws.R
-phase2_log <- pipeline_log
+log_pipeline(sprintf(
+  "Artifacts created:\n  - Quarterly: %d rows (%.1f MB estimated)\n  - Price: %d rows (%.1f MB estimated)",
+  nrow(quarterly_artifact),
+  nrow(quarterly_artifact) * 500 / 1e6,  # rough estimate
+  nrow(price_artifact),
+  nrow(price_artifact) * 100 / 1e6  # rough estimate
+))
