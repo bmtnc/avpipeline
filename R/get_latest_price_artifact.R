@@ -7,8 +7,8 @@
 #' @return tibble: Daily price data
 #' @export
 get_latest_price_artifact <- function(
-    bucket_name = "avpipeline-artifacts-prod",
-    region = "us-east-1"
+  bucket_name = "avpipeline-artifacts-prod",
+  region = "us-east-1"
 ) {
   load_price_artifact(
     bucket_name = bucket_name,

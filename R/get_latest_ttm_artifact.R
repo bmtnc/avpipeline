@@ -7,8 +7,8 @@
 #' @return tibble: Quarterly TTM financial data
 #' @export
 get_latest_ttm_artifact <- function(
-    bucket_name = "avpipeline-artifacts-prod",
-    region = "us-east-1"
+  bucket_name = "avpipeline-artifacts-prod",
+  region = "us-east-1"
 ) {
   load_quarterly_artifact(
     bucket_name = bucket_name,
