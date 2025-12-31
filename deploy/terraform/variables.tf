@@ -40,9 +40,9 @@ variable "phase2_cpu" {
 }
 
 variable "phase2_memory" {
-  description = "Memory for Phase 2 ECS task in MB (16GB needed for 2000+ tickers)"
+  description = "Memory for Phase 2 ECS task in MB (8GB for parallel ticker processing)"
   type        = number
-  default     = 16384
+  default     = 8192
 }
 
 variable "etf_symbol" {

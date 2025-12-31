@@ -62,16 +62,15 @@ n_tickers <- length(tickers)
 log_pipeline(sprintf("Processing %d tickers", n_tickers))
 
 # ============================================================================
-# PROCESS TICKERS FOR QUARTERLY ARTIFACT
+# PROCESS TICKERS FOR QUARTERLY ARTIFACT (PARALLEL)
 # ============================================================================
 
-log_pipeline("Processing tickers for quarterly TTM artifact...")
+n_cores <- parallel::detectCores()
+log_pipeline(sprintf("Processing tickers for quarterly TTM artifact using %d cores...", n_cores))
 process_start <- Sys.time()
 
-quarterly_results <- lapply(seq_along(tickers), function(i) {
-  ticker <- tickers[i]
-
-  result <- tryCatch({
+quarterly_results <- parallel::mclapply(tickers, function(ticker) {
+  tryCatch({
     process_ticker_for_quarterly_artifact(
       ticker = ticker,
       all_data = all_data,
@@ -84,21 +83,9 @@ quarterly_results <- lapply(seq_along(tickers), function(i) {
       min_obs = min_obs
     )
   }, error = function(e) {
-    warning(sprintf("Error processing %s: %s", ticker, e$message))
     NULL
   })
-
-  # Log progress every 100 tickers
-  if (i %% 100 == 0) {
-    elapsed <- as.numeric(difftime(Sys.time(), process_start, units = "secs"))
-    rate <- i / elapsed
-    eta <- (n_tickers - i) / rate
-    log_pipeline(sprintf("[%d/%d] %.1f%% | %.2f tickers/sec | ETA: %.1f min",
-                         i, n_tickers, 100 * i / n_tickers, rate, eta / 60))
-  }
-
-  result
-})
+}, mc.cores = n_cores)
 
 # Combine quarterly results
 log_pipeline("Combining quarterly results...")
