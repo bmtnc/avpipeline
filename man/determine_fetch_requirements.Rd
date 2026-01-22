@@ -18,7 +18,7 @@ determine_fetch_requirements(
 \item{fetch_mode}{character: "full" (default), "price_only", or "quarterly_only"}
 }
 \value{
-list: Named list with price, splits, quarterly, overview (each TRUE/FALSE)
+list: Named list with price, splits, quarterly (each TRUE/FALSE)
 }
 \description{
 Determines which data types need to be fetched for a ticker based on tracking state.

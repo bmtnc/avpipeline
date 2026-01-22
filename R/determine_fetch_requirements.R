@@ -5,7 +5,7 @@
 #' @param ticker_tracking tibble: Single row from refresh tracking for this ticker
 #' @param reference_date Date: Date to check against (defaults to today)
 #' @param fetch_mode character: "full" (default), "price_only", or "quarterly_only"
-#' @return list: Named list with price, splits, quarterly, overview (each TRUE/FALSE)
+#' @return list: Named list with price, splits, quarterly (each TRUE/FALSE)
 #' @keywords internal
 determine_fetch_requirements <- function(
   ticker_tracking,
@@ -32,8 +32,7 @@ determine_fetch_requirements <- function(
     return(list(
       price = TRUE,
       splits = FALSE,
-      quarterly = FALSE,
-      overview = FALSE
+      quarterly = FALSE
     ))
   }
 
@@ -41,11 +40,7 @@ determine_fetch_requirements <- function(
     return(list(
       price = FALSE,
       splits = FALSE,
-      quarterly = TRUE,
-      overview = should_fetch_overview_data(
-        overview_last_fetched_at = ticker_tracking$overview_last_fetched_at,
-        reference_date = reference_date
-      )
+      quarterly = TRUE
     ))
   }
 
@@ -58,15 +53,9 @@ determine_fetch_requirements <- function(
     reference_date = reference_date
   )
 
-  fetch_overview <- should_fetch_overview_data(
-    overview_last_fetched_at = ticker_tracking$overview_last_fetched_at,
-    reference_date = reference_date
-  )
-
   list(
     price = fetch_price,
     splits = fetch_splits,
-    quarterly = fetch_quarterly,
-    overview = fetch_overview
+    quarterly = fetch_quarterly
   )
 }

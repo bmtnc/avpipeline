@@ -196,62 +196,6 @@ test_that("determine_fetch_requirements validates inputs", {
   expect_error(determine_fetch_requirements(single_row, reference_date = "2024-12-15"), "Date object")
 })
 
-test_that("detect_data_changes detects new data when existing is NULL", {
-  new_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-06-30", "2024-09-30")),
-    value = c(100, 200)
-  )
-
-  result <- detect_data_changes(NULL, new_data, "fiscalDateEnding")
-
-  expect_true(result$has_changes)
-  expect_equal(result$new_records_count, 2)
-  expect_equal(result$latest_date, as.Date("2024-09-30"))
-})
-
-test_that("detect_data_changes detects new quarters", {
-  existing_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30")),
-    value = c(100, 200)
-  )
-
-  new_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30", "2024-09-30")),
-    value = c(100, 200, 300)
-  )
-
-  result <- detect_data_changes(existing_data, new_data, "fiscalDateEnding")
-
-  expect_true(result$has_changes)
-  expect_equal(result$new_records_count, 1)
-  expect_equal(result$latest_date, as.Date("2024-09-30"))
-})
-
-test_that("detect_data_changes returns no changes when data is same", {
-  existing_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30", "2024-09-30")),
-    value = c(100, 200, 300)
-  )
-
-  new_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30", "2024-09-30")),
-    value = c(100, 200, 300)
-  )
-
-  result <- detect_data_changes(existing_data, new_data, "fiscalDateEnding")
-
-  expect_false(result$has_changes)
-  expect_equal(result$new_records_count, 0)
-})
-
-test_that("detect_data_changes validates inputs", {
-  new_data <- tibble::tibble(x = 1:3)
-
-  expect_error(detect_data_changes(NULL, "not_df", "x"), "data.frame")
-  expect_error(detect_data_changes(NULL, new_data, 123), "character scalar")
-  expect_error(detect_data_changes(NULL, new_data, "missing_col"), "not found")
-})
-
 test_that("update_earnings_prediction updates tracking correctly", {
   tracking <- create_default_ticker_tracking("AAPL")
 

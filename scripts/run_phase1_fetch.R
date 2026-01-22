@@ -163,10 +163,6 @@ for (i in seq_along(tickers)) {
             max(earnings_data$reportedDate, na.rm = TRUE) else NULL
         )
       }
-      if (isTRUE(fetch_requirements$overview)) {
-        tracking <- update_tracking_after_fetch(tracking, ticker, "overview")
-      }
-
       total_rows <- sum(sapply(results, function(r) {
         if (!is.null(r$data)) nrow(r$data) else 0L
       }))

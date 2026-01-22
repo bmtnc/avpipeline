@@ -8,8 +8,8 @@ should_fetch_quarterly_data(
   next_estimated_report_date,
   quarterly_last_fetched_at,
   reference_date = Sys.Date(),
-  window_days = DATA_TYPE_REFRESH_CONFIG$quarterly$window_days,
-  fallback_max_days = DATA_TYPE_REFRESH_CONFIG$quarterly$fallback_max_days
+  window_days = 5,
+  fallback_max_days = 90
 )
 }
 \arguments{

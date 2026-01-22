@@ -16,8 +16,7 @@ get_config_for_data_type <- function(data_type) {
     balance_sheet = BALANCE_SHEET_CONFIG,
     income_statement = INCOME_STATEMENT_CONFIG,
     cash_flow = CASH_FLOW_CONFIG,
-    earnings = EARNINGS_CONFIG,
-    overview = OVERVIEW_CONFIG
+    earnings = EARNINGS_CONFIG
   )
 
   config_map[[data_type]]
