@@ -92,22 +92,31 @@ bash deploy/setup.sh
 ```
 
 This automated script will:
-- Deploy infrastructure using Terraform (ECS Fargate, S3, SNS, ECR, Parameter Store)
+- Deploy infrastructure using Terraform (ECS Fargate, Step Functions, S3, SNS, ECR, CloudWatch, Parameter Store)
 - Build and push Docker container to ECR
-- Set up weekly scheduling (Sundays at 2am ET)
-- Configure email notifications
+- Set up weekly scheduling (Sundays at 2am ET via EventBridge → Step Functions)
+- Configure email notifications and failure alarms
 
 ### Architecture
 
-- **ECS Fargate**: Serverless container execution
-- **S3**: Artifact storage with 30-day lifecycle
-- **EventBridge**: Weekly scheduling
-- **SNS**: Email notifications for pipeline success/failure
+- **Step Functions**: Orchestrates Phase 1 → Phase 2 sequencing with 8-hour timeouts per phase and automatic retry (2 attempts, exponential backoff)
+- **ECS Fargate**: Serverless container execution. Phase 1 runs on 1 vCPU / 4GB; Phase 2 runs on 4 vCPU / 8GB for parallel processing
+- **S3**: Artifact storage with lifecycle policies — TTM artifacts expire after 30 days, raw data after 365 days
+- **EventBridge**: Weekly scheduling (Sundays at 2am ET triggers the Step Functions state machine)
+- **CloudWatch**: Alarms on Step Functions execution failures and timeouts, both notify via SNS
+- **SNS**: Email notifications for pipeline success/failure/alarms
 - **Parameter Store**: Secure API key storage
+
+### Configuration
+
+Phase 1 supports a `FETCH_MODE` environment variable to control what gets fetched:
+- `full` (default) — price, splits, and quarterly data (subject to smart refresh logic)
+- `price_only` — only daily prices and splits
+- `quarterly_only` — only quarterly financials (balance sheet, income, cash flow, earnings)
 
 ### Cost
 
-Approximately **$3-6/month** for weekly runs.
+Approximately **$5-8/month** for weekly runs (Phase 2 uses 4 vCPU / 8GB).
 
 ### Full Documentation
 
