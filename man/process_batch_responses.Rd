@@ -20,6 +20,7 @@ Named list by ticker, each containing named list by data_type with
 success, data, error, outputsize_used
 }
 \description{
-Iterates over responses, parses each, writes to S3, and returns per-ticker results.
+Parses all responses, writes parquet files to a local temp directory,
+then batch uploads to S3 via \verb{aws s3 cp --recursive}.
 }
 \keyword{internal}

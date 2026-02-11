@@ -53,12 +53,12 @@ build_batch_requests <- function(batch_plan, api_key,
 
     if (isTRUE(fetch_requirements$price)) {
       api_function <- get_api_function_for_data_type("price")
-      extra_params <- list(outputsize = "full", datatype = "json")
+      extra_params <- list(outputsize = "full", datatype = "csv")
       req <- build_av_request(
         ticker, api_function, api_key,
         throttle_capacity = throttle_capacity,
         throttle_fill_time = throttle_fill_time,
-        outputsize = "full", datatype = "json"
+        outputsize = "full", datatype = "csv"
       )
       request_specs[[length(request_specs) + 1]] <- list(
         request = req,
