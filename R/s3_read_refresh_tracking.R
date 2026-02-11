@@ -37,7 +37,5 @@ s3_read_refresh_tracking <- function(bucket_name, region = "us-east-1") {
 
   tracking <- arrow::read_parquet(temp_file)
 
-  tracking <- migrate_tracking_schema(tracking)
-
   tracking
 }
