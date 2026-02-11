@@ -100,7 +100,7 @@ This automated script will:
 ### Architecture
 
 - **Step Functions**: Orchestrates Phase 1 → Phase 2 sequencing with 8-hour timeouts per phase and automatic retry (2 attempts, exponential backoff)
-- **ECS Fargate**: Serverless container execution. Phase 1 runs on 1 vCPU / 4GB; Phase 2 runs on 4 vCPU / 8GB for parallel processing
+- **ECS Fargate**: Serverless container execution. Phase 1 runs on 4 vCPU / 8GB (batch API + parallel S3 writes); Phase 2 runs on 4 vCPU / 8GB for parallel processing
 - **S3**: Artifact storage with lifecycle policies — TTM artifacts expire after 30 days, raw data after 365 days
 - **EventBridge**: Weekly scheduling (Sundays at 2am ET triggers the Step Functions state machine)
 - **CloudWatch**: Alarms on Step Functions execution failures and timeouts, both notify via SNS
@@ -178,11 +178,11 @@ Loads all raw data from S3, then processes each ticker in parallel.
 4. Calculate per-share metrics (TTM per-share for flow metrics, point-in-time per-share for balance sheet)
 
 **Performance (IWV, ~2,100 tickers):**
-- **Phase 1 (Fetch)**: ~6.3 hours (~10.8 sec/ticker avg, dominated by API delays + S3 writes)
+- **Phase 1 (Fetch)**: ~4 hours (~6.9 sec/ticker avg, httr2 batch processing with `req_throttle`)
 - **Phase 2 (Generate)**: ~44 min (parallelized across all cores)
-- **Total**: ~7 hours end-to-end
+- **Total**: ~4.75 hours end-to-end
 - **Memory usage**: Constant ~500MB
-- **API rate**: 1 request/sec (stays under 75 req/min premium limit)
+- **API rate**: 1 request/sec via `req_throttle` (stays under 75 req/min premium limit)
 
 **Production scripts:**
 - `scripts/run_pipeline_aws.R` — Top-level orchestrator (sources Phase 1 then Phase 2)
@@ -300,10 +300,71 @@ Relevant files:
 
 These are tickers AV doesn't cover: delisted/merged companies still in the ETF universe (e.g., WBA post-acquisition), special share classes, or newly listed companies. **Failures are non-destructive** — the pipeline records the error in `last_error_message` in refresh tracking but does not overwrite existing S3 data from prior successful fetches. Phase 2 processes whatever raw data exists in S3 regardless of Phase 1 outcome (2,027 of 2,034 tickers succeeded in Phase 2 on Feb 8).
 
+### Phase 1 S3 Write Performance on Fargate (Ongoing)
+
+Phase 1 runs at ~3.9 sec/ticker locally (MacBook, 8+ cores) but ~6.9 sec/ticker on Fargate (4 vCPU / 8GB). The API call phase (1 req/sec via `req_throttle`) is identical in both environments; the gap is entirely in S3 write overhead. Multiple optimization attempts have failed to close this gap meaningfully.
+
+**Timeline of optimization attempts (Feb 2026):**
+
+| Change | Local (sec/ticker) | AWS (sec/ticker) | Notes |
+|--------|-------------------|-----------------|-------|
+| Baseline (sequential httr + Sys.sleep) | — | 10.8 | Original implementation |
+| httr2 batch (`req_perform_parallel` + `req_throttle`) | 5.3 | 9.3 | API calls decoupled from S3, but S3 writes still sequential |
+| + Parallel S3 writes (`mclapply`, mc.cores=10) | 3.9 | 8.1 | Expected big win; minimal improvement on AWS |
+| + Arrow native S3 (`arrow::write_parquet(s3_uri)`) | 3.9 | 8.1 | Eliminated temp file + AWS CLI process spawn per write |
+| + Bumped Phase 1 to 4 vCPU / 8GB | 3.9 | 7.8 | Gave mclapply real cores; barely helped |
+| + Single `S3FileSystem` (no mclapply) | 3.9 | 6.9 | Pre-initialized S3 connection, sequential writes through it |
+| + Local write + `aws s3 cp --recursive` | 2.5 | 5.9 | Write parquet to local disk, batch upload via CLI parallel transfers |
+| + Pipelined S3 sync (`mcparallel`) | 2.5 | 6.7 | Background sync during next batch's API calls; no improvement |
+
+**What we tried and why we thought it would work:**
+
+1. **httr2 batch processing** (`req_perform_parallel` + `req_throttle`): The original Phase 1 loop called `Sys.sleep(1)` between API requests, during which S3 writes from the previous ticker blocked. Batching API requests via `req_perform_parallel` with `req_throttle(capacity=1, fill_time_s=1)` decouples API pacing from S3 writes. This worked — API calls now fire at exactly 1/sec regardless of S3 write speed. But S3 writes were still sequential within the batch processing phase.
+
+2. **Parallel S3 writes via `mclapply`**: After all API responses return, we have ~58 independent S3 writes per batch. Running them in parallel via `parallel::mclapply(mc.cores=10)` should overlap network I/O. Locally this worked well (3.9 sec/ticker). On Fargate with 1 vCPU, the forked processes time-sliced rather than running in parallel, yielding no improvement.
+
+3. **Arrow native S3 writes**: The original S3 write path was: `arrow::write_parquet(data, temp_file)` → `system2("aws", c("s3", "cp", temp_file, s3_uri))`. Each write spawned a Python process (AWS CLI) with ~2-3 sec overhead. Switching to `arrow::write_parquet(data, "s3://...")` eliminated the temp file and process spawn. This should have been a significant win per-write, but the overall batch timing barely changed.
+
+4. **4 vCPU for Phase 1**: Increased from 1 vCPU / 4GB to 4 vCPU / 8GB to give `mclapply` real parallelism. Expected the S3 write phase to drop from ~140 sec to ~20 sec. Actual improvement was marginal (~7.8 vs 8.1 sec/ticker), suggesting the bottleneck isn't CPU contention.
+
+5. **Single pre-initialized `S3FileSystem`**: Hypothesis was that `mclapply` fork overhead + per-process Arrow S3 initialization + credential resolution from ECS metadata service dominated write time. Fix: create one `arrow::S3FileSystem$create()` and write all files sequentially through it. One credential resolution, one connection, 58 fast PUTs. Expected ~6 sec for all writes. Actual improvement: 7.8 → 6.9 sec/ticker — modest.
+
+6. **Local write + `aws s3 cp --recursive`**: Instead of writing each parquet file directly to S3, write all files to a local temp directory first (milliseconds), then upload the entire directory in one `aws s3 cp --recursive` call. The AWS CLI performs parallel transfers internally (10 concurrent by default), turning 58 sequential S3 PUTs into a single parallelized batch upload. This was the first approach to meaningfully improve AWS performance: 6.9 → 5.9 sec/ticker.
+
+7. **Pipelined S3 sync via `mcparallel`**: Hypothesis: the ~90-sec gap between the API progress bar hitting 100% and the next batch starting was dominated by S3 uploads. If we kicked off `aws s3 cp --recursive` as a background process (via `parallel::mcparallel`) and immediately started the next batch's API calls, the S3 upload time would be hidden behind the next batch's ~60-sec API phase. Expected: ~2.5 sec/ticker. Actual: 6.7 sec/ticker — no improvement. The gap after the progress bar is dominated by **response parsing** (JSON deserialization + type conversion for thousands of rows per ticker), not S3 uploads. The S3 sync was already a small fraction of the post-bar time; hiding it saved nothing.
+
+**Analysis:**
+
+For a batch of 25 tickers with ~58 API requests:
+- API calls: ~58 sec (hard floor at 1 req/sec, identical local and AWS)
+- Response parsing: ~60-80 sec on AWS (JSON → tibble for ~6,000 rows/ticker)
+- S3 uploads: ~20 sec (via `aws s3 cp --recursive` parallel transfers)
+- Checkpoint/tracking saves: ~6 sec (2× `system2("aws s3 cp")`)
+
+The post-API-call overhead (~90 sec) is split roughly 70% parsing, 20% S3 uploads, 10% checkpoint writes. Earlier analysis incorrectly attributed the entire gap to S3 write latency. Response parsing on Fargate's CPU is the primary bottleneck after the API floor.
+
+**Current performance (IWV, ~2,100 tickers):**
+- Phase 1: ~3.5 hours at 5.9 sec/ticker (down from 6.3 hours)
+- Phase 2: ~44 min (unchanged)
+- Total: ~4.3 hours end-to-end
+
+**Potential future approaches (not yet attempted):**
+- Request CSV format from Alpha Vantage instead of JSON (faster parsing, smaller payloads)
+- Reduce per-ticker data volume by requesting `outputsize=compact` for weekly refreshes
+- Run Phase 1 on EC2 instead of Fargate (to rule out container networking/CPU overhead)
+
+Relevant files:
+- `R/process_batch_responses.R` — batch response processing with S3 writes
+- `R/s3_write_ticker_raw_data.R` — Arrow native S3 write
+- `R/build_batch_requests.R` — batch request construction
+- `R/build_av_request.R` — httr2 request builder with `req_throttle`
+- `scripts/run_phase1_fetch.R` — Phase 1 batch loop
+- `deploy/terraform/variables.tf` — Fargate CPU/memory configuration
+
 ### Next Steps
 - Fix split-triggered quarterly refetch (see Known Issues above)
+- Investigate Phase 1 S3 write latency on Fargate (see above)
 - Package validation and documentation updates
-- Performance optimization
 
 ## Contributing
 

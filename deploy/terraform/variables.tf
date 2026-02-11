@@ -22,15 +22,15 @@ variable "schedule_expression" {
 }
 
 variable "task_cpu" {
-  description = "CPU units for ECS task (1024 = 1 vCPU)"
+  description = "CPU units for Phase 1 ECS task (4096 = 4 vCPU for parallel S3 writes)"
   type        = number
-  default     = 1024
+  default     = 4096
 }
 
 variable "task_memory" {
-  description = "Memory for Phase 1 ECS task in MB (4GB sufficient for ticker-by-ticker fetch)"
+  description = "Memory for Phase 1 ECS task in MB (8GB for parallel batch processing)"
   type        = number
-  default     = 4096
+  default     = 8192
 }
 
 variable "phase2_cpu" {

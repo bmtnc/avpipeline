@@ -26,7 +26,8 @@ parse_response_by_type <- function(response, ticker, data_type, extra_params = l
 
 #' Process Batch Responses from req_perform_parallel
 #'
-#' Iterates over responses, parses each, writes to S3, and returns per-ticker results.
+#' Parses all responses, writes parquet files to a local temp directory,
+#' then batch uploads to S3 via `aws s3 cp --recursive`.
 #'
 #' @param responses list: Responses from httr2::req_perform_parallel()
 #' @param request_specs list: Corresponding request specs from build_batch_requests()
@@ -37,7 +38,9 @@ parse_response_by_type <- function(response, ticker, data_type, extra_params = l
 #' @keywords internal
 process_batch_responses <- function(responses, request_specs, bucket_name, region) {
   results <- list()
+  write_tasks <- list()
 
+  # Phase 1: Parse all responses (fast, CPU-only)
   for (i in seq_along(responses)) {
     resp <- responses[[i]]
     spec <- request_specs[[i]]
@@ -61,7 +64,9 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
         data <- parse_response_by_type(resp, ticker, data_type, extra_params)
 
         if (!is.null(data) && nrow(data) > 0) {
-          s3_write_ticker_raw_data(data, ticker, data_type, bucket_name, region)
+          write_tasks[[length(write_tasks) + 1]] <- list(
+            data = data, ticker = ticker, data_type = data_type
+          )
         }
 
         list(
@@ -81,6 +86,53 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
     })
 
     results[[ticker]][[data_type]] <- result
+  }
+
+  # Phase 2: Write to local temp dir, then batch upload to S3
+  if (length(write_tasks) > 0) {
+    temp_dir <- tempfile(pattern = "batch_")
+    dir.create(temp_dir, recursive = TRUE)
+    on.exit(unlink(temp_dir, recursive = TRUE), add = TRUE)
+
+    # Write all parquet files locally (fast, disk I/O only)
+    for (task in write_tasks) {
+      tryCatch({
+        s3_key <- generate_raw_data_s3_key(task$ticker, task$data_type)
+        local_path <- file.path(temp_dir, s3_key)
+        dir.create(dirname(local_path), recursive = TRUE, showWarnings = FALSE)
+        arrow::write_parquet(task$data, local_path)
+      }, error = function(e) {
+        results[[task$ticker]][[task$data_type]]$success <<- FALSE
+        results[[task$ticker]][[task$data_type]]$error <<- conditionMessage(e)
+      })
+    }
+
+    # Batch upload to S3 (AWS CLI uses parallel transfers by default)
+    local_raw_dir <- file.path(temp_dir, "raw")
+    s3_target <- paste0("s3://", bucket_name, "/raw/")
+
+    sync_result <- system2_with_timeout(
+      "aws",
+      args = c("s3", "cp", "--recursive", local_raw_dir, s3_target,
+               "--region", region, "--only-show-errors"),
+      timeout_seconds = 300,
+      stdout = TRUE,
+      stderr = TRUE
+    )
+
+    if (is_timeout_result(sync_result)) {
+      for (task in write_tasks) {
+        results[[task$ticker]][[task$data_type]]$success <- FALSE
+        results[[task$ticker]][[task$data_type]]$error <- "S3 batch upload timed out"
+      }
+    } else if (!is.null(attr(sync_result, "status")) && attr(sync_result, "status") != 0) {
+      for (task in write_tasks) {
+        results[[task$ticker]][[task$data_type]]$success <- FALSE
+        results[[task$ticker]][[task$data_type]]$error <- paste(
+          "S3 batch upload failed:", paste(sync_result, collapse = "\n")
+        )
+      }
+    }
   }
 
   results

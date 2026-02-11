@@ -164,7 +164,7 @@ if (n_to_fetch > 0) {
           on_error = "continue"
         )
 
-        # Process responses: parse + S3 write
+        # Process responses: parse + local write + S3 batch upload
         batch_results <- process_batch_responses(
           responses, request_specs, s3_bucket, aws_region
         )
