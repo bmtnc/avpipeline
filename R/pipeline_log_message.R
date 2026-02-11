@@ -123,22 +123,6 @@ log_phase_end <- function(phase, total, successful, failed, duration_seconds) {
 }
 
 
-#' Log Error
-#'
-#' Logs an error message with ticker context.
-#'
-#' @param ticker Character. Ticker symbol
-#' @param error_msg Character. Error message
-#'
-#' @return NULL (called for side effects)
-#' @keywords internal
-log_error <- function(ticker, error_msg) {
-  log_pipeline("ERROR [", ticker, "]: ", error_msg, level = "ERROR")
-
-  invisible(NULL)
-}
-
-
 #' Log Failed Tickers Summary
 #'
 #' Logs a summary of failed tickers at the end of a phase.

@@ -5,55 +5,36 @@
 [![Version](https://img.shields.io/badge/version-0.0.0.9000-blue.svg)](https://github.com/bmtnc/avpipeline)
 <!-- badges: end -->
 
-An R package that provides a  configuration-based API for working with Alpha Vantage financial data. The package eliminates code duplication through a unified architecture that works across all data types including stock prices, income statements, balance sheets, cash flows, and ETF profiles.
+An R package that implements a two-phase ETL pipeline for Alpha Vantage financial data. The pipeline fetches stock prices, income statements, balance sheets, cash flows, earnings, and splits for all tickers in an ETF, then processes them into quarterly TTM (trailing twelve months) financial metrics. A separate on-demand function joins quarterly financials with daily prices to produce a daily-frequency per-share artifact.
 
-## Configuration-Based Architecture
+## Architecture Overview
 
-This package implements a configuration-based design that achieves **60% code reduction** while providing **consistent behavior across all data types**:
+The pipeline runs in two phases on AWS (ECS Fargate, weekly on Sundays):
 
-- **7 Configuration Objects** define data-type-specific behavior
-- **6 Generic Functions** work with any configuration object  
-- **7 Parser Functions** handle data-type-specific parsing
-- **Total: 20 components** instead of 25+ individual functions
+**Phase 1 — Fetch** (`run_phase1_fetch.R`): Downloads raw data from Alpha Vantage API and stores per-ticker parquet files in S3. Processes tickers sequentially (1 API request/sec). Smart refresh logic skips quarterly re-fetches unless near predicted earnings or data is >90 days stale.
 
-### Universal API Pattern
+**Phase 2 — Generate** (`run_phase2_generate.R`): Loads all raw data from S3, processes each ticker in parallel (anomaly detection, statement alignment, TTM calculations), and uploads two artifacts: `ttm_quarterly_artifact.parquet` and `price_artifact.parquet`.
 
-All data types use the same functions with different configuration objects:
+**On-demand — Daily Artifact** (`create_daily_ttm_artifact()`): Joins quarterly TTM data with daily prices locally. Forward-fills financials from `reportedDate`, calculates market cap with split adjustments, and computes per-share metrics.
 
-```r
-# Same function, different configurations
-price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG)
-income_data <- fetch_alpha_vantage_data("AAPL", INCOME_STATEMENT_CONFIG)
-balance_data <- fetch_alpha_vantage_data("AAPL", BALANCE_SHEET_CONFIG)
-cash_flow_data <- fetch_alpha_vantage_data("AAPL", CASH_FLOW_CONFIG)
-earnings_data <- fetch_alpha_vantage_data("AAPL", EARNINGS_CONFIG)
-splits_data <- fetch_alpha_vantage_data("AAPL", SPLITS_CONFIG)
-etf_profile <- fetch_alpha_vantage_data("SPY", ETF_PROFILE_CONFIG)
+```
+Phase 1 (AWS, sequential)          Phase 2 (AWS, parallel)           On-demand (local)
+Alpha Vantage API                   S3 raw data                       S3 artifacts
+  → fetch per ticker                  → clean & validate                → join quarterly + price
+  → store to S3                       → anomaly detection               → forward-fill financials
+  → update tracking                   → TTM calculations                → market cap + splits
+                                      → upload artifacts                → per-share metrics
 ```
 
 ## Features
 
-### Unified API Experience
-- **Learn Once, Use Everywhere**: Master one API pattern, work with all data types
-- **Consistent Behavior**: Same error handling, retry logic, and caching across all data types
-- **Predictable Patterns**: Same function signatures regardless of data type
-- **Easy Extension**: New data types require only configuration + parser
-
-### Infrastructure
-- **Comprehensive Retry Logic**: 3 attempts per ticker with escalating delays (5s, 10s)
-- **Batch Processing**: Collects all successful results before writing to cache
-- **Error Tracking**: Comprehensive error tracking and recovery
-- **API Key Management**: Secure and flexible API key handling with environment variable fallback
-- **Rate Limiting**: Configuration-driven rate limiting for all data types
-
-### Configuration Objects
-- **`PRICE_CONFIG`**: Daily adjusted price data configuration
-- **`INCOME_STATEMENT_CONFIG`**: Quarterly income statement configuration  
-- **`BALANCE_SHEET_CONFIG`**: Quarterly balance sheet configuration
-- **`CASH_FLOW_CONFIG`**: Quarterly cash flow configuration
-- **`EARNINGS_CONFIG`**: Quarterly earnings timing metadata configuration
-- **`SPLITS_CONFIG`**: Stock splits data configuration
-- **`ETF_PROFILE_CONFIG`**: ETF profile and holdings configuration
+- **Smart Quarterly Refresh**: Only re-fetches quarterly data when near predicted earnings (±5 days) or >90 days stale, saving ~4 API calls per ticker most weeks
+- **Checkpoint Recovery**: Phase 1 saves progress every 25 tickers; interrupted runs resume from last checkpoint
+- **Parallel Processing**: Phase 2 uses all available cores via `parallel::mclapply()`
+- **Anomaly Detection**: Z-score based detection on quarterly financial metrics (MAD with configurable threshold)
+- **Retry Logic**: API requests retry up to 3 times with exponential backoff (5s, 10s) for rate limits and timeouts
+- **Error Isolation**: One bad ticker doesn't crash the pipeline; failures are logged and skipped
+- **Refresh Tracking**: Per-ticker state (last fetch dates, earnings predictions, errors) persisted in S3
 
 ## Installation
 
@@ -68,62 +49,35 @@ devtools::install_github("bmtnc/avpipeline")
 ### 1. Set up your Alpha Vantage API key
 
 ```r
-# Set environment variable (recommended)
+# Set environment variable
 Sys.setenv(ALPHA_VANTAGE_API_KEY = "your_api_key_here")
 ```
 
-### 2. Universal single-ticker data fetching
+### 2. Get ETF holdings
 
 ```r
 library(avpipeline)
 
-# All data types use the same function with different configs
-price_data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG, outputsize = "full")
-income_data <- fetch_alpha_vantage_data("AAPL", INCOME_STATEMENT_CONFIG)
-balance_data <- fetch_alpha_vantage_data("AAPL", BALANCE_SHEET_CONFIG)
-cash_flow_data <- fetch_alpha_vantage_data("AAPL", CASH_FLOW_CONFIG)
+# Fetch ticker list for an ETF
+holdings <- fetch_etf_holdings("IWV")
 ```
 
-### 3. Universal multiple-ticker processing
+### 3. Load pipeline artifacts
 
 ```r
-# Same function works for all data types
-tickers <- c("AAPL", "GOOGL", "MSFT")
+# Load the latest artifacts from S3
+quarterly <- load_quarterly_artifact(bucket = "avpipeline-artifacts-prod")
+prices <- load_price_artifact(bucket = "avpipeline-artifacts-prod")
 
-# Price data for multiple tickers
-price_data <- fetch_multiple_alpha_vantage_data(tickers, PRICE_CONFIG)
-
-# Income statement data for multiple tickers  
-income_data <- fetch_multiple_alpha_vantage_data(tickers, INCOME_STATEMENT_CONFIG)
-
-# Balance sheet data for multiple tickers
-balance_data <- fetch_multiple_alpha_vantage_data(tickers, BALANCE_SHEET_CONFIG)
+# Create the daily per-share artifact on-demand
+daily <- create_daily_ttm_artifact(quarterly, prices)
 ```
 
-### 4. Universal caching with retry logic
+### 4. Process a single ticker from S3
 
 ```r
-# Caching works the same for all data types
-cached_data <- fetch_multiple_with_incremental_cache_generic(
-  tickers = c("AAPL", "GOOGL", "MSFT"),
-  cache_file = "cache/data.csv",
-  single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, PRICE_CONFIG, ...)
-  },
-  cache_reader_func = function(cache_file) {
-    read_cached_data(cache_file, date_columns = PRICE_CONFIG$cache_date_columns)
-  },
-  data_type_name = PRICE_CONFIG$data_type_name,
-  delay_seconds = PRICE_CONFIG$default_delay
-)
-```
-
-### 5. ETF holdings integration
-
-```r
-# Get ETF holdings and fetch price data
-etf_holdings <- fetch_etf_holdings("SPY")
-etf_prices <- fetch_multiple_alpha_vantage_data(etf_holdings, PRICE_CONFIG)
+# Process one ticker's raw S3 data into a daily TTM artifact
+result <- process_ticker_from_s3("AAPL", bucket = "avpipeline-artifacts-prod")
 ```
 
 ## AWS Deployment
@@ -166,290 +120,153 @@ See [deploy/README.md](deploy/README.md) for:
 
 ## Pipeline Architecture
 
-### Ticker-by-Ticker Processing (Current)
+### Two-Phase Design
 
-The production pipeline uses a ticker-by-ticker architecture that processes one ticker completely before moving to the next. This design solves memory bottlenecks encountered when processing large ETFs.
+The production pipeline splits fetching and processing into separate phases. This enables Phase 1 to run sequentially (API-bound) while Phase 2 runs in parallel (CPU-bound), and allows either phase to be re-run independently.
 
-**Key Benefits:**
-- **Memory Efficiency**: Bounded at ~5,000 rows per iteration vs 10M+ rows for bulk processing
-- **Error Isolation**: One bad ticker doesn't crash the entire pipeline
-- **Scalability**: Can handle Russell 3000 (3,000 tickers) without memory issues
-- **Graceful Degradation**: Failed tickers are skipped with detailed logging
+### Phase 1: Fetch Raw Data
 
-**Processing Flow (per ticker):**
-1. Fetch financial data from API (6 API calls: balance sheet, income, cash flow, earnings, price, splits)
-2. Clean and validate data (anomaly detection, quarterly continuity checks)
-3. Calculate TTM metrics and per-share values
-4. Append to final artifact
-5. Memory cleanup
+Iterates through all tickers sequentially, fetching data from Alpha Vantage and storing per-ticker parquet files in S3.
 
-**Performance Characteristics:**
-- **Small ETFs** (QQQ ~100 tickers): ~17 minutes
-- **Large ETFs** (Russell 3000 ~3,000 tickers): ~5 hours
-- **Memory usage**: Constant ~500MB vs scaling linearly with ticker count
-- **API rate**: 60 requests/min (1-second delay, stays under 75 req/min premium limit)
+**Per-ticker flow:**
+1. `determine_fetch_requirements()` — checks tracking state to decide what to fetch
+2. `fetch_and_store_ticker_data()` — orchestrates fetching the required data types
+3. Each data type calls `fetch_and_store_single_data_type()`:
+   - `fetch_price()` → `make_av_request()` → `parse_price_response()`
+   - `fetch_splits()` → `make_av_request()` → `parse_splits_response()`
+   - `fetch_balance_sheet()` → `make_av_request()` → `parse_balance_sheet_response()`
+   - `fetch_income_statement()` → `make_av_request()` → `parse_income_statement_response()`
+   - `fetch_cash_flow()` → `make_av_request()` → `parse_cash_flow_response()`
+   - `fetch_earnings()` → `make_av_request()` → `parse_earnings_response()`
+4. Each successful fetch writes to `s3://bucket/raw/{TICKER}/{data_type}.parquet`
+5. Update refresh tracking (last fetch dates, earnings predictions)
 
-**Production Files:**
-- `scripts/build_complete_ttm_pipeline_ticker_by_ticker.R` - Current production pipeline
-- `R/process_single_ticker.R` - Core orchestration function for single-ticker processing
-- `scripts/build_complete_ttm_pipeline.R` - Deprecated bulk pipeline (kept for reference)
+**Smart refresh**: Price and splits are fetched every run. Quarterly data (balance sheet, income, cash flow, earnings) is only fetched when `should_fetch_quarterly_data()` returns TRUE:
+- New ticker (never fetched) → fetch
+- Data >90 days stale → fetch
+- Within ±5 days of predicted earnings → fetch
+- Otherwise → skip
 
-**Architecture Decision:**
-The ticker-by-ticker refactor was implemented to enable processing of large ETFs like Russell 3000. The bulk pipeline would exceed memory limits with 3,000 tickers due to holding all ticker data simultaneously in memory. The new architecture maintains constant memory usage by processing and releasing each ticker sequentially.
+### Phase 2: Generate Artifacts
+
+Loads all raw data from S3, then processes each ticker in parallel.
+
+**Per-ticker flow** (via `process_ticker_for_quarterly_artifact()`):
+1. `validate_and_prepare_statements()` — clean, detect anomalies, align dates, join statements
+2. `calculate_ttm_metrics()` — rolling 4-quarter sum for flow metrics (income + cash flow)
+3. Return quarterly-frequency TTM tibble
+
+**Outputs uploaded to S3:**
+- `ttm_quarterly_artifact.parquet` — quarterly TTM financials for all tickers
+- `price_artifact.parquet` — cleaned daily prices for all tickers
+
+### On-Demand: Daily Artifact
+
+`create_daily_ttm_artifact()` runs locally to produce the final daily-frequency dataset:
+1. Join quarterly financials with daily prices using `reportedDate`
+2. Forward-fill financials until next earnings announcement
+3. Build market cap with split adjustments (`build_market_cap_with_splits()`)
+4. Calculate per-share metrics (TTM per-share for flow metrics, point-in-time per-share for balance sheet)
+
+**Performance (IWV, ~2,100 tickers):**
+- **Phase 1 (Fetch)**: ~6.3 hours (~10.8 sec/ticker avg, dominated by API delays + S3 writes)
+- **Phase 2 (Generate)**: ~44 min (parallelized across all cores)
+- **Total**: ~7 hours end-to-end
+- **Memory usage**: Constant ~500MB
+- **API rate**: 1 request/sec (stays under 75 req/min premium limit)
+
+**Production scripts:**
+- `scripts/run_pipeline_aws.R` — Top-level orchestrator (sources Phase 1 then Phase 2)
+- `scripts/run_phase1_fetch.R` — Phase 1 implementation
+- `scripts/run_phase2_generate.R` — Phase 2 implementation
+- `scripts/run_phase1_aws.R` / `scripts/run_phase2_aws.R` — AWS wrappers with notifications
 
 ## Core Functions
 
-### Configuration Objects (7 total)
-- **`PRICE_CONFIG`**: Daily adjusted price data configuration
-- **`INCOME_STATEMENT_CONFIG`**: Quarterly income statement configuration
-- **`BALANCE_SHEET_CONFIG`**: Quarterly balance sheet configuration
-- **`CASH_FLOW_CONFIG`**: Quarterly cash flow configuration
-- **`EARNINGS_CONFIG`**: Quarterly earnings timing metadata configuration
-- **`SPLITS_CONFIG`**: Stock splits data configuration
-- **`ETF_PROFILE_CONFIG`**: ETF profile data configuration
+### API Layer (internal)
+- **`make_av_request()`**: Universal HTTP request handler with `with_retry()` for exponential backoff
+- **`fetch_price()`**, **`fetch_balance_sheet()`**, **`fetch_income_statement()`**, **`fetch_cash_flow()`**, **`fetch_earnings()`**, **`fetch_splits()`**: Per-data-type fetch functions
+- **`fetch_etf_holdings()`**: Fetch ETF constituent tickers (exported)
 
-### Generic Functions (6 total)
-- **`fetch_alpha_vantage_data()`**: Universal single-ticker data fetcher
-- **`fetch_multiple_alpha_vantage_data()`**: Universal multiple-ticker data fetcher
-- **`make_alpha_vantage_request()`**: Universal API request handler
-- **`process_tickers_with_progress_generic()`**: Universal progress tracking
-- **`combine_results_generic()`**: Universal result combination
-- **`fetch_multiple_with_incremental_cache_generic()`**: Universal batch caching
+### Parsers (7 total)
+- **`parse_price_response()`**: Daily adjusted price data
+- **`parse_balance_sheet_response()`**: Quarterly balance sheets
+- **`parse_income_statement_response()`**: Quarterly income statements
+- **`parse_cash_flow_response()`**: Quarterly cash flows
+- **`parse_earnings_response()`**: Earnings timing metadata
+- **`parse_splits_response()`**: Stock split events
+- **`parse_etf_profile_response()`**: ETF holdings and profile
 
-### Parser Functions (7 total)
-- **`parse_api_response()`**: Price data parsing
-- **`parse_income_statement_response()`**: Income statement parsing
-- **`parse_balance_sheet_response()`**: Balance sheet parsing
-- **`parse_cash_flow_response()`**: Cash flow parsing
-- **`parse_earnings_response()`**: Earnings timing metadata parsing
-- **`parse_splits_response()`**: Stock splits data parsing
-- **`parse_etf_profile_response()`**: ETF profile parsing
+### Pipeline Orchestration
+- **`fetch_and_store_ticker_data()`**: Orchestrates all fetches for one ticker based on requirements
+- **`fetch_and_store_single_data_type()`**: Fetches one data type and writes to S3
+- **`determine_fetch_requirements()`**: Decides what to fetch based on tracking state
+- **`should_fetch_quarterly_data()`**: Earnings-aware conditional fetch logic
+- **`process_ticker_for_quarterly_artifact()`**: Phase 2 per-ticker processing
 
-### Utility Functions
-- **`get_api_key()`**: API key management with environment variable fallback
-- **`validate_df_cols()`**: Data validation with detailed error reporting
-- **`read_cached_data()`**: Generic cache reading with date column specifications
-- **`get_symbols_to_fetch()`**: Universal symbol reconciliation logic
-- **`fetch_etf_holdings()`**: ETF holdings fetching
+### Data Processing
+- **`validate_and_prepare_statements()`**: Master function for cleaning and aligning financial statements
+- **`calculate_ttm_metrics()`**: Rolling 4-quarter TTM calculations for flow metrics
+- **`create_daily_ttm_artifact()`**: On-demand daily artifact generation (exported)
+- **`build_market_cap_with_splits()`**: Daily market cap with split adjustments
 
-## Usage Examples
+### Anomaly Detection
+- **`detect_time_series_anomalies()`**: Master anomaly detection function
+- **`detect_temporary_anomalies()`**: Detects temporary spikes/drops
+- **`detect_single_baseline_anomaly()`**: Baseline anomaly detection for single position
+- **`detect_baseline_anomaly()`**: Persistent baseline shift detection
+- **`clean_end_window_anomalies()`**: End-of-series anomaly handling
+- Parameters: `threshold = 4`, `lookback = 5`, `lookahead = 5`
 
-### Universal Data Fetching
+### Validation
+- **`validate_df_cols()`**, **`validate_df_type()`**: DataFrame validation
+- **`validate_quarterly_continuity()`**: Ensure continuous quarters exist
+- **`validate_continuous_quarters()`**: Quarter-by-quarter continuity checks
+- **`validate_character_scalar()`**, **`validate_numeric_scalar()`**, **`validate_numeric_vector()`**, **`validate_positive()`**, **`validate_non_empty()`**, **`validate_date_type()`**, **`validate_file_exists()`**, **`validate_month_end_date()`**: Input validators
 
-```r
-# Single ticker - same function for all data types
-apple_price <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG, outputsize = "full")
-apple_income <- fetch_alpha_vantage_data("AAPL", INCOME_STATEMENT_CONFIG)
-apple_balance <- fetch_alpha_vantage_data("AAPL", BALANCE_SHEET_CONFIG)
-apple_cashflow <- fetch_alpha_vantage_data("AAPL", CASH_FLOW_CONFIG)
-
-# Multiple tickers - same function for all data types
-tech_stocks <- c("AAPL", "GOOGL", "MSFT", "AMZN")
-tech_prices <- fetch_multiple_alpha_vantage_data(tech_stocks, PRICE_CONFIG)
-tech_income <- fetch_multiple_alpha_vantage_data(tech_stocks, INCOME_STATEMENT_CONFIG)
-```
-
-### Configuration-Based Caching
-
-```r
-# Price data caching
-price_data <- fetch_multiple_with_incremental_cache_generic(
-  tickers = c("AAPL", "GOOGL", "MSFT"),
-  cache_file = "cache/price_data.csv",
-  single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, PRICE_CONFIG, ...)
-  },
-  cache_reader_func = function(cache_file) {
-    read_cached_data(cache_file, date_columns = PRICE_CONFIG$cache_date_columns)
-  },
-  data_type_name = PRICE_CONFIG$data_type_name,
-  delay_seconds = PRICE_CONFIG$default_delay,
-  outputsize = "full"
-)
-
-# Income statement caching - same pattern, different config
-income_data <- fetch_multiple_with_incremental_cache_generic(
-  tickers = c("AAPL", "GOOGL", "MSFT"),
-  cache_file = "cache/income_data.csv",
-  single_fetch_func = function(ticker, ...) {
-    fetch_alpha_vantage_data(ticker, INCOME_STATEMENT_CONFIG, ...)
-  },
-  cache_reader_func = function(cache_file) {
-    read_cached_data(cache_file, date_columns = INCOME_STATEMENT_CONFIG$cache_date_columns)
-  },
-  data_type_name = INCOME_STATEMENT_CONFIG$data_type_name,
-  delay_seconds = INCOME_STATEMENT_CONFIG$default_delay
-)
-```
-
-### ETF Holdings Pipeline
-
-```r
-# Get ETF holdings and fetch comprehensive data
-spy_holdings <- fetch_etf_holdings("SPY")
-
-# Fetch price data for all S&P 500 constituents
-spy_prices <- fetch_multiple_alpha_vantage_data(spy_holdings, PRICE_CONFIG)
-
-# Fetch income statements for all constituents
-spy_income <- fetch_multiple_alpha_vantage_data(spy_holdings, INCOME_STATEMENT_CONFIG)
-
-# Fetch balance sheets for all constituents
-spy_balance <- fetch_multiple_alpha_vantage_data(spy_holdings, BALANCE_SHEET_CONFIG)
-```
-
-### Configuration Object Details
-
-```r
-# View configuration object structure
-str(PRICE_CONFIG)
-# $api_function: "TIME_SERIES_DAILY_ADJUSTED"
-# $parser_func: "parse_api_response"
-# $default_delay: 1
-# $data_type_name: "price"
-# $cache_date_columns: c("date", "initial_date", "latest_date", "as_of_date")
-# $result_sort_columns: c("ticker", "date")
-
-str(INCOME_STATEMENT_CONFIG)
-# $api_function: "INCOME_STATEMENT"  
-# $parser_func: "parse_income_statement_response"
-# $default_delay: 12
-# $data_type_name: "income statement"
-# $cache_date_columns: c("fiscalDateEnding", "as_of_date")
-# $result_sort_columns: c("ticker", "fiscalDateEnding")
-```
-
-## Architecture Benefits
-
-### Code Efficiency
-- **60% Code Reduction**: 16 components instead of 20+ individual functions
-- **Unified API**: Same functions work for all data types
-- **Easy Extension**: New data types require only configuration + parser
-- **Consistent Behavior**: Same error handling, retry logic, and caching everywhere
-
-### User Experience
-- **Learn Once, Use Everywhere**: Master one API, work with all data types
-- **Predictable Behavior**: Same patterns across all configurations
-- **Clear Configuration**: Explicit, documented configuration objects
-- **Seamless Integration**: All data types work together
-
-### Developer Experience
-- **Maintainability**: Single source of truth for common logic
-- **Testability**: Test generic functions once, works for all data types
-- **Extensibility**: New data types follow established patterns
-- **Documentation**: Configuration objects are self-documenting
-
-## Caching and Retry Logic
-
-The package implements comprehensive caching with robust retry logic:
-
-### Retry Logic
-- **3 attempts per ticker** with escalating delays
-- **First retry**: 5-second delay
-- **Second retry**: 10-second delay
-- **Comprehensive failure tracking** with detailed error messages
-
-### Batch Processing
-- **Collects all successful results** in memory
-- **Single cache write operation** at the end
-- **Data integrity protection** through batch writes
-- **Detailed success/failure reporting**
-
-### Universal Caching
-- **Same caching logic** across all data types
-- **Configuration-driven** date column specifications
-- **Intelligent deduplication** based on data type
-- **Resilient cache operations** with comprehensive error handling
+### Artifact Loaders (exported)
+- **`load_quarterly_artifact()`**, **`load_price_artifact()`**, **`load_daily_ttm_artifact()`**: Load artifacts from S3
+- **`get_latest_ttm_artifact()`**, **`get_latest_price_artifact()`**: Get latest artifact paths
 
 ## API Key Management
 
 ```r
-# Method 1: Environment variable (recommended)
+# Method 1: Environment variable (recommended for local development)
 Sys.setenv(ALPHA_VANTAGE_API_KEY = "your_key_here")
 
-# Method 2: Direct specification
-data <- fetch_alpha_vantage_data("AAPL", PRICE_CONFIG, api_key = "your_key_here")
-
-# Method 3: Using get_api_key() function
-api_key <- get_api_key()  # Gets from environment
-api_key <- get_api_key("explicit_key")  # Uses explicit key
+# Method 2: AWS Parameter Store (used in production)
+# Key is stored at /avpipeline/alpha-vantage-api-key
+# Retrieved automatically by run_phase1_fetch.R via get_api_key_from_parameter_store()
 ```
 
-## Error Handling
+## Retry Logic
 
-Comprehensive error handling with clear messages:
-
-```r
-# Data validation with detailed feedback
-df <- data.frame(ticker = "AAPL", price = 150)
-validate_df_cols(df, c("ticker", "date", "close"))
-# Error: Missing required columns: date, close
-# Available columns: ticker, price
-
-# Configuration validation
-tryCatch({
-  fetch_alpha_vantage_data("AAPL", "invalid_config")
-}, error = function(e) {
-  print(e$message)  # Clear error about invalid configuration
-})
-```
+API requests use exponential backoff via `with_retry()` in `make_av_request()`:
+- **3 attempts** maximum
+- **5-second** initial delay, **2x** multiplier (5s → 10s → 20s)
+- Only retries on rate limits, timeouts, and connection errors
+- Non-retryable errors (invalid ticker, missing data) fail immediately
 
 ## Rate Limiting
 
-Configuration-driven rate limiting:
-
-- **Price Data**: 1 second delay (default)
-- **Financial Statements**: 12 second delay (default)
-- **ETF Data**: 12 second delay (default)
-- **Configurable**: Adjust delays through configuration objects or parameters
-
-## Extension Pattern
-
-Adding new data types requires only:
-
-1. **Configuration Object**: Following standardized structure
-2. **Parser Function**: Data-type-specific parsing logic
-3. **Documentation**: Usage examples and parameter descriptions
-
-No changes needed to:
-- Generic functions (automatically work with new configuration)
-- Caching logic (inherited from generic functions)
-- Error handling (consistent across all configurations)
-- Progress tracking (universal implementation)
-- API request handling (configuration-driven)
-
-```r
-# Example: Adding a new data type
-NEW_DATA_CONFIG <- list(
-  api_function = "NEW_ENDPOINT",
-  parser_func = "parse_new_response",
-  default_delay = 12,
-  data_type_name = "new data type",
-  cache_date_columns = c("date", "as_of_date"),
-  result_sort_columns = c("ticker", "date")
-)
-
-# Automatically works with all existing functions
-new_data <- fetch_alpha_vantage_data("AAPL", NEW_DATA_CONFIG)
-```
+All API calls use a uniform **1-second delay** between requests (configurable via `API_DELAY_SECONDS` environment variable). At 6 endpoints per ticker, this means ~6 seconds per ticker for full fetches, ~2 seconds for price+splits only.
 
 ## Development Status
 
 **Current Version**: 0.0.0.9000 (Development)
 
 ### Implemented Features
-- Configuration-based architecture (complete)
-- Universal API interface (complete)
-- All configuration objects (7 total)
-- All generic functions (6 total)
-- All parser functions (7 total)
-- Comprehensive retry logic and error handling
-- Universal caching with batch processing
-- API key management
-- Data validation utilities
-- ETF holdings integration
-- Earnings timing metadata support
-- Stock splits data support
+- Two-phase S3 pipeline (fetch + generate)
+- Smart quarterly refresh based on earnings predictions
+- Checkpoint recovery for interrupted runs
+- Parallel Phase 2 processing
+- All 7 parser functions
+- Anomaly detection on quarterly financial metrics
+- TTM calculations and per-share metrics
+- Market cap with split adjustments
+- On-demand daily artifact generation
+- Comprehensive validation and error handling
+- AWS deployment (ECS Fargate, S3, EventBridge, SNS)
 
 ### Known Issues
 
@@ -464,12 +281,20 @@ Relevant files:
 - `R/determine_fetch_requirements.R` - fetch requirements per ticker
 - `R/build_market_cap_with_splits.R` - market cap calculation using splits
 
+**~12% of tickers fail Phase 1 every run (non-destructive).** As of Feb 2026, 257 of 2,115 IWV tickers consistently fail during Phase 1 fetch. The same tickers fail across runs. Breakdown:
+
+| Error | Count | Cause |
+|-------|-------|-------|
+| `Expected 'Time Series (Daily)' key not found` | 204 | AV returns unexpected response structure (no price data) |
+| `No quarterly reports/earnings found` | 36 | AV has price data but no financial statements |
+| `Invalid API call` | 17 | AV explicitly rejects the ticker symbol |
+
+These are tickers AV doesn't cover: delisted/merged companies still in the ETF universe (e.g., WBA post-acquisition), special share classes, or newly listed companies. **Failures are non-destructive** — the pipeline records the error in `last_error_message` in refresh tracking but does not overwrite existing S3 data from prior successful fetches. Phase 2 processes whatever raw data exists in S3 regardless of Phase 1 outcome (2,027 of 2,034 tickers succeeded in Phase 2 on Feb 8).
+
 ### Next Steps
 - Fix split-triggered quarterly refetch (see Known Issues above)
-- Comprehensive test suite for configuration architecture
 - Package validation and documentation updates
 - Performance optimization
-- Advanced configuration features
 
 ## Contributing
 
@@ -477,19 +302,12 @@ This package follows standard R package development practices:
 
 1. Use `renv` for dependency management
 2. Follow tidyverse style guidelines
-3. Use configuration-based patterns for new features
-4. Include comprehensive documentation
-5. Add tests for new functionality
+3. Include comprehensive documentation
+4. Add tests for new functionality
 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Getting Help
-
-- **Documentation**: All functions include comprehensive help documentation
-- **Configuration Examples**: See function documentation for configuration usage
-- **Architecture Guide**: Review package design patterns in documentation
 
 ## Alpha Vantage API
 
@@ -497,7 +315,7 @@ This package requires an Alpha Vantage API key. Get your free API key at [Alpha 
 
 ### API Endpoints Used
 - `TIME_SERIES_DAILY_ADJUSTED` - Daily price data
-- `INCOME_STATEMENT` - Quarterly income statement data  
+- `INCOME_STATEMENT` - Quarterly income statement data
 - `BALANCE_SHEET` - Quarterly balance sheet data
 - `CASH_FLOW` - Quarterly cash flow data
 - `EARNINGS` - Quarterly earnings timing metadata
@@ -508,18 +326,13 @@ This package requires an Alpha Vantage API key. Get your free API key at [Alpha 
 
 **Disclaimer**: This package is not affiliated with Alpha Vantage. Please review Alpha Vantage's terms of service before using their API.
 
-**Technical Note**: This package demonstrates how configuration-based architecture can reduce code complexity while improving functionality and maintainability - a pattern that can serve as a model for other API wrapper packages.
-
-
-Yes, this greatly clarifies the design and purpose! Here's a refined description:
-
 ## ttm_per_share_financial_artifact.csv
 
 **Daily frequency dataset** that bridges quarterly financial reporting with daily market data by mapping financial metrics to actual earnings announcement dates.
 
 **Core Design:**
 - **Frequency:** Daily observations (long-form)
-- **Index:** `ticker` and `date` 
+- **Index:** `ticker` and `date`
 - **Key Innovation:** Quarterly financial statements mapped to `date` based on actual earnings announcement dates (`reportedDate`), then forward-filled to create daily frequency
 
 **Date Column Usage:**
@@ -540,3 +353,174 @@ Yes, this greatly clarifies the design and purpose! Here's a refined description
 - Maintains quarterly granularity via `fiscalDateEnding` for period-specific analysis
 
 **Primary Use Case:** Daily frequency fundamental analysis, bridging the gap between quarterly earnings cycles and daily market movements.
+
+## Function Dependency Tree
+
+Function call graph rooted at each entry point script. Where a subtree has already been fully shown, `(see above)` avoids repetition.
+
+### scripts/run_pipeline_aws.R
+
+Top-level AWS orchestrator. Sources Phase 1 and Phase 2, then sends notifications.
+
+```
+scripts/run_pipeline_aws.R
+├── source("run_phase1_fetch.R")        → (see scripts/run_phase1_fetch.R)
+├── source("run_phase2_generate.R")     → (see scripts/run_phase2_generate.R)
+├── send_pipeline_notification
+├── create_pipeline_log
+├── upload_pipeline_log
+│   └── upload_artifact_to_s3
+│       ├── validate_character_scalar
+│       ├── validate_file_exists
+│       ├── system2_with_timeout
+│       │   ├── validate_character_scalar
+│       │   ├── validate_positive → validate_numeric_scalar
+│       │   └── with_timeout
+│       └── is_timeout_result
+└── generate_s3_artifact_key
+    └── validate_date_type
+```
+
+### scripts/run_phase1_fetch.R
+
+Phase 1: Fetches raw data from Alpha Vantage API and stores per-ticker in S3.
+
+```
+scripts/run_phase1_fetch.R
+├── log_phase_start / log_phase_end / log_pipeline / log_progress_summary / log_failed_tickers
+├── get_api_key_from_parameter_store
+│   ├── validate_character_scalar
+│   ├── system2_with_timeout (see above)
+│   └── is_timeout_result
+├── s3_read_refresh_tracking
+│   ├── system2_with_timeout (see above)
+│   ├── is_timeout_result
+│   ├── with_timeout
+│   └── initialize_tracking_from_s3_data
+│       ├── s3_list_existing_tickers
+│       │   ├── system2_with_timeout (see above)
+│       │   └── is_timeout_result
+│       ├── s3_read_ticker_raw_data_single
+│       │   ├── generate_raw_data_s3_key → validate_character_scalar
+│       │   └── validate_character_scalar
+│       ├── extract_tracking_from_ticker_data
+│       │   └── create_default_ticker_tracking
+│       └── create_empty_refresh_tracking
+├── get_financial_statement_tickers
+│   ├── validate_character_scalar
+│   └── fetch_etf_holdings
+│       ├── validate_character_scalar
+│       ├── make_av_request → get_api_key, with_retry, validate_character_scalar
+│       └── parse_etf_profile_response → validate_api_response
+├── s3_list_existing_tickers (see above)
+├── s3_read_checkpoint → validate_character_scalar, system2_with_timeout, is_timeout_result, with_timeout
+├── create_pipeline_log
+├── get_ticker_tracking → validate_character_scalar, validate_df_type, create_default_ticker_tracking
+├── determine_fetch_requirements
+│   └── should_fetch_quarterly_data → validate_date_type
+├── fetch_and_store_ticker_data
+│   ├── determine_fetch_requirements (see above)
+│   ├── fetch_and_store_single_data_type
+│   │   ├── fetch_balance_sheet  → make_av_request → parse_balance_sheet_response  → validate_api_response
+│   │   ├── fetch_income_statement → make_av_request → parse_income_statement_response → validate_api_response
+│   │   ├── fetch_cash_flow     → make_av_request → parse_cash_flow_response     → validate_api_response
+│   │   ├── fetch_earnings      → make_av_request → parse_earnings_response      → validate_api_response
+│   │   ├── fetch_price         → make_av_request, get_api_key → parse_price_response → validate_api_response
+│   │   ├── fetch_splits        → make_av_request → parse_splits_response        → validate_api_response
+│   │   ├── s3_write_ticker_raw_data
+│   │   │   ├── generate_raw_data_s3_key (see above)
+│   │   │   ├── validate_character_scalar, validate_df_type
+│   │   │   └── upload_artifact_to_s3 (see above)
+│   │   └── s3_write_version_snapshot
+│   │       ├── generate_version_snapshot_s3_key → validate_character_scalar, validate_date_type
+│   │       ├── s3_read_ticker_raw_data_single (see above)
+│   │       └── upload_artifact_to_s3 (see above)
+│   └── update_tracking_after_fetch
+│       └── update_ticker_tracking → validate_df_type, create_default_ticker_tracking
+├── update_tracking_after_error → update_ticker_tracking (see above)
+├── update_earnings_prediction
+│   ├── validate_character_scalar, validate_df_type
+│   ├── calculate_median_report_delay → validate_df_cols → validate_df_type
+│   ├── calculate_next_estimated_report_date
+│   └── update_ticker_tracking (see above)
+├── add_log_entry
+├── update_checkpoint → create_empty_checkpoint
+├── s3_write_checkpoint → validate_character_scalar, system2_with_timeout, is_timeout_result
+├── s3_write_refresh_tracking → validate_df_type, validate_character_scalar, upload_artifact_to_s3 (see above)
+└── s3_clear_checkpoint → validate_character_scalar, system2_with_timeout, is_timeout_result
+```
+
+### scripts/run_phase2_generate.R
+
+Phase 2: Loads raw data from S3, processes each ticker for quarterly TTM metrics, uploads artifacts.
+
+```
+scripts/run_phase2_generate.R
+├── log_phase_start / log_phase_end / log_pipeline
+├── s3_load_all_raw_data
+│   ├── s3_list_existing_tickers (see above)
+│   └── log_pipeline
+├── process_ticker_for_quarterly_artifact
+│   ├── validate_character_scalar
+│   ├── validate_and_prepare_statements
+│   │   ├── remove_all_na_financial_observations
+│   │   │   └── identify_all_na_rows → validate_df_cols, validate_character_scalar
+│   │   ├── clean_all_statement_anomalies
+│   │   │   ├── validate_positive → validate_numeric_scalar
+│   │   │   └── clean_single_statement_anomalies
+│   │   │       ├── validate_df_cols
+│   │   │       ├── filter_sufficient_observations → validate_non_empty, validate_df_cols
+│   │   │       └── clean_quarterly_metrics
+│   │   │           ├── validate_df_cols, validate_df_type, validate_character_scalar
+│   │   │           ├── validate_non_empty, validate_positive, validate_numeric_scalar
+│   │   │           ├── add_anomaly_flag_columns
+│   │   │           │   ├── validate_df_cols, validate_non_empty, validate_positive
+│   │   │           │   ├── detect_temporary_anomalies
+│   │   │           │   │   ├── validate_numeric_vector, validate_positive, validate_numeric_scalar
+│   │   │           │   │   └── detect_single_baseline_anomaly
+│   │   │           │   │       ├── validate_numeric_vector, validate_positive, validate_numeric_scalar
+│   │   │           │   │       ├── calculate_baseline → validate_positive, validate_numeric_scalar
+│   │   │           │   │       └── calculate_baseline_stats → validate_numeric_vector
+│   │   │           │   └── detect_baseline_anomaly → validate_positive
+│   │   │           └── clean_original_columns → validate_df_cols, validate_non_empty
+│   │   ├── align_statement_tickers
+│   │   ├── filter_essential_financial_columns
+│   │   │   ├── validate_df_type
+│   │   │   ├── get_income_statement_metrics
+│   │   │   ├── get_cash_flow_metrics
+│   │   │   └── get_balance_sheet_metrics
+│   │   ├── align_statement_dates
+│   │   ├── join_all_financial_statements → validate_df_cols
+│   │   ├── validate_quarterly_continuity
+│   │   │   ├── validate_df_cols
+│   │   │   └── validate_continuous_quarters
+│   │   │       ├── validate_character_scalar
+│   │   │       ├── extract_quarterly_pattern
+│   │   │       │   ├── validate_non_empty, validate_date_type
+│   │   │       │   └── generate_month_end_dates → validate_month_end_date
+│   │   │       └── validate_month_end_date
+│   │   ├── standardize_to_calendar_quarters → validate_df_cols
+│   │   └── add_quality_flags → validate_df_type, get_income_statement_metrics, get_cash_flow_metrics, get_balance_sheet_metrics
+│   ├── calculate_ttm_metrics
+│   ├── get_income_statement_metrics
+│   └── get_cash_flow_metrics
+└── upload_artifact_to_s3 (see above)
+```
+
+### scripts/run_phase1_aws.R and scripts/run_phase2_aws.R
+
+AWS wrappers that source the core phase scripts and add notification/logging.
+
+```
+scripts/run_phase1_aws.R
+├── source("run_phase1_fetch.R")   → (see above)
+├── create_pipeline_log
+└── send_pipeline_notification
+
+scripts/run_phase2_aws.R
+├── source("run_phase2_generate.R") → (see above)
+├── create_pipeline_log
+├── upload_pipeline_log             → (see above)
+├── generate_s3_artifact_key        → (see above)
+└── send_pipeline_notification
+```
