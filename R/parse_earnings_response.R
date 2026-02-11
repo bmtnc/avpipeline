@@ -3,7 +3,7 @@
 #' Parses Alpha Vantage Earnings API response into a standardized tibble format.
 #' Focuses on quarterly earnings data to provide timing metadata for financial statements.
 #'
-#' @param response Raw httr response object from Alpha Vantage API
+#' @param response httr2 response object from Alpha Vantage API
 #' @param ticker Character. The equity ticker for metadata
 #'
 #' @return A tibble with quarterly earnings timing data
@@ -12,7 +12,7 @@
 parse_earnings_response <- function(response, ticker) {
   
   # Parse JSON response
-  content <- httr::content(response, "text", encoding = "UTF-8")
+  content <- httr2::resp_body_string(response)
   parsed_data <- jsonlite::fromJSON(content)
 
   # Check for API error messages

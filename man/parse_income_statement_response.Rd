@@ -7,7 +7,7 @@
 parse_income_statement_response(response, ticker)
 }
 \arguments{
-\item{response}{Raw httr response object from Alpha Vantage API}
+\item{response}{httr2 response object from Alpha Vantage API}
 
 \item{ticker}{Character. The equity ticker for metadata}
 }

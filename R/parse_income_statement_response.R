@@ -3,7 +3,7 @@
 #' Parses Alpha Vantage Income Statement API response into a standardized tibble format.
 #' Only returns quarterly data to avoid mixing annual and quarterly numbers.
 #'
-#' @param response Raw httr response object from Alpha Vantage API
+#' @param response httr2 response object from Alpha Vantage API
 #' @param ticker Character. The equity ticker for metadata
 #'
 #' @return A tibble with quarterly income statement data
@@ -11,7 +11,7 @@
 parse_income_statement_response <- function(response, ticker) {
   
   # Parse JSON response
-  content <- httr::content(response, "text", encoding = "UTF-8")
+  content <- httr2::resp_body_string(response)
   parsed_data <- jsonlite::fromJSON(content)
 
   # Check for API error messages

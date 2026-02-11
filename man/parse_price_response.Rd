@@ -7,7 +7,7 @@
 parse_price_response(response, ticker, datatype)
 }
 \arguments{
-\item{response}{Raw httr response object}
+\item{response}{httr2 response object}
 
 \item{ticker}{Character. The equity ticker}
 

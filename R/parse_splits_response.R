@@ -2,7 +2,7 @@
 #'
 #' Parses the JSON response from Alpha Vantage's SPLITS endpoint into a standardized data.frame.
 #'
-#' @param response Raw httr response object from Alpha Vantage API
+#' @param response httr2 response object from Alpha Vantage API
 #' @param ticker Character string representing the ticker symbol
 #' @return A data.frame with columns: ticker, effective_date, split_factor, as_of_date
 #' @export
@@ -10,7 +10,7 @@
 parse_splits_response <- function(response, ticker) {
   
   # Parse JSON response
-  content <- httr::content(response, "text", encoding = "UTF-8")
+  content <- httr2::resp_body_string(response)
   response_content <- jsonlite::fromJSON(content)
 
   # Check if we got a proper JSON structure before using $ operator

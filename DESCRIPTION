@@ -11,7 +11,7 @@ RoxygenNote: 7.3.2
 Imports: 
     magrittr,
     dplyr,
-    httr,
+    httr2,
     jsonlite,
     rlang,
     tibble,
@@ -25,6 +25,7 @@ Imports:
     stringr,
     zoo,
     arrow
-Suggests: 
-    testthat (>= 3.0.0)
+Suggests:
+    testthat (>= 3.0.0),
+    webfakes
 Config/testthat/edition: 3

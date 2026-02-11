@@ -7,7 +7,7 @@
 parse_etf_profile_response(response)
 }
 \arguments{
-\item{response}{Raw httr response object from Alpha Vantage ETF profile API}
+\item{response}{httr2 response object from Alpha Vantage ETF profile API}
 }
 \value{
 Character vector of ticker symbols from ETF holdings

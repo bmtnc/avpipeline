@@ -1,6 +1,6 @@
 #' Parse Price Response to Tibble
 #'
-#' @param response Raw httr response object
+#' @param response httr2 response object
 #' @param ticker Character. The equity ticker
 #' @param datatype Character. Either "json" or "csv"
 #'
@@ -9,7 +9,7 @@
 parse_price_response <- function(response, ticker, datatype) {
   if (datatype == "json") {
     # Parse JSON response
-    content <- httr::content(response, as = "text", encoding = "UTF-8")
+    content <- httr2::resp_body_string(response)
     data <- jsonlite::fromJSON(content)
 
     # Check for API error messages
@@ -49,7 +49,7 @@ parse_price_response <- function(response, ticker, datatype) {
     
   } else if (datatype == "csv") {
     # Parse CSV response
-    content <- httr::content(response, as = "text", encoding = "UTF-8")
+    content <- httr2::resp_body_string(response)
     
     # Read CSV data using base R
     prices_df <- read.csv(text = content, stringsAsFactors = FALSE) %>%

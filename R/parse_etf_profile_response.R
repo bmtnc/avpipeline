@@ -1,12 +1,12 @@
 #' Parse ETF profile API response and extract ticker symbols
 #'
-#' @param response Raw httr response object from Alpha Vantage ETF profile API
+#' @param response httr2 response object from Alpha Vantage ETF profile API
 #'
 #' @return Character vector of ticker symbols from ETF holdings
 #' @keywords internal
 parse_etf_profile_response <- function(response) {
   # Get response content
-  content <- httr::content(response, as = "text", encoding = "UTF-8")
+  content <- httr2::resp_body_string(response)
 
   # Parse JSON response
   parsed_data <- jsonlite::fromJSON(content)
