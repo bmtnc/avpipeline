@@ -5,7 +5,7 @@
 #' on-demand when joining with price data.
 #'
 #' @param ticker character: Stock ticker symbol
-#' @param all_data list: Named list with all data types pre-loaded
+#' @param all_data list: Named list with all data types, each pre-split by ticker
 #' @param start_date Date: Start date for filtering financial data
 #' @param threshold numeric: Z-score threshold for anomaly detection (default: 4)
 #' @param lookback integer: Lookback for anomaly detection (default: 5)
@@ -28,17 +28,12 @@ process_ticker_for_quarterly_artifact <- function(
 ) {
   validate_character_scalar(ticker, name = "ticker")
 
-  # Filter data for this ticker
-  balance_sheet <- all_data$balance_sheet |>
-    dplyr::filter(ticker == !!ticker)
-  income_statement <- all_data$income_statement |>
-    dplyr::filter(ticker == !!ticker)
-  cash_flow <- all_data$cash_flow |>
-    dplyr::filter(ticker == !!ticker)
-  earnings <- all_data$earnings |>
-    dplyr::filter(ticker == !!ticker)
-  overview_data <- all_data$overview |>
-    dplyr::filter(ticker == !!ticker)
+  # Look up pre-split ticker data (O(1) list index vs O(N) filter scan)
+  balance_sheet <- all_data$balance_sheet[[ticker]] %||% tibble::tibble()
+  income_statement <- all_data$income_statement[[ticker]] %||% tibble::tibble()
+  cash_flow <- all_data$cash_flow[[ticker]] %||% tibble::tibble()
+  earnings <- all_data$earnings[[ticker]] %||% tibble::tibble()
+  overview_data <- all_data$overview[[ticker]] %||% tibble::tibble()
 
   if (nrow(earnings) == 0) {
     return(NULL)

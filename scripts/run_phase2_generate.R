@@ -56,8 +56,25 @@ all_data <- s3_load_all_raw_data(s3_bucket, aws_region)
 load_duration <- as.numeric(difftime(Sys.time(), load_start, units = "secs"))
 log_pipeline(sprintf("All data loaded in %.1f seconds", load_duration))
 
-# Get unique tickers from the data
+# Pre-split data by ticker for O(1) lookups in parallel workers
+log_pipeline("Pre-splitting data by ticker...")
+split_start <- Sys.time()
+
+# Save price data before splitting (needed intact for price artifact later)
+price_data <- all_data$price
+
 tickers <- unique(all_data$earnings$ticker)
+
+for (dt in names(all_data)) {
+  if (nrow(all_data[[dt]]) > 0 && "ticker" %in% names(all_data[[dt]])) {
+    all_data[[dt]] <- split(all_data[[dt]], all_data[[dt]]$ticker)
+  }
+}
+
+split_duration <- as.numeric(difftime(Sys.time(), split_start, units = "secs"))
+log_pipeline(sprintf("Data pre-split by ticker in %.1f seconds", split_duration))
+
+# Get unique tickers from the data (already extracted above)
 n_tickers <- length(tickers)
 log_pipeline(sprintf("Processing %d tickers", n_tickers))
 
@@ -109,7 +126,7 @@ log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
 log_pipeline("Preparing price artifact...")
 
 # Combine all price data and clean it
-price_artifact <- all_data$price |>
+price_artifact <- price_data |>
   dplyr::filter(
     date >= start_date,
     !is.na(close) & close > 0

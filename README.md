@@ -158,7 +158,7 @@ Iterates through all tickers sequentially, fetching data from Alpha Vantage and 
 
 ### Phase 2: Generate Artifacts
 
-Loads all raw data from S3, then processes each ticker in parallel.
+Loads all raw data from S3, pre-splits each data type by ticker via `split()`, then processes each ticker in parallel. The pre-split converts per-ticker data access from O(N) filter scans to O(1) list lookups, and reduces copy-on-write memory pressure in forked `mclapply` workers.
 
 **Per-ticker flow** (via `process_ticker_for_quarterly_artifact()`):
 1. `validate_and_prepare_statements()` — clean, detect anomalies, align dates, join statements
