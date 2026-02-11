@@ -22,6 +22,9 @@ clean_original_columns <- function(data, metric_cols) {
   validate_non_empty(data, name = "data")
 
   result <- data
+  failed_cols <- character(0)
+  fail_reasons <- character(0)
+  missing_flag_cols <- character(0)
 
   for (metric in metric_cols) {
     anomaly_col <- paste0(metric, "_anomaly")
@@ -39,24 +42,29 @@ clean_original_columns <- function(data, metric_cols) {
             )
         },
         error = function(e) {
-          warning(paste0(
-            "Failed to clean column '",
-            metric,
-            "'. Error: ",
-            e$message
-          ))
+          failed_cols <<- c(failed_cols, metric)
+          fail_reasons <<- c(fail_reasons, e$message)
           # Keep original data for this column if cleaning fails
         }
       )
     } else {
-      warning(paste0(
-        "Anomaly column '",
-        anomaly_col,
-        "' not found for metric '",
-        metric,
-        "'. Skipping cleaning."
-      ))
+      missing_flag_cols <- c(missing_flag_cols, metric)
     }
+  }
+
+  if (length(failed_cols) > 0) {
+    unique_reasons <- unique(fail_reasons)
+    warning(sprintf(
+      "Column cleaning failed for %d/%d columns: %s",
+      length(failed_cols), length(metric_cols),
+      paste(unique_reasons, collapse = "; ")
+    ))
+  }
+  if (length(missing_flag_cols) > 0) {
+    warning(sprintf(
+      "Missing anomaly flag columns for %d metrics. Skipping cleaning.",
+      length(missing_flag_cols)
+    ))
   }
 
   result

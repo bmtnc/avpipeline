@@ -1,7 +1,6 @@
-#' Load All Raw Data from S3 Using Arrow Datasets
+#' Load All Raw Data from S3
 #'
-#' Loads all data types for all tickers using Arrow's S3 reading with
-#' parallel loading across data types.
+#' Syncs all raw data from S3 to local disk, then reads parquet files locally.
 #'
 #' @param bucket_name character: S3 bucket name
 #' @param region character: AWS region (default: "us-east-1")
@@ -12,9 +11,40 @@ s3_load_all_raw_data <- function(bucket_name, region = "us-east-1") {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
 
-  # Get list of all tickers
-  log_pipeline("Listing tickers in S3...")
-  tickers <- s3_list_existing_tickers(bucket_name, region)
+  # Sync raw data from S3 to local temp directory
+  local_dir <- tempfile(pattern = "raw_data_")
+  dir.create(local_dir, recursive = TRUE)
+  on.exit(unlink(local_dir, recursive = TRUE), add = TRUE)
+
+  log_pipeline("Syncing raw data from S3 to local disk...")
+  sync_start <- Sys.time()
+
+  sync_result <- system2_with_timeout(
+    "aws",
+    args = c("s3", "sync",
+             paste0("s3://", bucket_name, "/raw/"), local_dir,
+             "--region", region,
+             "--exclude", "*/_versions/*",
+             "--exclude", "_metadata/*",
+             "--only-show-errors"),
+    timeout_seconds = 600,
+    stdout = TRUE,
+    stderr = TRUE
+  )
+
+  if (is_timeout_result(sync_result)) {
+    stop("S3 sync timed out after 600 seconds")
+  }
+  if (!is.null(attr(sync_result, "status")) && attr(sync_result, "status") != 0) {
+    stop("S3 sync failed: ", paste(sync_result, collapse = "\n"))
+  }
+
+  sync_duration <- as.numeric(difftime(Sys.time(), sync_start, units = "secs"))
+  log_pipeline(sprintf("S3 sync completed in %.1f seconds", sync_duration))
+
+  # Discover tickers from local directories
+  tickers <- list.dirs(local_dir, recursive = FALSE, full.names = FALSE)
+  tickers <- setdiff(tickers, "_metadata")
   log_pipeline(sprintf("Found %d tickers", length(tickers)))
 
   data_types <- c(
@@ -27,7 +57,7 @@ s3_load_all_raw_data <- function(bucket_name, region = "us-east-1") {
     "overview"
   )
 
-  # Load all data types in parallel
+  # Load all data types in parallel from local disk
   n_cores <- min(length(data_types), parallel::detectCores())
   log_pipeline(sprintf("Loading %d data types in parallel using %d cores...",
                        length(data_types), n_cores))
@@ -36,32 +66,19 @@ s3_load_all_raw_data <- function(bucket_name, region = "us-east-1") {
   results <- parallel::mclapply(data_types, function(dt) {
     start_time <- Sys.time()
 
-    # Build list of S3 URIs for this data type
-    file_uris <- paste0(
-      "s3://", bucket_name, "/raw/", tickers, "/", dt, ".parquet",
-      "?region=", region
-    )
+    file_paths <- file.path(local_dir, tickers, paste0(dt, ".parquet"))
+    file_paths <- file_paths[file.exists(file_paths)]
 
-    # Read files - use open_dataset for efficiency when possible
     tryCatch({
-      # For many files, read in chunks to balance memory and speed
-      chunk_size <- 500
-      n_chunks <- ceiling(length(file_uris) / chunk_size)
+      if (length(file_paths) == 0) {
+        return(list(data = tibble::tibble(), type = dt, rows = 0, duration = 0))
+      }
 
-      chunk_results <- lapply(seq_len(n_chunks), function(i) {
-        start_idx <- (i - 1) * chunk_size + 1
-        end_idx <- min(i * chunk_size, length(file_uris))
-        chunk_uris <- file_uris[start_idx:end_idx]
-
-        dfs <- lapply(chunk_uris, function(uri) {
-          tryCatch(arrow::read_parquet(uri), error = function(e) NULL)
-        })
-        dfs <- dfs[!sapply(dfs, is.null)]
-        if (length(dfs) > 0) dplyr::bind_rows(dfs) else NULL
+      dfs <- lapply(file_paths, function(path) {
+        tryCatch(arrow::read_parquet(path), error = function(e) NULL)
       })
-
-      chunk_results <- chunk_results[!sapply(chunk_results, is.null)]
-      combined <- dplyr::bind_rows(chunk_results)
+      dfs <- dfs[!sapply(dfs, is.null)]
+      combined <- if (length(dfs) > 0) dplyr::bind_rows(dfs) else tibble::tibble()
 
       duration <- as.numeric(difftime(Sys.time(), start_time, units = "secs"))
       list(data = combined, type = dt, rows = nrow(combined), duration = duration)

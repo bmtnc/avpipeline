@@ -158,7 +158,7 @@ Iterates through all tickers sequentially, fetching data from Alpha Vantage and 
 
 ### Phase 2: Generate Artifacts
 
-Loads all raw data from S3, pre-splits each data type by ticker via `split()`, then processes each ticker in parallel. The pre-split converts per-ticker data access from O(N) filter scans to O(1) list lookups, and reduces copy-on-write memory pressure in forked `mclapply` workers.
+Loads all raw data from S3, pre-splits each data type by ticker via `split()`, then processes each ticker in parallel.
 
 **Per-ticker flow** (via `process_ticker_for_quarterly_artifact()`):
 1. `validate_and_prepare_statements()` — clean, detect anomalies, align dates, join statements
@@ -168,6 +168,10 @@ Loads all raw data from S3, pre-splits each data type by ticker via `split()`, t
 **Outputs uploaded to S3:**
 - `ttm_quarterly_artifact.parquet` — quarterly TTM financials for all tickers
 - `price_artifact.parquet` — cleaned daily prices for all tickers
+
+**Performance (~2,100 tickers on 4 vCPU / 8GB Fargate, ~42 min):**
+- S3 loading: ~12 min — 14,700 individual parquet file reads (7 data types × ~2,100 tickers) across 4 `mclapply` workers. Bottlenecked by price data (9.5M rows, ~400 sec) landing on the same core as another data type.
+- Per-ticker processing: ~30 min — anomaly detection, statement alignment, and TTM calculations are genuinely compute-bound. Pre-splitting data by ticker (O(1) list lookup vs O(N) filter scan) had negligible impact because the filtered data frames are small (~168K rows) and the actual computation dominates.
 
 ### On-Demand: Daily Artifact
 
@@ -179,8 +183,8 @@ Loads all raw data from S3, pre-splits each data type by ticker via `split()`, t
 
 **Performance (IWV, ~2,100 tickers):**
 - **Phase 1 (Fetch)**: ~1.3 hours (~3.2 sec/ticker avg, httr2 batch processing with `req_throttle`, CSV price format)
-- **Phase 2 (Generate)**: ~44 min (parallelized across all cores)
-- **Total**: ~2.1 hours end-to-end
+- **Phase 2 (Generate)**: ~33 min (parallelized across all cores, S3 sync for data loading)
+- **Total**: ~1.9 hours end-to-end
 - **Memory usage**: Constant ~500MB
 - **API rate**: 1 request/sec via `req_throttle` (stays under 75 req/min premium limit)
 
@@ -348,14 +352,30 @@ The theoretical floor is ~78 sec / 25 tickers = 3.1 sec/ticker. At 3.2 sec/ticke
 
 **Current performance (IWV, ~2,100 tickers):**
 - Phase 1: ~1.3 hours at 3.2 sec/ticker (down from 6.3 hours at 10.8 sec/ticker)
-- Phase 2: ~44 min (unchanged)
-- Total: ~2.1 hours end-to-end
+- Phase 2: ~33 min (down from 44 min via S3 sync optimization)
+- Total: ~1.9 hours end-to-end
+
+### Phase 2 Performance Optimization on Fargate
+
+Phase 2 was optimized from 44 min down to 33 min by replacing ~14,000 individual S3 GET requests with a single `aws s3 sync` to local disk.
+
+The original `s3_load_all_raw_data()` read each parquet file individually via `arrow::read_parquet("s3://...")` — one HTTP request per file (2,100 tickers × 7 data types). Each S3 GET incurs ~50-100ms of latency overhead (connection setup, TLS handshake, request routing). Even parallelized across 7 data types via `mclapply`, each worker still read ~2,100 files sequentially.
+
+The fix: `aws s3 sync s3://bucket/raw/ /tmp/raw/` downloads the entire raw directory to local disk using the AWS CLI's built-in parallel transfers (10 concurrent by default), then `arrow::read_parquet()` reads from local files with zero network latency. The sync also excludes `_versions/` and `_metadata/` directories to avoid downloading unnecessary data.
+
+| Phase | Before | After | Improvement |
+|-------|--------|-------|-------------|
+| S3 data loading | ~11 min (14K individual GETs) | ~2 min (sync + local reads) | ~9 min saved |
+| Pre-split by ticker | ~5 sec (split all 7 data types) | ~1.6 sec (skip price, largest dataset) | ~3 sec saved |
+| Per-ticker processing | ~30 min | ~30 min (unchanged) | — |
+| **Total Phase 2** | **~44 min** | **~33 min** | **25% faster** |
 
 **Potential future approaches (not yet attempted):**
+- **Incremental processing**: Phase 1 already tracks which tickers were updated. Phase 2 could reprocess only changed tickers and merge results with the previous artifact, rather than reprocessing all ~2,100 tickers every run. On a typical weekly run where ~100-200 tickers have new data, this could reduce the per-ticker processing phase from ~30 min to ~3-5 min.
 - Reduce per-ticker data volume by requesting `outputsize=compact` for weekly refreshes
 - Run Phase 1 on EC2 instead of Fargate (to rule out container networking/CPU overhead)
 
-Relevant files:
+Relevant Phase 1 files:
 - `R/process_batch_responses.R` — batch response processing with S3 writes
 - `R/s3_write_ticker_raw_data.R` — Arrow native S3 write
 - `R/build_batch_requests.R` — batch request construction
@@ -363,8 +383,13 @@ Relevant files:
 - `scripts/run_phase1_fetch.R` — Phase 1 batch loop
 - `deploy/terraform/variables.tf` — Fargate CPU/memory configuration
 
+Relevant Phase 2 files:
+- `R/s3_load_all_raw_data.R` — S3 sync + local parquet reads
+- `scripts/run_phase2_generate.R` — Phase 2 batch processing loop
+
 ### Next Steps
 - Fix split-triggered quarterly refetch (see Known Issues above)
+- Incremental Phase 2 processing: reprocess only tickers updated in Phase 1, merge with previous artifact
 - Package validation and documentation updates
 
 ## Contributing

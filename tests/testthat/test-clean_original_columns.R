@@ -36,15 +36,12 @@ test_that("preserves anomaly flag columns", {
 test_that("returns original data unchanged when no anomaly columns exist", {
   test_df_no_anomaly <- test_df %>% dplyr::select(-metric1_anomaly, -metric2_anomaly)
   metric_cols <- c("metric1", "metric2")
-  
+
   expect_warning(
-    expect_warning(
-      actual <- clean_original_columns(test_df_no_anomaly, metric_cols),
-      "Anomaly column 'metric1_anomaly' not found for metric 'metric1'. Skipping cleaning."
-    ),
-    "Anomaly column 'metric2_anomaly' not found for metric 'metric2'. Skipping cleaning."
+    actual <- clean_original_columns(test_df_no_anomaly, metric_cols),
+    "Missing anomaly flag columns for 2 metrics"
   )
-  
+
   expect_equal(actual$metric1, test_df_no_anomaly$metric1)
   expect_equal(actual$metric2, test_df_no_anomaly$metric2)
 })
@@ -52,12 +49,12 @@ test_that("returns original data unchanged when no anomaly columns exist", {
 test_that("handles partial anomaly columns gracefully", {
   test_df_partial <- test_df %>% dplyr::select(-metric2_anomaly)
   metric_cols <- c("metric1", "metric2")
-  
+
   expect_warning(
     actual <- clean_original_columns(test_df_partial, metric_cols),
-    "Anomaly column 'metric2_anomaly' not found for metric 'metric2'. Skipping cleaning."
+    "Missing anomaly flag columns for 1 metrics"
   )
-  
+
   # Should clean metric1 but not metric2
   expect_equal(actual$metric1[3], 115)  # interpolated
   expect_equal(actual$metric2, test_df_partial$metric2)  # unchanged

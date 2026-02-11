@@ -66,6 +66,7 @@ price_data <- all_data$price
 tickers <- unique(all_data$earnings$ticker)
 
 for (dt in names(all_data)) {
+  if (dt == "price") next
   if (nrow(all_data[[dt]]) > 0 && "ticker" %in% names(all_data[[dt]])) {
     all_data[[dt]] <- split(all_data[[dt]], all_data[[dt]]$ticker)
   }

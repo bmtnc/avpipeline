@@ -62,6 +62,8 @@ clean_end_window_anomalies <- function(
 
     # Initialize result with original data
     result <- ticker_data
+    failed_cols <- character(0)
+    fail_reasons <- character(0)
 
     # Process each metric column
     for (col in metric_cols) {
@@ -109,17 +111,21 @@ clean_end_window_anomalies <- function(
           }
         },
         error = function(e) {
-          warning(paste0(
-            "Failed to clean end-window anomalies for ticker '",
-            ticker_name,
-            "' column '",
-            col,
-            "'. Error: ",
-            e$message
-          ))
+          failed_cols <<- c(failed_cols, col)
+          fail_reasons <<- c(fail_reasons, e$message)
           # Keep original data for this column if cleaning fails
         }
       )
+    }
+
+    # Log one summary line per ticker if any columns failed
+    if (length(failed_cols) > 0) {
+      unique_reasons <- unique(fail_reasons)
+      warning(sprintf(
+        "End-window cleaning skipped for ticker '%s' (%d/%d columns): %s",
+        ticker_name, length(failed_cols), length(metric_cols),
+        paste(unique_reasons, collapse = "; ")
+      ))
     }
 
     result

@@ -50,6 +50,8 @@ add_anomaly_flag_columns <- function(
 
     # Initialize result with original data
     result <- ticker_data
+    failed_cols <- character(0)
+    fail_reasons <- character(0)
 
     # Add anomaly flags for each metric column with error handling
     for (col in metric_cols) {
@@ -66,15 +68,8 @@ add_anomaly_flag_columns <- function(
           )
         },
         error = function(e) {
-          cat(
-            "Failed to detect anomalies for ticker '",
-            ticker_name,
-            "' column '",
-            col,
-            "'. Error: ",
-            e$message,
-            "\n"
-          )
+          failed_cols <<- c(failed_cols, col)
+          fail_reasons <<- c(fail_reasons, e$message)
           # Return FALSE vector as fallback for this ticker-column
           rep(FALSE, nrow(ticker_data))
         }
@@ -82,6 +77,16 @@ add_anomaly_flag_columns <- function(
 
       # Add the anomaly column (either successful detection or FALSE fallback)
       result[[anomaly_col]] <- anomaly_flags
+    }
+
+    # Log one summary line per ticker if any columns failed
+    if (length(failed_cols) > 0) {
+      unique_reasons <- unique(fail_reasons)
+      cat(sprintf(
+        "Anomaly detection skipped for ticker '%s' (%d/%d columns): %s\n",
+        ticker_name, length(failed_cols), length(metric_cols),
+        paste(unique_reasons, collapse = "; ")
+      ))
     }
 
     result
