@@ -15,18 +15,16 @@ fetch_all_ticker_data <- function(
   validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
   validate_numeric_scalar(delay_seconds, name = "delay_seconds", gte = 0)
 
-  # Initialize API log
   api_log <- tibble::tibble(
     ticker = character(),
     endpoint = character(),
     status_message = character()
   )
 
-  # Helper function to fetch with error handling and logging
-  fetch_with_logging <- function(endpoint_name, config, ...) {
+  fetch_with_logging <- function(endpoint_name, fetch_fn) {
     tryCatch(
       {
-        result <- fetch_single_ticker_data(ticker, config, ...)
+        result <- fetch_fn()
         api_log <<- dplyr::bind_rows(
           api_log,
           tibble::tibble(
@@ -51,47 +49,41 @@ fetch_all_ticker_data <- function(
     )
   }
 
-  # Fetch balance sheet
   balance_sheet <- fetch_with_logging(
     "balance_sheet",
-    BALANCE_SHEET_CONFIG,
-    datatype = "json"
+    function() fetch_balance_sheet(ticker)
   )
   Sys.sleep(delay_seconds)
 
-  # Fetch income statement
   income_statement <- fetch_with_logging(
     "income_statement",
-    INCOME_STATEMENT_CONFIG,
-    datatype = "json"
+    function() fetch_income_statement(ticker)
   )
   Sys.sleep(delay_seconds)
 
-  # Fetch cash flow
   cash_flow <- fetch_with_logging(
     "cash_flow",
-    CASH_FLOW_CONFIG,
-    datatype = "json"
+    function() fetch_cash_flow(ticker)
   )
   Sys.sleep(delay_seconds)
 
-  # Fetch earnings
-  earnings <- fetch_with_logging("earnings", EARNINGS_CONFIG, datatype = "json")
+  earnings <- fetch_with_logging(
+    "earnings",
+    function() fetch_earnings(ticker)
+  )
   Sys.sleep(delay_seconds)
 
-  # Fetch price data
   price_data <- fetch_with_logging(
     "price_data",
-    PRICE_CONFIG,
-    outputsize = "full",
-    datatype = "json"
+    function() fetch_price(ticker, outputsize = "full")
   )
   Sys.sleep(delay_seconds)
 
-  # Fetch splits data (last call, no delay after)
-  splits_data <- fetch_with_logging("splits_data", SPLITS_CONFIG)
+  splits_data <- fetch_with_logging(
+    "splits_data",
+    function() fetch_splits(ticker)
+  )
 
-  # Return all data and log
   list(
     balance_sheet = balance_sheet,
     income_statement = income_statement,

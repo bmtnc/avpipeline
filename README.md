@@ -451,7 +451,21 @@ new_data <- fetch_alpha_vantage_data("AAPL", NEW_DATA_CONFIG)
 - Earnings timing metadata support
 - Stock splits data support
 
+### Known Issues
+
+**Stock splits cause stale shares outstanding for up to 90 days.** When a stock split occurs between quarterly data fetches, the pipeline produces incorrect market cap and per-share metrics until the next quarterly refetch. This was observed with $NOW's 5-for-1 split in December 2025.
+
+Root cause: `should_fetch_quarterly_data()` only re-fetches quarterly data when near predicted earnings (±5 days) or when data is >90 days stale. Stock splits trigger Alpha Vantage to retroactively adjust `commonStockSharesOutstanding` in their balance sheet API, but the pipeline doesn't re-fetch quarterly data when a split is detected. Meanwhile, Phase 1 does re-fetch price data every run, so `split_coefficient` and `adjusted_close` update immediately. This creates a mismatch: split-adjusted prices paired with pre-split shares outstanding.
+
+The fix would be to detect splits in Phase 1 (via price data `split_coefficient` or the SPLITS endpoint) and force a quarterly data refetch for affected tickers.
+
+Relevant files:
+- `R/should_fetch_quarterly_data.R` - conditional quarterly fetch logic
+- `R/determine_fetch_requirements.R` - fetch requirements per ticker
+- `R/build_market_cap_with_splits.R` - market cap calculation using splits
+
 ### Next Steps
+- Fix split-triggered quarterly refetch (see Known Issues above)
 - Comprehensive test suite for configuration architecture
 - Package validation and documentation updates
 - Performance optimization

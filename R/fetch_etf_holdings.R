@@ -13,17 +13,14 @@
 fetch_etf_holdings <- function(etf_symbol, api_key = NULL) {
   validate_character_scalar(etf_symbol, allow_empty = FALSE, name = "etf_symbol")
 
-  # Convert to uppercase for consistency
   etf_symbol <- toupper(etf_symbol)
 
-  # Make API request using configuration-based approach
-  response <- make_alpha_vantage_request(
-    etf_symbol,
-    ETF_PROFILE_CONFIG,
-    api_key
+  response <- make_av_request(
+    ticker = etf_symbol,
+    api_function = "ETF_PROFILE",
+    api_key = api_key
   )
 
-  # Parse response and extract ticker symbols
   tickers <- parse_etf_profile_response(response)
 
   cat(

@@ -36,8 +36,8 @@ fetch_and_store_single_data_type <- function(
     )
   }
 
-  config <- get_config_for_data_type(data_type)
-  if (is.null(config)) {
+  valid_data_types <- c("price", "splits", "balance_sheet", "income_statement", "cash_flow", "earnings")
+  if (!data_type %in% valid_data_types) {
     return(list(
       success = FALSE,
       data = NULL,
@@ -47,11 +47,14 @@ fetch_and_store_single_data_type <- function(
   }
 
   tryCatch({
-    if (data_type == "price" && !is.null(outputsize)) {
-      data <- fetch_single_ticker_data(ticker, config, api_key = api_key, outputsize = outputsize)
-    } else {
-      data <- fetch_single_ticker_data(ticker, config, api_key = api_key)
-    }
+    data <- switch(data_type,
+      "price" = fetch_price(ticker, api_key, outputsize = outputsize %||% "compact"),
+      "splits" = fetch_splits(ticker, api_key),
+      "balance_sheet" = fetch_balance_sheet(ticker, api_key),
+      "income_statement" = fetch_income_statement(ticker, api_key),
+      "cash_flow" = fetch_cash_flow(ticker, api_key),
+      "earnings" = fetch_earnings(ticker, api_key)
+    )
 
     if (is.null(data) || nrow(data) == 0) {
       return(list(
