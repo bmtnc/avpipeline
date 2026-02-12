@@ -17,7 +17,7 @@ load_options_raw_term_structure <- function(
     artifact_date <- find_latest_options_artifact_date(bucket_name, region)
   }
 
-  date_string <- format(artifact_date, "%Y-%m-%d")
+  date_string <- if (inherits(artifact_date, "Date")) format(artifact_date, "%Y-%m-%d") else artifact_date
   s3_uri <- sprintf(
     "s3://%s/options-artifacts/%s/raw_term_structure.parquet?region=%s",
     bucket_name, date_string, region
@@ -46,7 +46,7 @@ load_options_interpolated_term_structure <- function(
     artifact_date <- find_latest_options_artifact_date(bucket_name, region)
   }
 
-  date_string <- format(artifact_date, "%Y-%m-%d")
+  date_string <- if (inherits(artifact_date, "Date")) format(artifact_date, "%Y-%m-%d") else artifact_date
   s3_uri <- sprintf(
     "s3://%s/options-artifacts/%s/interpolated_term_structure.parquet?region=%s",
     bucket_name, date_string, region
