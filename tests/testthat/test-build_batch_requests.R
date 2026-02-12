@@ -35,8 +35,8 @@ test_that("build_batch_requests generates correct count for full fetch", {
 
   specs <- build_batch_requests(batch_plan, "test_key")
 
-  # price + splits + 4 quarterly (balance_sheet, income_statement, cash_flow, earnings)
-  expect_length(specs, 6)
+  # price + splits + 5 quarterly (balance_sheet, income_statement, cash_flow, earnings, earnings_estimates)
+  expect_length(specs, 7)
 })
 
 test_that("build_batch_requests generates correct count for price+splits only", {
@@ -60,7 +60,7 @@ test_that("build_batch_requests generates correct count for quarterly only", {
   )
 
   specs <- build_batch_requests(batch_plan, "test_key")
-  expect_length(specs, 4)
+  expect_length(specs, 5)
 })
 
 test_that("build_batch_requests handles multiple tickers", {
@@ -76,13 +76,13 @@ test_that("build_batch_requests handles multiple tickers", {
   )
 
   specs <- build_batch_requests(batch_plan, "test_key")
-  # AAPL: 2, MSFT: 6
-  expect_length(specs, 8)
+  # AAPL: 2, MSFT: 7
+  expect_length(specs, 9)
 
   # Check ticker/data_type metadata preserved
   tickers <- sapply(specs, function(s) s$ticker)
   expect_equal(sum(tickers == "AAPL"), 2)
-  expect_equal(sum(tickers == "MSFT"), 6)
+  expect_equal(sum(tickers == "MSFT"), 7)
 })
 
 test_that("build_batch_requests returns empty list for empty batch plan", {

@@ -49,7 +49,7 @@ fetch_and_store_ticker_data <- function(
   }
 
   if (isTRUE(fetch_requirements$quarterly)) {
-    quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings")
+    quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings", "earnings_estimates")
     for (data_type in quarterly_types) {
       results[[data_type]] <- fetch_and_store_single_data_type(
         ticker, data_type, bucket_name, api_key, region, delay_seconds

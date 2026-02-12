@@ -52,6 +52,7 @@ s3_load_all_raw_data <- function(bucket_name, region = "us-east-1") {
     "income_statement",
     "cash_flow",
     "earnings",
+    "earnings_estimates",
     "price",
     "splits",
     "overview"

@@ -61,6 +61,19 @@ process_ticker_for_quarterly_artifact <- function(
   flow_metrics <- c(get_income_statement_metrics(), get_cash_flow_metrics())
   result <- calculate_ttm_metrics(financial_statements, flow_metrics)
 
+  # LEFT JOIN quarterly earnings estimates
+  earnings_estimates <- all_data$earnings_estimates[[ticker]] %||% tibble::tibble()
+  if (nrow(earnings_estimates) > 0) {
+    quarterly_estimates <- earnings_estimates %>%
+      dplyr::filter(grepl("quarter", horizon, ignore.case = TRUE)) %>%
+      dplyr::select(ticker, fiscalDateEnding, dplyr::all_of(get_earnings_estimates_metrics()))
+    result <- dplyr::left_join(result, quarterly_estimates, by = c("ticker", "fiscalDateEnding"))
+  } else {
+    for (col in get_earnings_estimates_metrics()) {
+      result[[col]] <- NA_real_
+    }
+  }
+
   # Add overview metadata
   if (nrow(overview_data) > 0) {
     result <- dplyr::mutate(

@@ -157,11 +157,12 @@ add_tickers_to_artifact <- function(
 
     # Structure into pre-split all_data format
     all_data <- list(
-      balance_sheet    = setNames(list(raw$balance_sheet %||% tibble::tibble()), ticker),
-      income_statement = setNames(list(raw$income_statement %||% tibble::tibble()), ticker),
-      cash_flow        = setNames(list(raw$cash_flow %||% tibble::tibble()), ticker),
-      earnings         = setNames(list(raw$earnings %||% tibble::tibble()), ticker),
-      overview         = setNames(list(raw$overview %||% tibble::tibble()), ticker)
+      balance_sheet       = setNames(list(raw$balance_sheet %||% tibble::tibble()), ticker),
+      income_statement    = setNames(list(raw$income_statement %||% tibble::tibble()), ticker),
+      cash_flow           = setNames(list(raw$cash_flow %||% tibble::tibble()), ticker),
+      earnings            = setNames(list(raw$earnings %||% tibble::tibble()), ticker),
+      earnings_estimates  = setNames(list(raw$earnings_estimates %||% tibble::tibble()), ticker),
+      overview            = setNames(list(raw$overview %||% tibble::tibble()), ticker)
     )
 
     quarterly <- tryCatch(

@@ -36,7 +36,7 @@ fetch_and_store_single_data_type <- function(
     )
   }
 
-  valid_data_types <- c("price", "splits", "balance_sheet", "income_statement", "cash_flow", "earnings")
+  valid_data_types <- c("price", "splits", "balance_sheet", "income_statement", "cash_flow", "earnings", "earnings_estimates")
   if (!data_type %in% valid_data_types) {
     return(list(
       success = FALSE,
@@ -53,7 +53,8 @@ fetch_and_store_single_data_type <- function(
       "balance_sheet" = fetch_balance_sheet(ticker, api_key),
       "income_statement" = fetch_income_statement(ticker, api_key),
       "cash_flow" = fetch_cash_flow(ticker, api_key),
-      "earnings" = fetch_earnings(ticker, api_key)
+      "earnings" = fetch_earnings(ticker, api_key),
+      "earnings_estimates" = fetch_earnings_estimates(ticker, api_key)
     )
 
     if (is.null(data) || nrow(data) == 0) {

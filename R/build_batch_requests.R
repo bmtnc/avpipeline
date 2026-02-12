@@ -13,7 +13,8 @@ get_api_function_for_data_type <- function(data_type) {
     balance_sheet = "BALANCE_SHEET",
     income_statement = "INCOME_STATEMENT",
     cash_flow = "CASH_FLOW",
-    earnings = "EARNINGS"
+    earnings = "EARNINGS",
+    earnings_estimates = "EARNINGS_ESTIMATES"
   )
 
   if (!data_type %in% names(mapping)) {
@@ -84,7 +85,7 @@ build_batch_requests <- function(batch_plan, api_key,
     }
 
     if (isTRUE(fetch_requirements$quarterly)) {
-      quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings")
+      quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings", "earnings_estimates")
       for (data_type in quarterly_types) {
         api_function <- get_api_function_for_data_type(data_type)
         req <- build_av_request(
