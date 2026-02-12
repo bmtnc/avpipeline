@@ -256,6 +256,8 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 - Raw term structure artifact: `options-artifacts/{YYYY-MM-DD}/raw_term_structure.parquet` (one row per ticker/observation_date/expiration)
 - Interpolated term structure artifact: `options-artifacts/{YYYY-MM-DD}/interpolated_term_structure.parquet` (one row per ticker/observation_date/tenor)
 
+**Artifact snapshots:** Each run writes a fresh artifact containing only the tickers from that run — it does not merge with a previous artifact. Pass all desired tickers in a single call. Raw option chains in `raw/{TICKER}/historical_options.parquet` are always preserved and appended to incrementally regardless.
+
 **API volume:** Each API call returns the full chain for one ticker on one date. At 1 req/sec: 12 weeks × 1 ticker = ~12 sec; 52 weeks × 10 tickers = ~9 min. Incremental fetch skips dates already in S3.
 
 **Performance (IWV, ~2,100 tickers):**
