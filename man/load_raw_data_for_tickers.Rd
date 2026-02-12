@@ -19,4 +19,9 @@ list: Named list with each data type as a tibble
 \description{
 Reads parquet files from a local directory for a specified set of tickers.
 }
+\details{
+Note: Currently unused. Incremental Phase 2 uses \code{s3_load_all_raw_data()} +
+filter instead, since the S3 sync cost is fixed regardless. Retained for
+potential future use in targeted single-ticker reprocessing.
+}
 \keyword{internal}

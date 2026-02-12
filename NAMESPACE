@@ -2,6 +2,7 @@
 
 export(add_anomaly_flag_columns)
 export(add_per_share_columns)
+export(add_tickers_to_artifact)
 export(calculate_baseline)
 export(calculate_baseline_stats)
 export(clean_end_window_anomalies)

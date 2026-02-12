@@ -80,6 +80,20 @@ daily <- create_daily_ttm_artifact(quarterly, prices)
 result <- process_ticker_from_s3("AAPL", bucket = "avpipeline-artifacts-prod")
 ```
 
+### 5. Add tickers on-demand
+
+Fetch, process, and merge new tickers into the latest S3 artifacts without running the full pipeline:
+
+```r
+add_tickers_to_artifact(
+  c("PLTR", "COIN", "TSM", "BABA"),
+  bucket_name = "avpipeline-artifacts-prod",
+  fetch = TRUE   # FALSE to skip API fetch if raw data already in S3
+)
+```
+
+This runs Phase 1 (fetch from Alpha Vantage) and Phase 2 (process + merge) for the specified tickers only, updating the quarterly and price artifacts in S3.
+
 ## AWS Deployment
 
 The avpipeline can be deployed to AWS for automated weekly execution with artifact storage in S3.
