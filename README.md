@@ -94,6 +94,28 @@ add_tickers_to_artifact(
 
 This runs Phase 1 (fetch from Alpha Vantage) and Phase 2 (process + merge) for the specified tickers only, updating the quarterly and price artifacts in S3.
 
+### 6. Build implied volatility term structures
+
+Fetch historical option chains and build IV term structure artifacts for a basket of tickers:
+
+```r
+# Fetch 12 weeks of options data, build IV term structures, upload to S3
+fetch_options_and_build_artifact(
+  c("AAPL", "MSFT", "SPY"),
+  n_weeks = 12,
+  bucket_name = "avpipeline-artifacts-prod"
+)
+
+# Load the artifacts
+raw_ts <- load_options_raw_term_structure("avpipeline-artifacts-prod")
+interp_ts <- load_options_interpolated_term_structure("avpipeline-artifacts-prod")
+
+# Pivot interpolated term structure to wide format
+tidyr::pivot_wider(interp_ts, names_from = tenor_days, values_from = iv, names_prefix = "iv_")
+```
+
+Works with any ticker — price data is automatically fetched from Alpha Vantage and stored in S3 if not already present.
+
 ## AWS Deployment
 
 The avpipeline can be deployed to AWS for automated weekly execution with artifact storage in S3.
@@ -216,6 +238,26 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 3. Build market cap with split adjustments (`build_market_cap_with_splits()`)
 4. Calculate per-share metrics (TTM per-share for flow metrics, point-in-time per-share for balance sheet)
 
+### On-Demand: Options IV Term Structure
+
+`fetch_options_and_build_artifact()` runs locally to fetch historical option chains and build implied volatility term structures. Designed for on-demand use with small-to-medium baskets of tickers (not scheduled AWS runs). All functions are exported for use by other packages.
+
+**Per-ticker flow:**
+1. Load daily prices from S3 (auto-fetches from Alpha Vantage if missing)
+2. `derive_weekly_dates()` — derive N weekly observation dates from daily prices
+3. Incremental fetch: compare weekly dates against existing options data in S3, fetch only missing dates via `HISTORICAL_OPTIONS` endpoint (one API call per date, each returning the full option chain)
+4. `build_options_term_structure()` — for each observation date:
+   - `extract_atm_options()` — find at-the-money options (within 5% moneyness) per expiration
+   - `calculate_iv_term_structure()` — average call/put ATM IV per expiration, compute days-to-expiration
+   - `interpolate_iv_to_standard_tenors()` — linear interpolation to 30d, 60d, 90d, 180d, 365d tenors
+
+**S3 storage:**
+- Raw option chains: `raw/{TICKER}/historical_options.parquet` (one file per ticker, all dates concatenated, deduped on `contractID + date`)
+- Raw term structure artifact: `options-artifacts/{YYYY-MM-DD}/raw_term_structure.parquet` (one row per ticker/observation_date/expiration)
+- Interpolated term structure artifact: `options-artifacts/{YYYY-MM-DD}/interpolated_term_structure.parquet` (one row per ticker/observation_date/tenor)
+
+**API volume:** Each API call returns the full chain for one ticker on one date. At 1 req/sec: 12 weeks × 1 ticker = ~12 sec; 52 weeks × 10 tickers = ~9 min. Incremental fetch skips dates already in S3.
+
 **Performance (IWV, ~2,100 tickers):**
 - **Phase 1 (Fetch)**: ~1.3 hours (~3.2 sec/ticker avg, httr2 batch processing with `req_throttle`, CSV price format)
 - **Phase 2 (Generate)**: ~33 min (parallelized across all cores, S3 sync for data loading)
@@ -236,7 +278,7 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 - **`fetch_price()`**, **`fetch_balance_sheet()`**, **`fetch_income_statement()`**, **`fetch_cash_flow()`**, **`fetch_earnings()`**, **`fetch_splits()`**: Per-data-type fetch functions
 - **`fetch_etf_holdings()`**: Fetch ETF constituent tickers (exported)
 
-### Parsers (7 total)
+### Parsers (8 total)
 - **`parse_price_response()`**: Daily adjusted price data
 - **`parse_balance_sheet_response()`**: Quarterly balance sheets
 - **`parse_income_statement_response()`**: Quarterly income statements
@@ -244,6 +286,7 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 - **`parse_earnings_response()`**: Earnings timing metadata
 - **`parse_splits_response()`**: Stock split events
 - **`parse_etf_profile_response()`**: ETF holdings and profile
+- **`parse_historical_options_response()`**: Historical option chains (exported)
 
 ### Pipeline Orchestration
 - **`fetch_and_store_ticker_data()`**: Orchestrates all fetches for one ticker based on requirements
@@ -257,6 +300,14 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 - **`calculate_ttm_metrics()`**: Rolling 4-quarter TTM calculations for flow metrics
 - **`create_daily_ttm_artifact()`**: On-demand daily artifact generation (exported)
 - **`build_market_cap_with_splits()`**: Daily market cap with split adjustments
+
+### Options & IV Term Structure (exported)
+- **`fetch_options_and_build_artifact()`**: Primary entry point — fetches option chains, builds IV term structures, uploads artifacts to S3
+- **`build_options_term_structure()`**: Builds raw + interpolated term structures for one ticker across all observation dates
+- **`calculate_iv_term_structure()`**: Calculates ATM IV term structure for one observation date
+- **`interpolate_iv_to_standard_tenors()`**: Linear interpolation to standard tenors (30d, 60d, 90d, 180d, 365d)
+- **`derive_weekly_dates()`**: Derives weekly observation dates from daily price data
+- **`load_options_raw_term_structure()`**, **`load_options_interpolated_term_structure()`**: Load options artifacts from S3
 
 ### Anomaly Detection
 - **`detect_time_series_anomalies()`**: Master anomaly detection function
@@ -273,7 +324,8 @@ Falls back to full reprocess if no manifest or no previous artifact exists.
 - **`validate_character_scalar()`**, **`validate_numeric_scalar()`**, **`validate_numeric_vector()`**, **`validate_positive()`**, **`validate_non_empty()`**, **`validate_date_type()`**, **`validate_file_exists()`**, **`validate_month_end_date()`**: Input validators
 
 ### Artifact Loaders (exported)
-- **`load_quarterly_artifact()`**, **`load_price_artifact()`**, **`load_daily_ttm_artifact()`**: Load artifacts from S3
+- **`load_quarterly_artifact()`**, **`load_price_artifact()`**, **`load_daily_ttm_artifact()`**: Load TTM artifacts from S3
+- **`load_options_raw_term_structure()`**, **`load_options_interpolated_term_structure()`**: Load options IV artifacts from S3
 - **`get_latest_ttm_artifact()`**, **`get_latest_price_artifact()`**: Get latest artifact paths
 
 ## API Key Management
@@ -455,6 +507,7 @@ This package requires an Alpha Vantage API key. Get your free API key at [Alpha 
 - `EARNINGS` - Quarterly earnings timing metadata
 - `SPLITS` - Stock splits data
 - `ETF_PROFILE` - ETF holdings and profile data
+- `HISTORICAL_OPTIONS` - Historical option chains with IV and Greeks
 
 ---
 
@@ -666,4 +719,44 @@ scripts/run_phase2_aws.R
 ├── upload_pipeline_log             → (see above)
 ├── generate_s3_artifact_key        → (see above)
 └── send_pipeline_notification
+```
+
+### fetch_options_and_build_artifact()
+
+On-demand entry point for options IV term structure. Runs locally, reads/writes S3.
+
+```
+fetch_options_and_build_artifact
+├── get_api_key
+├── [per ticker]
+│   ├── s3_read_ticker_raw_data_single (read existing price data)
+│   │   ├── generate_raw_data_s3_key → validate_character_scalar
+│   │   └── validate_character_scalar
+│   ├── [if no price data in S3 and fetch=TRUE]
+│   │   ├── fetch_price → make_av_request → parse_price_response → validate_api_response
+│   │   └── s3_write_ticker_raw_data
+│   │       ├── generate_raw_data_s3_key (see above)
+│   │       └── validate_character_scalar, validate_df_type
+│   ├── derive_weekly_dates
+│   │   └── validate_df_cols → validate_df_type
+│   ├── s3_read_ticker_raw_data_single (read existing options data)
+│   ├── [if fetch=TRUE, for missing dates]
+│   │   └── fetch_historical_options_for_dates
+│   │       ├── fetch_historical_options
+│   │       │   ├── validate_character_scalar
+│   │       │   ├── make_av_request → build_av_request, get_api_key
+│   │       │   └── parse_historical_options_response
+│   │       │       ├── validate_api_response
+│   │       │       └── empty_options_tibble
+│   │       ├── s3_read_ticker_raw_data_single (read existing, append, dedup)
+│   │       └── s3_write_ticker_raw_data (write combined)
+│   ├── s3_read_ticker_raw_data_single (read complete options data)
+│   └── build_options_term_structure
+│       ├── validate_character_scalar
+│       └── [per observation date]
+│           ├── calculate_iv_term_structure
+│           │   └── extract_atm_options
+│           └── interpolate_iv_to_standard_tenors
+├── upload_artifact_to_s3 (raw_term_structure.parquet)
+└── upload_artifact_to_s3 (interpolated_term_structure.parquet)
 ```
