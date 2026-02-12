@@ -293,6 +293,9 @@ if (n_to_fetch > 0) {
 s3_write_refresh_tracking(tracking, s3_bucket, aws_region)
 log_pipeline("Tracking saved to S3")
 
+s3_write_phase1_manifest(pipeline_log, s3_bucket, aws_region)
+log_pipeline("Phase 1 manifest written to S3")
+
 # Clear checkpoint on successful completion
 s3_clear_checkpoint(s3_bucket, "phase1", aws_region)
 log_pipeline("Checkpoint cleared (phase complete)")

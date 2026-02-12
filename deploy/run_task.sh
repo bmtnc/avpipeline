@@ -9,8 +9,9 @@
 #   ./run_task.sh full               # Run as single task (legacy mode)
 #
 # Environment overrides (optional):
-#   ETF_SYMBOL=SPY ./run_task.sh     # Override ETF
-#   FETCH_MODE=price_only ./run_task.sh phase1  # Override fetch mode
+#   ETF_SYMBOL=IWM ./run_task.sh phase1          # Override ETF
+#   FETCH_MODE=price_only ./run_task.sh phase1    # Override fetch mode
+#   PHASE2_MODE=full ./run_task.sh phase2         # Force full Phase 2 reprocess
 
 set -e
 
@@ -39,6 +40,32 @@ fi
 
 echo "S3 Bucket: $S3_BUCKET"
 
+# Build environment overrides JSON for ECS run-task
+build_env_overrides() {
+    local ENV_PAIRS=""
+
+    if [ -n "$ETF_SYMBOL" ]; then
+        ENV_PAIRS="$ENV_PAIRS{\"name\":\"ETF_SYMBOL\",\"value\":\"$ETF_SYMBOL\"},"
+        echo "  Override: ETF_SYMBOL=$ETF_SYMBOL" >&2
+    fi
+    if [ -n "$FETCH_MODE" ]; then
+        ENV_PAIRS="$ENV_PAIRS{\"name\":\"FETCH_MODE\",\"value\":\"$FETCH_MODE\"},"
+        echo "  Override: FETCH_MODE=$FETCH_MODE" >&2
+    fi
+    if [ -n "$PHASE2_MODE" ]; then
+        ENV_PAIRS="$ENV_PAIRS{\"name\":\"PHASE2_MODE\",\"value\":\"$PHASE2_MODE\"},"
+        echo "  Override: PHASE2_MODE=$PHASE2_MODE" >&2
+    fi
+
+    # Remove trailing comma and build JSON
+    if [ -n "$ENV_PAIRS" ]; then
+        ENV_PAIRS="${ENV_PAIRS%,}"
+        echo "{\"containerOverrides\":[{\"name\":\"avpipeline\",\"environment\":[$ENV_PAIRS]}]}"
+    else
+        echo ""
+    fi
+}
+
 # Get subnet for ECS tasks
 get_subnet() {
     aws ec2 describe-subnets \
@@ -62,12 +89,20 @@ run_ecs_task() {
     echo "Using subnet: $SUBNET_ID"
     echo "Starting $PHASE_NAME task..."
 
+    OVERRIDES_JSON=$(build_env_overrides)
+
+    OVERRIDE_ARGS=""
+    if [ -n "$OVERRIDES_JSON" ]; then
+        OVERRIDE_ARGS="--overrides $OVERRIDES_JSON"
+    fi
+
     TASK_ARN=$(aws ecs run-task \
         --cluster "$CLUSTER_NAME" \
         --task-definition "$TASK_DEF" \
         --launch-type FARGATE \
         --network-configuration "awsvpcConfiguration={subnets=[$SUBNET_ID],assignPublicIp=ENABLED}" \
         --region "$AWS_REGION" \
+        $OVERRIDE_ARGS \
         --query 'tasks[0].taskArn' \
         --output text)
 

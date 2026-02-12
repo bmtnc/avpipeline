@@ -209,6 +209,10 @@ resource "aws_ecs_task_definition" "phase2" {
       {
         name  = "START_DATE"
         value = var.start_date
+      },
+      {
+        name  = "PHASE2_MODE"
+        value = var.phase2_mode
       }
     ]
 
@@ -272,6 +276,10 @@ resource "aws_ecs_task_definition" "full" {
       {
         name  = "START_DATE"
         value = var.start_date
+      },
+      {
+        name  = "PHASE2_MODE"
+        value = var.phase2_mode
       }
     ]
 

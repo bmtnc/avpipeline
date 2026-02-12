@@ -114,6 +114,10 @@ Phase 1 supports a `FETCH_MODE` environment variable to control what gets fetche
 - `price_only` — only daily prices and splits
 - `quarterly_only` — only quarterly financials (balance sheet, income, cash flow, earnings)
 
+Phase 2 supports a `PHASE2_MODE` environment variable to control processing:
+- `incremental` (default) — only reprocess tickers updated in Phase 1, merge with previous artifact
+- `full` — reprocess all tickers from scratch (use after code changes to anomaly detection or TTM logic)
+
 ### Cost
 
 Approximately **$5-8/month** for weekly runs (Phase 2 uses 4 vCPU / 8GB).
@@ -150,6 +154,8 @@ Iterates through all tickers sequentially, fetching data from Alpha Vantage and 
 4. Each successful fetch writes to `s3://bucket/raw/{TICKER}/{data_type}.parquet`
 5. Update refresh tracking (last fetch dates, earnings predictions)
 
+**End-of-run**: After all tickers are processed, Phase 1 writes a manifest (`s3://{bucket}/raw/_metadata/phase1_manifest.parquet`) listing all successfully updated tickers and their data types. This manifest drives incremental Phase 2 processing.
+
 **Smart refresh**: Price and splits are fetched every run. Quarterly data (balance sheet, income, cash flow, earnings) is only fetched when `should_fetch_quarterly_data()` returns TRUE:
 - New ticker (never fetched) → fetch
 - Data >90 days stale → fetch
@@ -158,7 +164,19 @@ Iterates through all tickers sequentially, fetching data from Alpha Vantage and 
 
 ### Phase 2: Generate Artifacts
 
-Loads all raw data from S3, pre-splits each data type by ticker via `split()`, then processes each ticker in parallel.
+Supports two modes via `PHASE2_MODE` environment variable:
+- `incremental` (default) — only reprocess tickers updated in Phase 1, merge unchanged rows from previous artifact
+- `full` — reprocess all tickers from scratch
+
+**Incremental mode flow:**
+1. Read Phase 1 manifest (`s3://{bucket}/raw/_metadata/phase1_manifest.parquet`) listing tickers updated this run
+2. Load previous `ttm_quarterly_artifact.parquet` from S3
+3. Determine reprocess set: manifest tickers (updated) + tickers in S3 but not in previous artifact (new). Tickers in previous artifact but no longer in S3 are dropped. All others carry forward unchanged.
+4. Sync all raw data from S3 via `aws s3 sync`, load into memory, then filter to reprocess tickers only for quarterly processing
+5. Process reprocess tickers in parallel, merge with unchanged rows from previous artifact
+6. Price artifact is always fully rebuilt (cheap — just filter + write)
+
+Falls back to full reprocess if no manifest or no previous artifact exists.
 
 **Per-ticker flow** (via `process_ticker_for_quarterly_artifact()`):
 1. `validate_and_prepare_statements()` — clean, detect anomalies, align dates, join statements
@@ -169,9 +187,12 @@ Loads all raw data from S3, pre-splits each data type by ticker via `split()`, t
 - `ttm_quarterly_artifact.parquet` — quarterly TTM financials for all tickers
 - `price_artifact.parquet` — cleaned daily prices for all tickers
 
-**Performance (~2,100 tickers on 4 vCPU / 8GB Fargate, ~42 min):**
-- S3 loading: ~12 min — 14,700 individual parquet file reads (7 data types × ~2,100 tickers) across 4 `mclapply` workers. Bottlenecked by price data (9.5M rows, ~400 sec) landing on the same core as another data type.
-- Per-ticker processing: ~30 min — anomaly detection, statement alignment, and TTM calculations are genuinely compute-bound. Pre-splitting data by ticker (O(1) list lookup vs O(N) filter scan) had negligible impact because the filtered data frames are small (~168K rows) and the actual computation dominates.
+**Performance (~2,100 tickers on 4 vCPU / 8GB Fargate, full mode ~33 min):**
+- S3 sync + local loading: ~2 min — `aws s3 sync` to local disk, then parallel `arrow::read_parquet()` from local files
+- Pre-split by ticker: ~2 sec (skip price, pre-split remaining 6 data types for O(1) lookups in parallel workers)
+- Per-ticker processing: ~30 min — anomaly detection, statement alignment, and TTM calculations are genuinely compute-bound
+
+**Incremental mode** reduces the ~30 min processing phase proportionally to the reprocess set. On a typical weekly run with ~100-200 updated tickers (out of ~2,100), processing drops to ~2-3 min, bringing total Phase 2 from ~33 min to ~5-6 min. S3 sync and price artifact rebuild remain unchanged.
 
 ### On-Demand: Daily Artifact
 
@@ -270,6 +291,7 @@ All API calls use a uniform **1-second delay** between requests (configurable vi
 
 ### Implemented Features
 - Two-phase S3 pipeline (fetch + generate)
+- Incremental Phase 2 processing (reprocess only updated tickers, merge with previous artifact)
 - Smart quarterly refresh based on earnings predictions
 - Checkpoint recovery for interrupted runs
 - Parallel Phase 2 processing
@@ -371,7 +393,6 @@ The fix: `aws s3 sync s3://bucket/raw/ /tmp/raw/` downloads the entire raw direc
 | **Total Phase 2** | **~44 min** | **~33 min** | **25% faster** |
 
 **Potential future approaches (not yet attempted):**
-- **Incremental processing**: Phase 1 already tracks which tickers were updated. Phase 2 could reprocess only changed tickers and merge results with the previous artifact, rather than reprocessing all ~2,100 tickers every run. On a typical weekly run where ~100-200 tickers have new data, this could reduce the per-ticker processing phase from ~30 min to ~3-5 min.
 - Reduce per-ticker data volume by requesting `outputsize=compact` for weekly refreshes
 - Run Phase 1 on EC2 instead of Fargate (to rule out container networking/CPU overhead)
 
@@ -385,11 +406,14 @@ Relevant Phase 1 files:
 
 Relevant Phase 2 files:
 - `R/s3_load_all_raw_data.R` — S3 sync + local parquet reads
-- `scripts/run_phase2_generate.R` — Phase 2 batch processing loop
+- `R/determine_phase2_reprocess_set.R` — incremental reprocess set logic
+- `R/derive_phase1_manifest.R` — manifest derivation from pipeline log
+- `R/s3_write_phase1_manifest.R` / `R/s3_read_phase1_manifest.R` — manifest S3 I/O
+- `R/load_raw_data_for_tickers.R` — selective local parquet loading (currently unused; retained for future use)
+- `scripts/run_phase2_generate.R` — Phase 2 batch processing loop (incremental/full modes)
 
 ### Next Steps
 - Fix split-triggered quarterly refetch (see Known Issues above)
-- Incremental Phase 2 processing: reprocess only tickers updated in Phase 1, merge with previous artifact
 - Package validation and documentation updates
 
 ## Contributing
@@ -543,6 +567,10 @@ scripts/run_phase1_fetch.R
 ├── update_checkpoint → create_empty_checkpoint
 ├── s3_write_checkpoint → validate_character_scalar, system2_with_timeout, is_timeout_result
 ├── s3_write_refresh_tracking → validate_df_type, validate_character_scalar, upload_artifact_to_s3 (see above)
+├── s3_write_phase1_manifest
+│   ├── validate_df_type, validate_character_scalar
+│   ├── derive_phase1_manifest → validate_df_type
+│   └── upload_artifact_to_s3 (see above)
 └── s3_clear_checkpoint → validate_character_scalar, system2_with_timeout, is_timeout_result
 ```
 
@@ -553,6 +581,11 @@ Phase 2: Loads raw data from S3, processes each ticker for quarterly TTM metrics
 ```
 scripts/run_phase2_generate.R
 ├── log_phase_start / log_phase_end / log_pipeline
+├── [incremental mode]
+│   ├── s3_read_phase1_manifest → validate_character_scalar, arrow::read_parquet
+│   ├── s3_list_existing_tickers (see above)
+│   ├── load_quarterly_artifact → get_latest_ttm_artifact, arrow::read_parquet
+│   └── determine_phase2_reprocess_set
 ├── s3_load_all_raw_data
 │   ├── s3_list_existing_tickers (see above)
 │   └── log_pipeline

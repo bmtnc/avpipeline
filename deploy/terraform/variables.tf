@@ -62,3 +62,9 @@ variable "fetch_mode" {
   type        = string
   default     = "full"
 }
+
+variable "phase2_mode" {
+  description = "Phase 2 processing mode (incremental, full)"
+  type        = string
+  default     = "incremental"
+}
