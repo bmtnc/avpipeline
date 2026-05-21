@@ -21,9 +21,9 @@ create_daily_ttm_artifact <- function(
     if (!is.character(tickers)) {
       stop("tickers must be a character vector")
     }
-    quarterly_df <- quarterly_df |>
+    quarterly_df <- quarterly_df %>%
       dplyr::filter(ticker %in% tickers)
-    price_df <- price_df |>
+    price_df <- price_df %>%
       dplyr::filter(ticker %in% tickers)
   }
 
@@ -34,9 +34,9 @@ create_daily_ttm_artifact <- function(
  results <- lapply(all_tickers, function(tkr) {
     tryCatch({
       # Filter data for this ticker
-      ticker_quarterly <- quarterly_df |>
+      ticker_quarterly <- quarterly_df %>%
         dplyr::filter(ticker == tkr)
-      ticker_price <- price_df |>
+      ticker_price <- price_df %>%
         dplyr::filter(ticker == tkr)
 
       if (nrow(ticker_quarterly) == 0 || nrow(ticker_price) == 0) {
@@ -44,10 +44,10 @@ create_daily_ttm_artifact <- function(
       }
 
       # Extract splits from price data for build_market_cap_with_splits
-      splits_data <- ticker_price |>
+      splits_data <- ticker_price %>%
         dplyr::filter(
           !is.na(split_coefficient) & split_coefficient != 1
-        ) |>
+        ) %>%
         dplyr::select(
           ticker,
           effective_date = date,

@@ -233,11 +233,11 @@ log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
 log_pipeline("Preparing price artifact...")
 
 # Combine all price data and clean it
-price_artifact <- price_data |>
+price_artifact <- price_data %>%
   dplyr::filter(
     date >= start_date,
     !is.na(close) & close > 0
-  ) |>
+  ) %>%
   dplyr::select(
     ticker,
     date,
@@ -249,8 +249,8 @@ price_artifact <- price_data |>
     volume,
     dividend_amount,
     split_coefficient
-  ) |>
-  dplyr::distinct() |>
+  ) %>%
+  dplyr::distinct() %>%
   dplyr::arrange(ticker, date)
 
 log_pipeline(sprintf("Price artifact: %d rows", nrow(price_artifact)))

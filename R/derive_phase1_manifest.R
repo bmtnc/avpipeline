@@ -25,8 +25,8 @@ derive_phase1_manifest <- function(pipeline_log) {
     return(empty_manifest)
   }
 
-  success_log |>
-    dplyr::group_by(ticker) |>
+  success_log %>%
+    dplyr::group_by(ticker) %>%
     dplyr::summarise(
       data_types_updated = paste(sort(unique(data_type)), collapse = ","),
       timestamp = max(timestamp),

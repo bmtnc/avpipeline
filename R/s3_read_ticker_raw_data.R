@@ -20,7 +20,6 @@ s3_read_ticker_raw_data <- function(ticker, bucket_name, region = "us-east-1") {
     "income_statement",
     "cash_flow",
     "earnings",
-    "earnings_estimates",
     "price",
     "splits",
     "overview"

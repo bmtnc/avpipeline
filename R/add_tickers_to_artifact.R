@@ -161,7 +161,6 @@ add_tickers_to_artifact <- function(
       income_statement    = setNames(list(raw$income_statement %||% tibble::tibble()), ticker),
       cash_flow           = setNames(list(raw$cash_flow %||% tibble::tibble()), ticker),
       earnings            = setNames(list(raw$earnings %||% tibble::tibble()), ticker),
-      earnings_estimates  = setNames(list(raw$earnings_estimates %||% tibble::tibble()), ticker),
       overview            = setNames(list(raw$overview %||% tibble::tibble()), ticker)
     )
 
@@ -183,13 +182,13 @@ add_tickers_to_artifact <- function(
 
     # Collect price data
     if (!is.null(raw$price) && nrow(raw$price) > 0) {
-      price_results[[ticker]] <- raw$price |>
-        dplyr::filter(date >= start_date, !is.na(close) & close > 0) |>
+      price_results[[ticker]] <- raw$price %>%
+        dplyr::filter(date >= start_date, !is.na(close) & close > 0) %>%
         dplyr::select(
           ticker, date, open, high, low, close, adjusted_close,
           volume, dividend_amount, split_coefficient
-        ) |>
-        dplyr::distinct() |>
+        ) %>%
+        dplyr::distinct() %>%
         dplyr::arrange(ticker, date)
     }
 
