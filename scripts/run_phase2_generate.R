@@ -156,6 +156,10 @@ if (phase2_mode == "price_only") {
   quarterly_artifact <- load_quarterly_artifact(s3_bucket, region = aws_region)
   log_pipeline(sprintf("Previous quarterly artifact: %d rows", nrow(quarterly_artifact)))
 
+  # No tickers reprocessed in this mode; define summary counters for the footer.
+  n_tickers <- 0L
+  success_count <- 0L
+
 } else {
 
 # Determine tickers to process

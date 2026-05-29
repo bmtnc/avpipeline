@@ -33,12 +33,14 @@ s3_load_all_raw_data <- function(bucket_name, region = "us-east-1",
   on.exit(unlink(local_dir, recursive = TRUE), add = TRUE)
 
   # Sync only the requested types when a subset is given (skips the rest).
+  # Glob patterns are shell-quoted: system2() runs via a shell, so an unquoted
+  # "*" would expand against the container workdir before aws sees it.
   sync_filter <- if (is.null(data_types)) {
     c("--exclude", "*/_versions/*", "--exclude", "_metadata/*")
   } else {
-    c("--exclude", "*",
+    c("--exclude", shQuote("*"),
       unlist(lapply(types_to_load,
-                    function(dt) c("--include", paste0("*/", dt, ".parquet")))))
+                    function(dt) c("--include", shQuote(paste0("*/", dt, ".parquet"))))))
   }
 
   log_pipeline("Syncing raw data from S3 to local disk...")
