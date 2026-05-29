@@ -128,6 +128,24 @@ log_pipeline(sprintf("All data loaded in %.1f seconds", load_duration))
 # Save price data before splitting (needed intact for price artifact later)
 price_data <- all_data$price
 
+# Overlay provisional interim bulk-quote bars on top of authoritative history.
+# No-op when no interim file exists (e.g. weekly run after reconciliation).
+# Authoritative wins on shared dates; interim only fills beyond the frontier.
+interim_quotes <- s3_read_interim_quotes(s3_bucket, aws_region)
+if (!is.null(interim_quotes)) {
+  rows_before <- nrow(price_data)
+  price_data <- merge_interim_quotes(price_data, interim_quotes)
+  fresh_rows <- nrow(price_data) - rows_before
+  log_pipeline(sprintf("Overlaid interim quotes: +%d provisional rows", fresh_rows))
+
+  # Authoritative has fully caught up (no interim bar beyond the frontier) ->
+  # the interim store is entirely stale; clear it. Fires on the weekly run.
+  if (fresh_rows == 0) {
+    s3_clear_interim_quotes(s3_bucket, aws_region)
+    log_pipeline("Interim quotes fully superseded by authoritative; cleared.")
+  }
+}
+
 # Determine tickers to process
 if (phase2_mode == "incremental" && reprocess_info$reason == "incremental") {
   tickers <- reprocess_info$reprocess_tickers

@@ -25,7 +25,14 @@ message("ETF: ", etf_symbol, " | Bucket: ", S3_BUCKET, " | Mode: ", fetch_mode)
 message("")
 
 tryCatch({
-  source("/app/scripts/run_phase1_fetch.R")
+  # bulk_interim takes the fast daily price path (consolidated bulk quotes);
+  # all other modes run the per-ticker fetch.
+  phase1_script <- if (fetch_mode == "bulk_interim") {
+    "/app/scripts/run_phase1_interim_prices.R"
+  } else {
+    "/app/scripts/run_phase1_fetch.R"
+  }
+  source(phase1_script)
 
   end_time <- Sys.time()
   duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
