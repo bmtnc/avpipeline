@@ -14,8 +14,10 @@ determine_phase2_reprocess_set <- function(
     s3_tickers
 ) {
 
-  # No manifest → full reprocess
-  if (is.null(manifest) || nrow(manifest) == 0) {
+  # Missing manifest (Phase 1 didn't run / wasn't written) → safe full reprocess.
+  # An EMPTY manifest is different: Phase 1 ran and nothing was due, so it flows
+  # to the incremental path below and reprocesses nothing (just new tickers).
+  if (is.null(manifest)) {
     return(list(
       reprocess_tickers = sort(s3_tickers),
       unchanged_tickers = character(0),

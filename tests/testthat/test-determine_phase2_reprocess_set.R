@@ -11,7 +11,7 @@ test_that("NULL manifest triggers full reprocess", {
   expect_equal(result$reason, "no_manifest")
 })
 
-test_that("empty manifest triggers full reprocess", {
+test_that("empty manifest reprocesses nothing (Phase 1 ran, nothing due)", {
   empty_manifest <- tibble::tibble(
     ticker = character(),
     data_types_updated = character(),
@@ -24,8 +24,27 @@ test_that("empty manifest triggers full reprocess", {
     s3_tickers = c("AAPL", "MSFT")
   )
 
-  expect_equal(result$reason, "no_manifest")
-  expect_equal(result$reprocess_tickers, c("AAPL", "MSFT"))
+  expect_equal(result$reason, "incremental")
+  expect_equal(result$reprocess_tickers, character(0))
+  expect_equal(result$unchanged_tickers, c("AAPL", "MSFT"))
+})
+
+test_that("empty manifest still picks up brand-new tickers", {
+  empty_manifest <- tibble::tibble(
+    ticker = character(),
+    data_types_updated = character(),
+    timestamp = as.POSIXct(character())
+  )
+
+  result <- determine_phase2_reprocess_set(
+    manifest = empty_manifest,
+    previous_artifact_tickers = c("AAPL", "MSFT"),
+    s3_tickers = c("AAPL", "MSFT", "GOOG")
+  )
+
+  expect_equal(result$reason, "incremental")
+  expect_equal(result$reprocess_tickers, "GOOG")
+  expect_equal(result$unchanged_tickers, c("AAPL", "MSFT"))
 })
 
 test_that("no previous artifact triggers full reprocess", {

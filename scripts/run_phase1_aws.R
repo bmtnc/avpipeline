@@ -25,14 +25,17 @@ message("ETF: ", etf_symbol, " | Bucket: ", S3_BUCKET, " | Mode: ", fetch_mode)
 message("")
 
 tryCatch({
-  # bulk_interim takes the fast daily price path (consolidated bulk quotes);
-  # all other modes run the per-ticker fetch.
-  phase1_script <- if (fetch_mode == "bulk_interim") {
-    "/app/scripts/run_phase1_interim_prices.R"
+  # The daily run (bulk_interim) does two things: fast bulk-quote price interim,
+  # then the smart quarterly fetch so new earnings are picked up the day they
+  # post (writing the Phase 1 manifest). Per-ticker price/splits backfill stays
+  # on the weekly full run. All other modes run the per-ticker fetch directly.
+  if (fetch_mode == "bulk_interim") {
+    source("/app/scripts/run_phase1_interim_prices.R")
+    Sys.setenv(FETCH_MODE = "quarterly_only")
+    source("/app/scripts/run_phase1_fetch.R")
   } else {
-    "/app/scripts/run_phase1_fetch.R"
+    source("/app/scripts/run_phase1_fetch.R")
   }
-  source(phase1_script)
 
   end_time <- Sys.time()
   duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
