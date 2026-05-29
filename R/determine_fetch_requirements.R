@@ -36,26 +36,26 @@ determine_fetch_requirements <- function(
     ))
   }
 
-  if (fetch_mode == "quarterly_only") {
-    return(list(
-      price = FALSE,
-      splits = FALSE,
-      quarterly = TRUE
-    ))
-  }
-
-  fetch_price <- TRUE
-  fetch_splits <- TRUE
-
+  # Quarterly is gated by the smart-refresh check in every mode that fetches it,
+  # so the daily quarterly_only run only pulls tickers near earnings or stale —
+  # not all of them.
   fetch_quarterly <- should_fetch_quarterly_data(
     next_estimated_report_date = ticker_tracking$next_estimated_report_date,
     quarterly_last_fetched_at = ticker_tracking$quarterly_last_fetched_at,
     reference_date = reference_date
   )
 
+  if (fetch_mode == "quarterly_only") {
+    return(list(
+      price = FALSE,
+      splits = FALSE,
+      quarterly = fetch_quarterly
+    ))
+  }
+
   list(
-    price = fetch_price,
-    splits = fetch_splits,
+    price = TRUE,
+    splits = TRUE,
     quarterly = fetch_quarterly
   )
 }
