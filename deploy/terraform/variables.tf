@@ -16,9 +16,15 @@ variable "bucket_suffix" {
 }
 
 variable "schedule_expression" {
-  description = "EventBridge cron expression for pipeline execution"
+  description = "EventBridge cron expression for the weekly full pipeline run"
   type        = string
   default     = "cron(0 6 ? * SUN *)"
+}
+
+variable "daily_schedule_expression" {
+  description = "EventBridge cron expression for the daily price-only pipeline run (Tue-Sat 07:00 UTC captures the prior trading day's close)"
+  type        = string
+  default     = "cron(0 7 ? * TUE-SAT *)"
 }
 
 variable "task_cpu" {

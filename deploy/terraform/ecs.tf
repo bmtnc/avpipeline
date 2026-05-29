@@ -32,8 +32,8 @@ resource "aws_iam_role" "ecs_task_execution_role" {
   })
 
   tags = {
-    Name        = "avpipeline-ecs-task-execution-role"
-    ManagedBy   = "terraform"
+    Name      = "avpipeline-ecs-task-execution-role"
+    ManagedBy = "terraform"
   }
 }
 
@@ -59,8 +59,8 @@ resource "aws_iam_role" "ecs_task_role" {
   })
 
   tags = {
-    Name        = "avpipeline-ecs-task-role"
-    ManagedBy   = "terraform"
+    Name      = "avpipeline-ecs-task-role"
+    ManagedBy = "terraform"
   }
 }
 
@@ -306,8 +306,8 @@ resource "aws_cloudwatch_log_group" "avpipeline" {
   retention_in_days = 30
 
   tags = {
-    Name        = "avpipeline-logs"
-    ManagedBy   = "terraform"
+    Name      = "avpipeline-logs"
+    ManagedBy = "terraform"
   }
 }
 
@@ -326,16 +326,16 @@ data "aws_subnets" "default" {
   }
 }
 
-# EventBridge Rule for scheduled execution
+# EventBridge Rule for the weekly full run
 
 resource "aws_cloudwatch_event_rule" "pipeline_schedule" {
   name                = "avpipeline-schedule"
-  description         = "Triggers avpipeline ECS task on schedule"
+  description         = "Triggers the weekly full avpipeline run on schedule"
   schedule_expression = var.schedule_expression
 
   tags = {
-    Name        = "avpipeline-schedule"
-    ManagedBy   = "terraform"
+    Name      = "avpipeline-schedule"
+    ManagedBy = "terraform"
   }
 }
 
@@ -344,6 +344,28 @@ resource "aws_cloudwatch_event_target" "step_functions" {
   target_id = "avpipeline-stepfunctions"
   arn       = aws_sfn_state_machine.pipeline.arn
   role_arn  = aws_iam_role.eventbridge_sfn_role.arn
+  input     = jsonencode({ fetchMode = "full" })
+}
+
+# EventBridge Rule for the daily price-only run
+
+resource "aws_cloudwatch_event_rule" "pipeline_schedule_daily" {
+  name                = "avpipeline-schedule-daily"
+  description         = "Triggers the daily price-only avpipeline run on schedule"
+  schedule_expression = var.daily_schedule_expression
+
+  tags = {
+    Name      = "avpipeline-schedule-daily"
+    ManagedBy = "terraform"
+  }
+}
+
+resource "aws_cloudwatch_event_target" "step_functions_daily" {
+  rule      = aws_cloudwatch_event_rule.pipeline_schedule_daily.name
+  target_id = "avpipeline-stepfunctions-daily"
+  arn       = aws_sfn_state_machine.pipeline.arn
+  role_arn  = aws_iam_role.eventbridge_sfn_role.arn
+  input     = jsonencode({ fetchMode = "bulk_interim" })
 }
 
 # CloudWatch Alarms for Pipeline Monitoring

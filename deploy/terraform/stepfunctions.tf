@@ -132,12 +132,29 @@ resource "aws_sfn_state_machine" "pipeline" {
 
   definition = jsonencode({
     Comment = "AV Pipeline: Phase 1 (Fetch) -> Phase 2 (Generate)"
-    StartAt = "Phase1Fetch"
+    StartAt = "ResolveFetchMode"
     States = {
+      # Default fetchMode to "full" when the execution input omits it (manual runs).
+      # The weekly trigger passes "full"; the daily trigger passes "price_only".
+      ResolveFetchMode = {
+        Type = "Choice"
+        Choices = [{
+          Variable  = "$.fetchMode"
+          IsPresent = true
+          Next      = "Phase1Fetch"
+        }]
+        Default = "DefaultFetchMode"
+      }
+      DefaultFetchMode = {
+        Type       = "Pass"
+        Result     = "full"
+        ResultPath = "$.fetchMode"
+        Next       = "Phase1Fetch"
+      }
       Phase1Fetch = {
         Type           = "Task"
         Resource       = "arn:aws:states:::ecs:runTask.sync"
-        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
+        TimeoutSeconds = 28800 # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
@@ -147,6 +164,15 @@ resource "aws_sfn_state_machine" "pipeline" {
               Subnets        = data.aws_subnets.default.ids
               AssignPublicIp = "ENABLED"
             }
+          }
+          Overrides = {
+            ContainerOverrides = [{
+              Name = "avpipeline"
+              Environment = [{
+                Name      = "FETCH_MODE"
+                "Value.$" = "$.fetchMode"
+              }]
+            }]
           }
         }
         ResultPath = "$.phase1Result"
@@ -166,7 +192,7 @@ resource "aws_sfn_state_machine" "pipeline" {
       Phase2Generate = {
         Type           = "Task"
         Resource       = "arn:aws:states:::ecs:runTask.sync"
-        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
+        TimeoutSeconds = 28800 # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
