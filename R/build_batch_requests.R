@@ -33,12 +33,13 @@ get_api_function_for_data_type <- function(data_type) {
 #'   fetch_requirements and ticker_tracking
 #' @param api_key character: Alpha Vantage API key
 #' @param throttle_capacity numeric: Token bucket capacity (default: 1)
-#' @param throttle_fill_time numeric: Seconds to refill one token (default: 1)
+#' @param throttle_fill_time numeric: Seconds to refill one token (default: 0.5,
+#'   i.e. 120 req/min — held under the 150/min premium limit for headroom)
 #' @return list of request specs, each containing: request, ticker, data_type, extra_params
 #' @keywords internal
 build_batch_requests <- function(batch_plan, api_key,
                                  throttle_capacity = 1,
-                                 throttle_fill_time = 1) {
+                                 throttle_fill_time = 0.5) {
   validate_character_scalar(api_key, name = "api_key")
 
   if (length(batch_plan) == 0) {

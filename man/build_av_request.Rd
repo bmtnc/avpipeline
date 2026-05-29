@@ -9,7 +9,7 @@ build_av_request(
   api_function,
   api_key,
   throttle_capacity = 1,
-  throttle_fill_time = 1,
+  throttle_fill_time = 0.5,
   ...
 )
 }
@@ -22,7 +22,8 @@ build_av_request(
 
 \item{throttle_capacity}{numeric: Token bucket capacity (default: 1)}
 
-\item{throttle_fill_time}{numeric: Seconds to refill one token (default: 1)}
+\item{throttle_fill_time}{numeric: Seconds to refill one token (default: 0.5,
+i.e. 120 req/min — held under the 150/min premium limit for headroom)}
 
 \item{...}{Additional query parameters (outputsize, datatype, etc.)}
 }

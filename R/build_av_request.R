@@ -6,12 +6,13 @@
 #' @param api_function character: Alpha Vantage API function name
 #' @param api_key character: API key
 #' @param throttle_capacity numeric: Token bucket capacity (default: 1)
-#' @param throttle_fill_time numeric: Seconds to refill one token (default: 1)
+#' @param throttle_fill_time numeric: Seconds to refill one token (default: 0.5,
+#'   i.e. 120 req/min — held under the 150/min premium limit for headroom)
 #' @param ... Additional query parameters (outputsize, datatype, etc.)
 #' @return An unevaluated httr2_request object
 #' @keywords internal
 build_av_request <- function(ticker, api_function, api_key,
-                             throttle_capacity = 1, throttle_fill_time = 1,
+                             throttle_capacity = 1, throttle_fill_time = 0.5,
                              ...) {
   validate_character_scalar(ticker, name = "ticker")
   validate_character_scalar(api_function, name = "api_function")

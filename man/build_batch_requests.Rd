@@ -8,7 +8,7 @@ build_batch_requests(
   batch_plan,
   api_key,
   throttle_capacity = 1,
-  throttle_fill_time = 1
+  throttle_fill_time = 0.5
 )
 }
 \arguments{
@@ -19,7 +19,8 @@ fetch_requirements and ticker_tracking}
 
 \item{throttle_capacity}{numeric: Token bucket capacity (default: 1)}
 
-\item{throttle_fill_time}{numeric: Seconds to refill one token (default: 1)}
+\item{throttle_fill_time}{numeric: Seconds to refill one token (default: 0.5,
+i.e. 120 req/min — held under the 150/min premium limit for headroom)}
 }
 \value{
 list of request specs, each containing: request, ticker, data_type, extra_params
