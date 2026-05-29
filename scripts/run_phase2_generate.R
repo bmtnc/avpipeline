@@ -37,8 +37,8 @@ phase2_mode <- Sys.getenv("PHASE2_MODE", "incremental")
 if (s3_bucket == "") {
   stop("S3_BUCKET environment variable is required")
 }
-if (!phase2_mode %in% c("incremental", "full")) {
-  stop("PHASE2_MODE must be 'incremental' or 'full'")
+if (!phase2_mode %in% c("incremental", "full", "price_only")) {
+  stop("PHASE2_MODE must be 'incremental', 'full', or 'price_only'")
 }
 
 threshold <- 4
@@ -120,7 +120,9 @@ if (phase2_mode == "incremental") {
 log_pipeline("Syncing raw data from S3...")
 load_start <- Sys.time()
 
-all_data <- s3_load_all_raw_data(s3_bucket, aws_region)
+# Price-only daily runs touch no financials, so load only price raw data.
+load_types <- if (phase2_mode == "price_only") "price" else NULL
+all_data <- s3_load_all_raw_data(s3_bucket, aws_region, data_types = load_types)
 
 load_duration <- as.numeric(difftime(Sys.time(), load_start, units = "secs"))
 log_pipeline(sprintf("All data loaded in %.1f seconds", load_duration))
@@ -145,6 +147,16 @@ if (!is.null(interim_quotes)) {
     log_pipeline("Interim quotes fully superseded by authoritative; cleared.")
   }
 }
+
+if (phase2_mode == "price_only") {
+  # Daily price refresh: financials are unchanged, so skip all quarterly
+  # reprocessing and carry the previous quarterly artifact forward verbatim.
+  # (Re-uploaded below under today's date so the artifact pair stays colocated.)
+  log_pipeline("Price-only mode: reusing previous quarterly artifact unchanged.")
+  quarterly_artifact <- load_quarterly_artifact(s3_bucket, region = aws_region)
+  log_pipeline(sprintf("Previous quarterly artifact: %d rows", nrow(quarterly_artifact)))
+
+} else {
 
 # Determine tickers to process
 if (phase2_mode == "incremental" && reprocess_info$reason == "incremental") {
@@ -243,6 +255,8 @@ if (phase2_mode == "incremental" && !is.null(previous_artifact) &&
 }
 
 log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
+
+}  # end quarterly processing (skipped in price_only mode)
 
 # ============================================================================
 # PREPARE PRICE ARTIFACT

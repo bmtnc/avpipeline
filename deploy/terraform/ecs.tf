@@ -365,7 +365,7 @@ resource "aws_cloudwatch_event_target" "step_functions_daily" {
   target_id = "avpipeline-stepfunctions-daily"
   arn       = aws_sfn_state_machine.pipeline.arn
   role_arn  = aws_iam_role.eventbridge_sfn_role.arn
-  input     = jsonencode({ fetchMode = "bulk_interim" })
+  input     = jsonencode({ fetchMode = "bulk_interim", phase2Mode = "price_only" })
 }
 
 # CloudWatch Alarms for Pipeline Monitoring
