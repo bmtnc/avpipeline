@@ -105,5 +105,8 @@ process_ticker_from_s3 <- function(
     )
   }
 
+  # Add subsector from the equities taxonomy (keyed on industry; NA when unmapped)
+  result <- join_equities_taxonomy(result)
+
   result
 }

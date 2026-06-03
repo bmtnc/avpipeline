@@ -9,10 +9,11 @@ test_that("get_api_function_for_data_type returns correct mappings", {
   expect_equal(get_api_function_for_data_type("income_statement"), "INCOME_STATEMENT")
   expect_equal(get_api_function_for_data_type("cash_flow"), "CASH_FLOW")
   expect_equal(get_api_function_for_data_type("earnings"), "EARNINGS")
+  expect_equal(get_api_function_for_data_type("overview"), "OVERVIEW")
 })
 
 test_that("get_api_function_for_data_type errors on unknown data_type", {
-  expect_error(get_api_function_for_data_type("overview"), "Unknown data_type")
+  expect_error(get_api_function_for_data_type("unknown_type"), "Unknown data_type")
   expect_error(get_api_function_for_data_type(""), "Unknown data_type")
   expect_error(get_api_function_for_data_type("PRICE"), "Unknown data_type")
 })

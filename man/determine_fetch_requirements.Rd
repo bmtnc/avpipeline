@@ -7,7 +7,8 @@
 determine_fetch_requirements(
   ticker_tracking,
   reference_date = Sys.Date(),
-  fetch_mode = "full"
+  fetch_mode = "full",
+  overview_exists = TRUE
 )
 }
 \arguments{
@@ -16,9 +17,14 @@ determine_fetch_requirements(
 \item{reference_date}{Date: Date to check against (defaults to today)}
 
 \item{fetch_mode}{character: "full" (default), "price_only", or "quarterly_only"}
+
+\item{overview_exists}{logical: Whether overview is already stored in S3 for
+this ticker. Overview is a gap-fill: fetched once when missing, never
+re-pulled. Defaults to TRUE (assume present) so callers that don't track
+overview presence never trigger a fetch.}
 }
 \value{
-list: Named list with price, splits, quarterly (each TRUE/FALSE)
+list: Named list with price, splits, overview, quarterly (each TRUE/FALSE)
 }
 \description{
 Determines which data types need to be fetched for a ticker based on tracking state.

@@ -53,6 +53,10 @@ etf_tickers <- get_financial_statement_tickers(etf_symbol = etf_symbol)
 s3_tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
 all_tickers <- unique(c(etf_tickers, s3_tickers))
 
+# Tickers that already have overview in S3 — overview is gap-filled (fetched once
+# when missing, never re-pulled), so it is requested only for tickers not in this set.
+tickers_with_overview <- s3_list_tickers_with_overview(s3_bucket, aws_region)
+
 # Load checkpoint and filter to unprocessed tickers
 checkpoint <- s3_read_checkpoint(s3_bucket, "phase1", aws_region)
 already_processed <- checkpoint$processed_tickers %||% character(0)
@@ -62,6 +66,9 @@ n_total <- length(all_tickers)
 
 log_pipeline(sprintf("Total tickers: %d (%d ETF + %d additional from S3)",
         n_total, length(etf_tickers), length(setdiff(s3_tickers, etf_tickers))))
+log_pipeline(sprintf("Overview present for %d tickers; %d missing (gap-fill targets)",
+        length(tickers_with_overview),
+        length(setdiff(all_tickers, tickers_with_overview))))
 
 if (length(already_processed) > 0) {
   log_pipeline(sprintf("Resuming from checkpoint: %d already processed, %d remaining",
@@ -88,7 +95,8 @@ for (ticker in tickers) {
   tryCatch({
     ticker_tracking <- get_ticker_tracking(ticker, tracking)
     fetch_requirements <- determine_fetch_requirements(
-      ticker_tracking, reference_date, fetch_mode = fetch_mode
+      ticker_tracking, reference_date, fetch_mode = fetch_mode,
+      overview_exists = ticker %in% tickers_with_overview
     )
     fetch_types <- names(fetch_requirements)[unlist(fetch_requirements)]
 
@@ -229,6 +237,10 @@ if (n_to_fetch > 0) {
 
           if (isTRUE(fetch_requirements$splits)) {
             tracking <- update_tracking_after_fetch(tracking, ticker, "splits")
+          }
+
+          if (isTRUE(fetch_requirements$overview)) {
+            tracking <- update_tracking_after_fetch(tracking, ticker, "overview")
           }
 
           if (isTRUE(fetch_requirements$quarterly)) {

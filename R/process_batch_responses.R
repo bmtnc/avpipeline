@@ -18,6 +18,7 @@ parse_response_by_type <- function(response, ticker, data_type, extra_params = l
     "splits" = parse_splits_response(response, ticker),
     "balance_sheet" = parse_balance_sheet_response(response, ticker),
     "income_statement" = parse_income_statement_response(response, ticker),
+    "overview" = parse_overview_response(response, ticker),
     "cash_flow" = parse_cash_flow_response(response, ticker),
     "earnings" = parse_earnings_response(response, ticker),
     stop("Unknown data_type: ", data_type)

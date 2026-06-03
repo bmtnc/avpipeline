@@ -13,7 +13,8 @@ get_api_function_for_data_type <- function(data_type) {
     balance_sheet = "BALANCE_SHEET",
     income_statement = "INCOME_STATEMENT",
     cash_flow = "CASH_FLOW",
-    earnings = "EARNINGS"
+    earnings = "EARNINGS",
+    overview = "OVERVIEW"
   )
 
   if (!data_type %in% names(mapping)) {
@@ -80,6 +81,21 @@ build_batch_requests <- function(batch_plan, api_key,
         request = req,
         ticker = ticker,
         data_type = "splits",
+        extra_params = list()
+      )
+    }
+
+    if (isTRUE(fetch_requirements$overview)) {
+      api_function <- get_api_function_for_data_type("overview")
+      req <- build_av_request(
+        ticker, api_function, api_key,
+        throttle_capacity = throttle_capacity,
+        throttle_fill_time = throttle_fill_time
+      )
+      request_specs[[length(request_specs) + 1]] <- list(
+        request = req,
+        ticker = ticker,
+        data_type = "overview",
         extra_params = list()
       )
     }

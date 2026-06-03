@@ -5,12 +5,17 @@
 #' @param ticker_tracking tibble: Single row from refresh tracking for this ticker
 #' @param reference_date Date: Date to check against (defaults to today)
 #' @param fetch_mode character: "full" (default), "price_only", or "quarterly_only"
-#' @return list: Named list with price, splits, quarterly (each TRUE/FALSE)
+#' @param overview_exists logical: Whether overview is already stored in S3 for
+#'   this ticker. Overview is a gap-fill: fetched once when missing, never
+#'   re-pulled. Defaults to TRUE (assume present) so callers that don't track
+#'   overview presence never trigger a fetch.
+#' @return list: Named list with price, splits, overview, quarterly (each TRUE/FALSE)
 #' @keywords internal
 determine_fetch_requirements <- function(
   ticker_tracking,
   reference_date = Sys.Date(),
-  fetch_mode = "full"
+  fetch_mode = "full",
+  overview_exists = TRUE
 ) {
   if (!is.data.frame(ticker_tracking) || nrow(ticker_tracking) != 1) {
     stop(
@@ -28,10 +33,14 @@ determine_fetch_requirements <- function(
     )
   }
 
+  # Overview is fetched only when missing from S3, and never on price-only runs.
+  overview_required <- fetch_mode != "price_only" && !isTRUE(overview_exists)
+
   if (fetch_mode == "price_only") {
     return(list(
       price = TRUE,
       splits = FALSE,
+      overview = FALSE,
       quarterly = FALSE
     ))
   }
@@ -49,6 +58,7 @@ determine_fetch_requirements <- function(
     return(list(
       price = FALSE,
       splits = FALSE,
+      overview = overview_required,
       quarterly = fetch_quarterly
     ))
   }
@@ -56,6 +66,7 @@ determine_fetch_requirements <- function(
   list(
     price = TRUE,
     splits = TRUE,
+    overview = overview_required,
     quarterly = fetch_quarterly
   )
 }

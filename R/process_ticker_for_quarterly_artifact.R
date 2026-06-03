@@ -84,5 +84,8 @@ process_ticker_for_quarterly_artifact <- function(
     )
   }
 
+  # Add subsector from the equities taxonomy (keyed on industry; NA when unmapped)
+  result <- join_equities_taxonomy(result)
+
   result
 }

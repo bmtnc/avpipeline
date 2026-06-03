@@ -262,6 +262,17 @@ log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
 
 }  # end quarterly processing (skipped in price_only mode)
 
+# Backfill subsector for ALL rows from the equities taxonomy. Done here (not only
+# per-ticker) so carried-forward/unchanged rows from a previous artifact — which
+# predate subsector — get it too. Idempotent: drop any existing column, recompute.
+quarterly_artifact <- quarterly_artifact %>%
+  dplyr::select(-dplyr::any_of("subsector")) %>%
+  join_equities_taxonomy()
+
+log_pipeline(sprintf("Subsector assigned: %d of %d rows mapped",
+                     sum(!is.na(quarterly_artifact$subsector)),
+                     nrow(quarterly_artifact)))
+
 # ============================================================================
 # PREPARE PRICE ARTIFACT
 # ============================================================================
