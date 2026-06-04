@@ -6,7 +6,11 @@
 #'
 #' @return A tibble with option chain data
 #' @export
-parse_historical_options_response <- function(response, ticker, datatype = "csv") {
+parse_historical_options_response <- function(
+  response,
+  ticker,
+  datatype = "csv"
+) {
   if (!datatype %in% c("json", "csv")) {
     stop("datatype must be 'json' or 'csv', got: ", datatype)
   }
@@ -22,7 +26,6 @@ parse_historical_options_response <- function(response, ticker, datatype = "csv"
     }
 
     options_df <- tibble::as_tibble(parsed_data$data)
-
   } else if (datatype == "csv") {
     if (nchar(trimws(content)) == 0) {
       return(empty_options_tibble(ticker))
@@ -67,10 +70,26 @@ parse_historical_options_response <- function(response, ticker, datatype = "csv"
       rho = as.numeric(rho)
     ) %>%
     dplyr::select(
-      ticker, contractID, date, expiration, strike, type,
-      last, mark, bid, bid_size, ask, ask_size,
-      volume, open_interest,
-      implied_volatility, delta, gamma, theta, vega, rho
+      ticker,
+      contractID,
+      date,
+      expiration,
+      strike,
+      type,
+      last,
+      mark,
+      bid,
+      bid_size,
+      ask,
+      ask_size,
+      volume,
+      open_interest,
+      implied_volatility,
+      delta,
+      gamma,
+      theta,
+      vega,
+      rho
     ) %>%
     dplyr::arrange(expiration, strike, type)
 

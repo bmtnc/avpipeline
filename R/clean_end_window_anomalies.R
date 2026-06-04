@@ -123,7 +123,9 @@ clean_end_window_anomalies <- function(
       unique_reasons <- unique(fail_reasons)
       warning(sprintf(
         "End-window cleaning skipped for ticker '%s' (%d/%d columns): %s",
-        ticker_name, length(failed_cols), length(metric_cols),
+        ticker_name,
+        length(failed_cols),
+        length(metric_cols),
         paste(unique_reasons, collapse = "; ")
       ))
     }

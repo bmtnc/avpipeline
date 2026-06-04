@@ -6,7 +6,6 @@
 #' @return Character. Execution ID for this pipeline run
 #' @keywords internal
 get_execution_id <- function() {
-
   exec_id <- Sys.getenv("EXECUTION_ID", "")
   if (exec_id == "") {
     exec_id <- format(Sys.time(), "%Y%m%d-%H%M%S")
@@ -31,8 +30,16 @@ log_pipeline <- function(..., level = "INFO") {
 
   timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
   exec_id <- get_execution_id()
-  msg <- paste0("[", timestamp, "] [", exec_id, "] [", level, "] ",
-                paste0(..., collapse = ""))
+  msg <- paste0(
+    "[",
+    timestamp,
+    "] [",
+    exec_id,
+    "] [",
+    level,
+    "] ",
+    paste0(..., collapse = "")
+  )
   message(msg)
   flush.console()
 
@@ -54,8 +61,14 @@ log_pipeline <- function(..., level = "INFO") {
 #'
 #' @return NULL (called for side effects)
 #' @keywords internal
-log_progress_summary <- function(current, total, successful, failed, phase = "Fetch",
-                                  elapsed_seconds = NULL) {
+log_progress_summary <- function(
+  current,
+  total,
+  successful,
+  failed,
+  phase = "Fetch",
+  elapsed_seconds = NULL
+) {
   pct <- round(100 * current / total, 1)
 
   if (!is.null(elapsed_seconds) && current > 0) {
@@ -65,14 +78,29 @@ log_progress_summary <- function(current, total, successful, failed, phase = "Fe
     eta_min <- round(eta_seconds / 60, 1)
 
     log_pipeline(
-      sprintf("[%d/%d] %s%% | %d ok | %d err | %.1fs/ticker | ETA: %.1f min",
-              current, total, pct, successful, failed, avg_seconds, eta_min),
+      sprintf(
+        "[%d/%d] %s%% | %d ok | %d err | %.1fs/ticker | ETA: %.1f min",
+        current,
+        total,
+        pct,
+        successful,
+        failed,
+        avg_seconds,
+        eta_min
+      ),
       level = "INFO"
     )
   } else {
     log_pipeline(
-      sprintf("[%d/%d] %s%% complete | %d successful | %d failed | Phase: %s",
-              current, total, pct, successful, failed, phase),
+      sprintf(
+        "[%d/%d] %s%% complete | %d successful | %d failed | Phase: %s",
+        current,
+        total,
+        pct,
+        successful,
+        failed,
+        phase
+      ),
       level = "INFO"
     )
   }
@@ -115,8 +143,13 @@ log_phase_start <- function(phase, details = "") {
 log_phase_end <- function(phase, total, successful, failed, duration_seconds) {
   log_pipeline("=== ", phase, " COMPLETE ===")
   log_pipeline(
-    sprintf("Processed: %d | Success: %d | Failed: %d | Duration: %.1f min",
-            total, successful, failed, duration_seconds / 60)
+    sprintf(
+      "Processed: %d | Success: %d | Failed: %d | Duration: %.1f min",
+      total,
+      successful,
+      failed,
+      duration_seconds / 60
+    )
   )
 
   invisible(NULL)
@@ -140,12 +173,21 @@ log_failed_tickers <- function(failed_tickers) {
 
   if (n_failed <= 20) {
     log_pipeline(
-      sprintf("Failed tickers (%d): %s", n_failed, paste(failed_tickers, collapse = ", "))
+      sprintf(
+        "Failed tickers (%d): %s",
+        n_failed,
+        paste(failed_tickers, collapse = ", ")
+      )
     )
   } else {
     shown <- paste(failed_tickers[1:20], collapse = ", ")
     log_pipeline(
-      sprintf("Failed tickers (%d): %s, ... (+%d more)", n_failed, shown, n_failed - 20)
+      sprintf(
+        "Failed tickers (%d): %s, ... (+%d more)",
+        n_failed,
+        shown,
+        n_failed - 20
+      )
     )
   }
 

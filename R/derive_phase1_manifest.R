@@ -6,7 +6,6 @@
 #' @return tibble: Manifest with columns ticker, data_types_updated, timestamp
 #' @keywords internal
 derive_phase1_manifest <- function(pipeline_log) {
-
   validate_df_type(pipeline_log)
 
   empty_manifest <- tibble::tibble(

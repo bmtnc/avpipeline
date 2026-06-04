@@ -18,8 +18,16 @@ calculate_nopat_per_share <- function(
 ) {
   # Input validation
   validate_numeric_vector(ebit_ps, allow_empty = TRUE, name = "ebit_ps")
-  validate_numeric_vector(dep_amort_ps, allow_empty = TRUE, name = "dep_amort_ps")
-  validate_numeric_vector(depreciation_ps, allow_empty = TRUE, name = "depreciation_ps")
+  validate_numeric_vector(
+    dep_amort_ps,
+    allow_empty = TRUE,
+    name = "dep_amort_ps"
+  )
+  validate_numeric_vector(
+    depreciation_ps,
+    allow_empty = TRUE,
+    name = "depreciation_ps"
+  )
   validate_numeric_scalar(tax_rate, name = "tax_rate", gte = 0, lte = 1)
 
   # Calculate amortization (D&A minus depreciation)

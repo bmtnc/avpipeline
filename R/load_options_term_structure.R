@@ -6,9 +6,9 @@
 #' @return tibble: Raw IV term structure data
 #' @export
 load_options_raw_term_structure <- function(
-    bucket_name,
-    artifact_date = NULL,
-    region = "us-east-1"
+  bucket_name,
+  artifact_date = NULL,
+  region = "us-east-1"
 ) {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
@@ -17,10 +17,16 @@ load_options_raw_term_structure <- function(
     artifact_date <- find_latest_options_artifact_date(bucket_name, region)
   }
 
-  date_string <- if (inherits(artifact_date, "Date")) format(artifact_date, "%Y-%m-%d") else artifact_date
+  date_string <- if (inherits(artifact_date, "Date")) {
+    format(artifact_date, "%Y-%m-%d")
+  } else {
+    artifact_date
+  }
   s3_uri <- sprintf(
     "s3://%s/options-artifacts/%s/raw_term_structure.parquet?region=%s",
-    bucket_name, date_string, region
+    bucket_name,
+    date_string,
+    region
   )
 
   arrow::read_parquet(s3_uri)
@@ -35,9 +41,9 @@ load_options_raw_term_structure <- function(
 #' @return tibble: Interpolated IV term structure data at standard tenors
 #' @export
 load_options_interpolated_term_structure <- function(
-    bucket_name,
-    artifact_date = NULL,
-    region = "us-east-1"
+  bucket_name,
+  artifact_date = NULL,
+  region = "us-east-1"
 ) {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
@@ -46,10 +52,16 @@ load_options_interpolated_term_structure <- function(
     artifact_date <- find_latest_options_artifact_date(bucket_name, region)
   }
 
-  date_string <- if (inherits(artifact_date, "Date")) format(artifact_date, "%Y-%m-%d") else artifact_date
+  date_string <- if (inherits(artifact_date, "Date")) {
+    format(artifact_date, "%Y-%m-%d")
+  } else {
+    artifact_date
+  }
   s3_uri <- sprintf(
     "s3://%s/options-artifacts/%s/interpolated_term_structure.parquet?region=%s",
-    bucket_name, date_string, region
+    bucket_name,
+    date_string,
+    region
   )
 
   arrow::read_parquet(s3_uri)
@@ -66,9 +78,11 @@ find_latest_options_artifact_date <- function(bucket_name, region) {
   result <- system2(
     "aws",
     args = c(
-      "s3", "ls",
+      "s3",
+      "ls",
       sprintf("s3://%s/options-artifacts/", bucket_name),
-      "--region", region
+      "--region",
+      region
     ),
     stdout = TRUE,
     stderr = FALSE
@@ -79,7 +93,11 @@ find_latest_options_artifact_date <- function(bucket_name, region) {
   dates <- dates[grepl("^\\d{4}-\\d{2}-\\d{2}$", dates)]
 
   if (length(dates) == 0) {
-    stop("No options artifacts found in s3://", bucket_name, "/options-artifacts/")
+    stop(
+      "No options artifacts found in s3://",
+      bucket_name,
+      "/options-artifacts/"
+    )
   }
 
   max(as.Date(dates))

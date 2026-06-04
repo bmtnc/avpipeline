@@ -14,7 +14,10 @@ s3_write_interim_quotes <- function(data, bucket_name, region = "us-east-1") {
   validate_character_scalar(bucket_name, name = "bucket_name")
 
   s3_uri <- paste0(
-    "s3://", bucket_name, "/interim/interim_quotes.parquet?region=", region
+    "s3://",
+    bucket_name,
+    "/interim/interim_quotes.parquet?region=",
+    region
   )
   arrow::write_parquet(data, s3_uri)
 

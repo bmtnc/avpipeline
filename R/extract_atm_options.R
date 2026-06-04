@@ -6,7 +6,11 @@
 #'
 #' @return Tibble with one row per (expiration, type) for the closest-to-ATM options
 #' @keywords internal
-extract_atm_options <- function(options_chain, spot_price, moneyness_threshold = 0.05) {
+extract_atm_options <- function(
+  options_chain,
+  spot_price,
+  moneyness_threshold = 0.05
+) {
   if (nrow(options_chain) == 0 || is.na(spot_price) || spot_price <= 0) {
     return(options_chain[0, ])
   }

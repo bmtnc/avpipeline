@@ -12,7 +12,10 @@ s3_read_interim_quotes <- function(bucket_name, region = "us-east-1") {
   validate_character_scalar(bucket_name, name = "bucket_name")
 
   s3_uri <- paste0(
-    "s3://", bucket_name, "/interim/interim_quotes.parquet?region=", region
+    "s3://",
+    bucket_name,
+    "/interim/interim_quotes.parquet?region=",
+    region
   )
   tryCatch(
     tibble::as_tibble(arrow::read_parquet(s3_uri)),

@@ -2,9 +2,14 @@ price_row <- function(ticker, date, close) {
   tibble::tibble(
     ticker = ticker,
     date = as.Date(date),
-    open = close, high = close, low = close, close = close,
-    adjusted_close = close, volume = 1000,
-    dividend_amount = 0, split_coefficient = 1
+    open = close,
+    high = close,
+    low = close,
+    close = close,
+    adjusted_close = close,
+    volume = 1000,
+    dividend_amount = 0,
+    split_coefficient = 1
   )
 }
 

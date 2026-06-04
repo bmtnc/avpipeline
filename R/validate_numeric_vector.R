@@ -12,7 +12,9 @@
 validate_numeric_vector <- function(x, allow_empty = FALSE, name = "Input") {
   if (!is.numeric(x)) {
     stop(paste0(
-      name, " must be a numeric vector. Received: ", class(x)[1]
+      name,
+      " must be a numeric vector. Received: ",
+      class(x)[1]
     ))
   }
   if (!allow_empty && length(x) == 0) {

@@ -26,7 +26,10 @@ test_that("validate_date_type enforces scalar by default", {
 })
 
 test_that("validate_date_type allows vectors when scalar = FALSE", {
-  expect_null(validate_date_type(as.Date(c("2024-01-01", "2024-02-01")), scalar = FALSE))
+  expect_null(validate_date_type(
+    as.Date(c("2024-01-01", "2024-02-01")),
+    scalar = FALSE
+  ))
 })
 
 test_that("validate_date_type uses custom name in error messages", {

@@ -5,7 +5,10 @@
 # Phase 2: Generate TTM artifacts from S3 data
 
 # Use pre-built renv library installed during Docker build
-.libPaths(c("/app/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu", .libPaths()))
+.libPaths(c(
+  "/app/renv/library/linux-ubuntu-noble/R-4.4/x86_64-pc-linux-gnu",
+  .libPaths()
+))
 
 # Load package functions
 devtools::load_all("/app")
@@ -33,45 +36,57 @@ message("")
 # Step 1: Phase 1 - Fetch raw data to S3
 message("[1/3] Running Phase 1...")
 phase1_success <- FALSE
-tryCatch({
-  source("/app/scripts/run_phase1_fetch.R")
-  phase1_success <- TRUE
-}, error = function(e) {
-  error_msg <- paste0("Phase 1 (Fetch) failed: ", e$message)
-  message(error_msg)
-  send_pipeline_notification(
-    topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: Phase 1 (Fetch)",
-    message = error_msg,
-    region = AWS_REGION
-  )
-  stop(error_msg)
-})
+tryCatch(
+  {
+    source("/app/scripts/run_phase1_fetch.R")
+    phase1_success <- TRUE
+  },
+  error = function(e) {
+    error_msg <- paste0("Phase 1 (Fetch) failed: ", e$message)
+    message(error_msg)
+    send_pipeline_notification(
+      topic_arn = SNS_TOPIC_ARN,
+      subject = "Pipeline Failed: Phase 1 (Fetch)",
+      message = error_msg,
+      region = AWS_REGION
+    )
+    stop(error_msg)
+  }
+)
 
 phase1_time <- Sys.time()
-phase1_duration <- round(as.numeric(difftime(phase1_time, start_time, units = "mins")), 2)
+phase1_duration <- round(
+  as.numeric(difftime(phase1_time, start_time, units = "mins")),
+  2
+)
 
 # Step 2: Phase 2 - Generate TTM artifacts
 message("")
 message("[2/3] Running Phase 2...")
 phase2_success <- FALSE
-tryCatch({
-  source("/app/scripts/run_phase2_generate.R")
-  phase2_success <- TRUE
-}, error = function(e) {
-  error_msg <- paste0("Phase 2 (Generate) failed: ", e$message)
-  message(error_msg)
-  send_pipeline_notification(
-    topic_arn = SNS_TOPIC_ARN,
-    subject = "Pipeline Failed: Phase 2 (Generate)",
-    message = error_msg,
-    region = AWS_REGION
-  )
-  stop(error_msg)
-})
+tryCatch(
+  {
+    source("/app/scripts/run_phase2_generate.R")
+    phase2_success <- TRUE
+  },
+  error = function(e) {
+    error_msg <- paste0("Phase 2 (Generate) failed: ", e$message)
+    message(error_msg)
+    send_pipeline_notification(
+      topic_arn = SNS_TOPIC_ARN,
+      subject = "Pipeline Failed: Phase 2 (Generate)",
+      message = error_msg,
+      region = AWS_REGION
+    )
+    stop(error_msg)
+  }
+)
 
 phase2_time <- Sys.time()
-phase2_duration <- round(as.numeric(difftime(phase2_time, phase1_time, units = "mins")), 2)
+phase2_duration <- round(
+  as.numeric(difftime(phase2_time, phase1_time, units = "mins")),
+  2
+)
 
 # Step 3: Upload combined log and send notification
 message("")
@@ -87,14 +102,20 @@ combined_log <- if (exists("phase2_log")) {
 }
 
 # Upload log to S3
-tryCatch({
-  upload_pipeline_log(combined_log, S3_BUCKET, AWS_REGION)
-}, error = function(e) {
-  warning("Failed to upload pipeline log: ", e$message)
-})
+tryCatch(
+  {
+    upload_pipeline_log(combined_log, S3_BUCKET, AWS_REGION)
+  },
+  error = function(e) {
+    warning("Failed to upload pipeline log: ", e$message)
+  }
+)
 
 end_time <- Sys.time()
-total_duration <- round(as.numeric(difftime(end_time, start_time, units = "mins")), 2)
+total_duration <- round(
+  as.numeric(difftime(end_time, start_time, units = "mins")),
+  2
+)
 
 # Calculate summary stats from log
 fetch_log <- combined_log[combined_log$phase == "fetch", ]
@@ -120,36 +141,78 @@ s3_key <- generate_s3_artifact_key(date = Sys.Date())
 success_message <- paste0(
   "TTM Pipeline completed!\n\n",
   "Configuration:\n",
-  "  ETF: ", etf_symbol, "\n",
-  "  Mode: ", fetch_mode, "\n\n",
-  "Phase 1 (Fetch): ", fetch_total, " tickers\n",
-  "  Success: ", fetch_success, "\n",
-  "  Errors:  ", fetch_errors, "\n",
-  "  Skipped: ", fetch_skipped, "\n\n",
-  "Phase 2 (Generate): ", generate_total, " tickers\n",
-  "  Success: ", generate_success, "\n",
-  "  Errors:  ", generate_errors, "\n",
-  "  Skipped: ", generate_skipped, "\n",
-  "  Total rows: ", format(total_rows, big.mark = ","), "\n\n",
+  "  ETF: ",
+  etf_symbol,
+  "\n",
+  "  Mode: ",
+  fetch_mode,
+  "\n\n",
+  "Phase 1 (Fetch): ",
+  fetch_total,
+  " tickers\n",
+  "  Success: ",
+  fetch_success,
+  "\n",
+  "  Errors:  ",
+  fetch_errors,
+  "\n",
+  "  Skipped: ",
+  fetch_skipped,
+  "\n\n",
+  "Phase 2 (Generate): ",
+  generate_total,
+  " tickers\n",
+  "  Success: ",
+  generate_success,
+  "\n",
+  "  Errors:  ",
+  generate_errors,
+  "\n",
+  "  Skipped: ",
+  generate_skipped,
+  "\n",
+  "  Total rows: ",
+  format(total_rows, big.mark = ","),
+  "\n\n",
   "Timing:\n",
-  "  Phase 1: ", phase1_duration, " min\n",
-  "  Phase 2: ", phase2_duration, " min\n",
-  "  Total:   ", total_duration, " min\n\n",
-  "Output: s3://", S3_BUCKET, "/", s3_key
+  "  Phase 1: ",
+  phase1_duration,
+  " min\n",
+  "  Phase 2: ",
+  phase2_duration,
+  " min\n",
+  "  Total:   ",
+  total_duration,
+  " min\n\n",
+  "Output: s3://",
+  S3_BUCKET,
+  "/",
+  s3_key
 )
 
-tryCatch({
-  send_pipeline_notification(
-    topic_arn = SNS_TOPIC_ARN,
-    subject = paste0("Pipeline Success: ", format(Sys.Date(), "%Y-%m-%d")),
-    message = success_message,
-    region = AWS_REGION
-  )
-  message("Notification sent")
-}, error = function(e) {
-  warning("Failed to send notification: ", e$message)
-})
+tryCatch(
+  {
+    send_pipeline_notification(
+      topic_arn = SNS_TOPIC_ARN,
+      subject = paste0("Pipeline Success: ", format(Sys.Date(), "%Y-%m-%d")),
+      message = success_message,
+      region = AWS_REGION
+    )
+    message("Notification sent")
+  },
+  error = function(e) {
+    warning("Failed to send notification: ", e$message)
+  }
+)
 
 message("")
 message("=== PIPELINE COMPLETE ===")
-message("Phase 1: ", phase1_duration, " min | Phase 2: ", phase2_duration, " min | Total: ", total_duration, " min")
+message(
+  "Phase 1: ",
+  phase1_duration,
+  " min | Phase 2: ",
+  phase2_duration,
+  " min | Total: ",
+  total_duration,
+  " min"
+)

@@ -12,7 +12,9 @@ fetch_bulk_quotes <- function(symbols, api_key = NULL) {
     stop("fetch_bulk_quotes(): [symbols] must be a non-empty character vector")
   }
   if (length(symbols) > 100) {
-    stop("fetch_bulk_quotes(): REALTIME_BULK_QUOTES accepts at most 100 symbols per call")
+    stop(
+      "fetch_bulk_quotes(): REALTIME_BULK_QUOTES accepts at most 100 symbols per call"
+    )
   }
 
   response <- make_av_request(

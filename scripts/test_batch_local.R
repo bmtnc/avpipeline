@@ -18,8 +18,18 @@ devtools::load_all()
 # CONFIGURATION
 # ============================================================================
 
-tickers <- c("AAPL", "MSFT", "GOOGL", "AMZN", "META",
-             "NVDA", "TSLA", "JPM", "JNJ", "PG")
+tickers <- c(
+  "AAPL",
+  "MSFT",
+  "GOOGL",
+  "AMZN",
+  "META",
+  "NVDA",
+  "TSLA",
+  "JPM",
+  "JNJ",
+  "PG"
+)
 batch_size <- as.integer(Sys.getenv("PHASE1_BATCH_SIZE", "10"))
 
 api_key <- Sys.getenv("ALPHA_VANTAGE_API_KEY", "")
@@ -28,7 +38,11 @@ if (api_key == "") {
 }
 
 cat("=== Phase 1 Batch Smoke Test ===\n")
-cat(sprintf("Tickers: %d (%s)\n", length(tickers), paste(tickers, collapse = ", ")))
+cat(sprintf(
+  "Tickers: %d (%s)\n",
+  length(tickers),
+  paste(tickers, collapse = ", ")
+))
 cat(sprintf("Batch size: %d\n", batch_size))
 cat("\n")
 
@@ -47,8 +61,15 @@ for (ticker in tickers) {
 request_specs <- build_batch_requests(batch_plan, api_key)
 n_requests <- length(request_specs)
 
-cat(sprintf("Total API requests: %d (%d tickers x 6 data types)\n", n_requests, length(tickers)))
-cat(sprintf("Theoretical sequential time: %d seconds (1 req/sec)\n", n_requests))
+cat(sprintf(
+  "Total API requests: %d (%d tickers x 6 data types)\n",
+  n_requests,
+  length(tickers)
+))
+cat(sprintf(
+  "Theoretical sequential time: %d seconds (1 req/sec)\n",
+  n_requests
+))
 cat("\n")
 
 # ============================================================================
@@ -62,8 +83,11 @@ batch_start <- Sys.time()
 responses <- httr2::req_perform_parallel(requests, on_error = "continue")
 batch_duration <- as.numeric(difftime(Sys.time(), batch_start, units = "secs"))
 
-cat(sprintf("Batch API calls complete: %.1f seconds for %d requests\n",
-            batch_duration, n_requests))
+cat(sprintf(
+  "Batch API calls complete: %.1f seconds for %d requests\n",
+  batch_duration,
+  n_requests
+))
 cat(sprintf("Effective rate: %.2f req/sec\n", n_requests / batch_duration))
 cat("\n")
 
@@ -85,17 +109,25 @@ for (i in seq_along(responses)) {
     results[[ticker]] <- list()
   }
 
-  result <- tryCatch({
-    if (inherits(resp, "error")) {
-      list(success = FALSE, rows = 0L, error = conditionMessage(resp))
-    } else {
-      data <- parse_response_by_type(resp, ticker, data_type, spec$extra_params)
-      n_rows <- if (!is.null(data) && is.data.frame(data)) nrow(data) else 0L
-      list(success = TRUE, rows = n_rows, error = NULL)
+  result <- tryCatch(
+    {
+      if (inherits(resp, "error")) {
+        list(success = FALSE, rows = 0L, error = conditionMessage(resp))
+      } else {
+        data <- parse_response_by_type(
+          resp,
+          ticker,
+          data_type,
+          spec$extra_params
+        )
+        n_rows <- if (!is.null(data) && is.data.frame(data)) nrow(data) else 0L
+        list(success = TRUE, rows = n_rows, error = NULL)
+      }
+    },
+    error = function(e) {
+      list(success = FALSE, rows = 0L, error = conditionMessage(e))
     }
-  }, error = function(e) {
-    list(success = FALSE, rows = 0L, error = conditionMessage(e))
-  })
+  )
 
   results[[ticker]][[data_type]] <- result
 }
@@ -111,11 +143,25 @@ cat("\n")
 # ============================================================================
 
 cat("=== Per-Ticker Results ===\n")
-cat(sprintf("%-8s %-8s %-8s %-8s %-8s %-8s %-8s\n",
-            "Ticker", "Price", "Splits", "BalSht", "Income", "CashFl", "Earning"))
+cat(sprintf(
+  "%-8s %-8s %-8s %-8s %-8s %-8s %-8s\n",
+  "Ticker",
+  "Price",
+  "Splits",
+  "BalSht",
+  "Income",
+  "CashFl",
+  "Earning"
+))
 
-all_data_types <- c("price", "splits", "balance_sheet",
-                     "income_statement", "cash_flow", "earnings")
+all_data_types <- c(
+  "price",
+  "splits",
+  "balance_sheet",
+  "income_statement",
+  "cash_flow",
+  "earnings"
+)
 
 total_success <- 0
 total_fail <- 0
@@ -145,18 +191,30 @@ for (ticker in tickers) {
 }
 
 cat("\n=== Timing Summary ===\n")
-cat(sprintf("API calls:       %.1f sec (%d requests)\n", batch_duration, n_requests))
+cat(sprintf(
+  "API calls:       %.1f sec (%d requests)\n",
+  batch_duration,
+  n_requests
+))
 cat(sprintf("Parsing:         %.1f sec\n", parse_duration))
 cat(sprintf("Total:           %.1f sec\n", total_duration))
 cat(sprintf("Effective rate:  %.2f req/sec\n", n_requests / batch_duration))
-cat(sprintf("Per ticker:      %.1f sec (vs ~10.8 sec sequential baseline)\n",
-            total_duration / length(tickers)))
-cat(sprintf("Speedup:         %.1fx vs sequential baseline\n",
-            (length(tickers) * 10.8) / total_duration))
+cat(sprintf(
+  "Per ticker:      %.1f sec (vs ~10.8 sec sequential baseline)\n",
+  total_duration / length(tickers)
+))
+cat(sprintf(
+  "Speedup:         %.1fx vs sequential baseline\n",
+  (length(tickers) * 10.8) / total_duration
+))
 cat("\n")
 
-cat(sprintf("Success: %d | Failed: %d | Total rows: %s\n",
-            total_success, total_fail, format(total_rows, big.mark = ",")))
+cat(sprintf(
+  "Success: %d | Failed: %d | Total rows: %s\n",
+  total_success,
+  total_fail,
+  format(total_rows, big.mark = ",")
+))
 
 # Print any errors
 errors <- list()
@@ -164,7 +222,12 @@ for (ticker in tickers) {
   for (dt in all_data_types) {
     r <- results[[ticker]][[dt]]
     if (!is.null(r) && !r$success) {
-      errors[[length(errors) + 1]] <- sprintf("  %s/%s: %s", ticker, dt, r$error)
+      errors[[length(errors) + 1]] <- sprintf(
+        "  %s/%s: %s",
+        ticker,
+        dt,
+        r$error
+      )
     }
   }
 }

@@ -56,7 +56,8 @@ clean_original_columns <- function(data, metric_cols) {
     unique_reasons <- unique(fail_reasons)
     warning(sprintf(
       "Column cleaning failed for %d/%d columns: %s",
-      length(failed_cols), length(metric_cols),
+      length(failed_cols),
+      length(metric_cols),
       paste(unique_reasons, collapse = "; ")
     ))
   }

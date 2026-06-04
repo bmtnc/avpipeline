@@ -15,18 +15,23 @@
 #'   tickers_succeeded, tickers_failed
 #' @export
 add_tickers_to_artifact <- function(
-    tickers,
-    bucket_name = "avpipeline-artifacts-prod",
-    api_key = NULL,
-    region = "us-east-1",
-    start_date = as.Date("2004-12-31"),
-    fetch = TRUE
+  tickers,
+  bucket_name = "avpipeline-artifacts-prod",
+  api_key = NULL,
+  region = "us-east-1",
+  start_date = as.Date("2004-12-31"),
+  fetch = TRUE
 ) {
-
   if (!is.character(tickers) || length(tickers) == 0) {
-    stop("add_tickers_to_artifact(): [tickers] must be a non-empty character vector")
+    stop(
+      "add_tickers_to_artifact(): [tickers] must be a non-empty character vector"
+    )
   }
-  validate_character_scalar(bucket_name, allow_empty = FALSE, name = "bucket_name")
+  validate_character_scalar(
+    bucket_name,
+    allow_empty = FALSE,
+    name = "bucket_name"
+  )
   validate_character_scalar(region, name = "region")
 
   tickers <- unique(tickers)
@@ -46,22 +51,29 @@ add_tickers_to_artifact <- function(
       message(sprintf("  Fetching %s...", ticker))
       ticker_tracking <- get_ticker_tracking(ticker, tracking)
 
-      ticker_results <- tryCatch({
-        fetch_and_store_ticker_data(
-          ticker = ticker,
-          fetch_requirements = fetch_requirements,
-          ticker_tracking = ticker_tracking,
-          bucket_name = bucket_name,
-          api_key = api_key,
-          region = region
-        )
-      }, error = function(e) {
-        message(sprintf("    ERROR: %s", conditionMessage(e)))
-        NULL
-      })
+      ticker_results <- tryCatch(
+        {
+          fetch_and_store_ticker_data(
+            ticker = ticker,
+            fetch_requirements = fetch_requirements,
+            ticker_tracking = ticker_tracking,
+            bucket_name = bucket_name,
+            api_key = api_key,
+            region = region
+          )
+        },
+        error = function(e) {
+          message(sprintf("    ERROR: %s", conditionMessage(e)))
+          NULL
+        }
+      )
 
       if (is.null(ticker_results)) {
-        tracking <- update_tracking_after_error(tracking, ticker, "Fetch failed")
+        tracking <- update_tracking_after_error(
+          tracking,
+          ticker,
+          "Fetch failed"
+        )
         tickers_failed <- c(tickers_failed, ticker)
         next
       }
@@ -71,7 +83,9 @@ add_tickers_to_artifact <- function(
         error_msgs <- sapply(ticker_results, function(r) r$error)
         error_msgs <- error_msgs[!sapply(error_msgs, is.null)]
         tracking <- update_tracking_after_error(
-          tracking, ticker, paste(error_msgs, collapse = "; ")
+          tracking,
+          ticker,
+          paste(error_msgs, collapse = "; ")
         )
         tickers_failed <- c(tickers_failed, ticker)
         message(sprintf("    FAILED: %s", paste(error_msgs, collapse = "; ")))
@@ -87,7 +101,9 @@ add_tickers_to_artifact <- function(
           NULL
         }
         tracking <- update_tracking_after_fetch(
-          tracking, ticker, "price",
+          tracking,
+          ticker,
+          "price",
           price_last_date = price_last_date,
           price_has_full_history = TRUE
         )
@@ -102,11 +118,23 @@ add_tickers_to_artifact <- function(
         tracking <- update_earnings_prediction(tracking, ticker, earnings_data)
       }
       tracking <- update_tracking_after_fetch(
-        tracking, ticker, "quarterly",
-        fiscal_date_ending = if (!is.null(earnings_data) && nrow(earnings_data) > 0)
-          max(earnings_data$fiscalDateEnding, na.rm = TRUE) else NULL,
-        reported_date = if (!is.null(earnings_data) && nrow(earnings_data) > 0)
-          max(earnings_data$reportedDate, na.rm = TRUE) else NULL
+        tracking,
+        ticker,
+        "quarterly",
+        fiscal_date_ending = if (
+          !is.null(earnings_data) && nrow(earnings_data) > 0
+        ) {
+          max(earnings_data$fiscalDateEnding, na.rm = TRUE)
+        } else {
+          NULL
+        },
+        reported_date = if (
+          !is.null(earnings_data) && nrow(earnings_data) > 0
+        ) {
+          max(earnings_data$reportedDate, na.rm = TRUE)
+        } else {
+          NULL
+        }
       )
 
       tickers_succeeded <- c(tickers_succeeded, ticker)
@@ -134,7 +162,10 @@ add_tickers_to_artifact <- function(
 
   # ---- Phase 2: Process ----
 
-  message(sprintf("Phase 2: Processing %d ticker(s)...", length(tickers_to_process)))
+  message(sprintf(
+    "Phase 2: Processing %d ticker(s)...",
+    length(tickers_to_process)
+  ))
 
   quarterly_results <- list()
   price_results <- list()
@@ -157,11 +188,17 @@ add_tickers_to_artifact <- function(
 
     # Structure into pre-split all_data format
     all_data <- list(
-      balance_sheet       = setNames(list(raw$balance_sheet %||% tibble::tibble()), ticker),
-      income_statement    = setNames(list(raw$income_statement %||% tibble::tibble()), ticker),
-      cash_flow           = setNames(list(raw$cash_flow %||% tibble::tibble()), ticker),
-      earnings            = setNames(list(raw$earnings %||% tibble::tibble()), ticker),
-      overview            = setNames(list(raw$overview %||% tibble::tibble()), ticker)
+      balance_sheet = setNames(
+        list(raw$balance_sheet %||% tibble::tibble()),
+        ticker
+      ),
+      income_statement = setNames(
+        list(raw$income_statement %||% tibble::tibble()),
+        ticker
+      ),
+      cash_flow = setNames(list(raw$cash_flow %||% tibble::tibble()), ticker),
+      earnings = setNames(list(raw$earnings %||% tibble::tibble()), ticker),
+      overview = setNames(list(raw$overview %||% tibble::tibble()), ticker)
     )
 
     quarterly <- tryCatch(
@@ -185,16 +222,29 @@ add_tickers_to_artifact <- function(
       price_results[[ticker]] <- raw$price %>%
         dplyr::filter(date >= start_date, !is.na(close) & close > 0) %>%
         dplyr::select(
-          ticker, date, open, high, low, close, adjusted_close,
-          volume, dividend_amount, split_coefficient
+          ticker,
+          date,
+          open,
+          high,
+          low,
+          close,
+          adjusted_close,
+          volume,
+          dividend_amount,
+          split_coefficient
         ) %>%
         dplyr::distinct() %>%
         dplyr::arrange(ticker, date)
     }
 
-    message(sprintf("    OK (%d quarterly rows, %d price rows)",
+    message(sprintf(
+      "    OK (%d quarterly rows, %d price rows)",
       if (!is.null(quarterly)) nrow(quarterly) else 0L,
-      if (!is.null(price_results[[ticker]])) nrow(price_results[[ticker]]) else 0L
+      if (!is.null(price_results[[ticker]])) {
+        nrow(price_results[[ticker]])
+      } else {
+        0L
+      }
     ))
   }
 
@@ -229,12 +279,14 @@ add_tickers_to_artifact <- function(
 
   if (nrow(existing_quarterly) > 0 && length(processed_tickers) > 0) {
     existing_quarterly <- dplyr::filter(
-      existing_quarterly, !ticker %in% processed_tickers
+      existing_quarterly,
+      !ticker %in% processed_tickers
     )
   }
   if (nrow(existing_price) > 0 && length(processed_tickers) > 0) {
     existing_price <- dplyr::filter(
-      existing_price, !ticker %in% processed_tickers
+      existing_price,
+      !ticker %in% processed_tickers
     )
   }
 
@@ -244,29 +296,40 @@ add_tickers_to_artifact <- function(
   # ---- Upload merged artifacts ----
 
   date_string <- format(Sys.Date(), "%Y-%m-%d")
-  message(sprintf("Uploading merged artifacts to S3 (date key: %s)...", date_string))
+  message(sprintf(
+    "Uploading merged artifacts to S3 (date key: %s)...",
+    date_string
+  ))
 
   quarterly_path <- tempfile(fileext = ".parquet")
   arrow::write_parquet(merged_quarterly, quarterly_path)
   upload_artifact_to_s3(
-    quarterly_path, bucket_name,
+    quarterly_path,
+    bucket_name,
     paste0("ttm-artifacts/", date_string, "/ttm_quarterly_artifact.parquet"),
     region
   )
   unlink(quarterly_path)
-  message(sprintf("  Quarterly artifact: %d rows (%d new)",
-    nrow(merged_quarterly), nrow(new_quarterly)))
+  message(sprintf(
+    "  Quarterly artifact: %d rows (%d new)",
+    nrow(merged_quarterly),
+    nrow(new_quarterly)
+  ))
 
   price_path <- tempfile(fileext = ".parquet")
   arrow::write_parquet(merged_price, price_path)
   upload_artifact_to_s3(
-    price_path, bucket_name,
+    price_path,
+    bucket_name,
     paste0("ttm-artifacts/", date_string, "/price_artifact.parquet"),
     region
   )
   unlink(price_path)
-  message(sprintf("  Price artifact: %d rows (%d new)",
-    nrow(merged_price), nrow(new_price)))
+  message(sprintf(
+    "  Price artifact: %d rows (%d new)",
+    nrow(merged_price),
+    nrow(new_price)
+  ))
 
   message("Done.")
 

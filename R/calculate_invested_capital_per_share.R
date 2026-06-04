@@ -13,8 +13,16 @@ calculate_invested_capital_per_share <- function(
   lease_obligations_ps,
   equity_ps
 ) {
-  validate_numeric_vector(debt_total_ps, allow_empty = TRUE, name = "debt_total_ps")
-  validate_numeric_vector(lease_obligations_ps, allow_empty = TRUE, name = "lease_obligations_ps")
+  validate_numeric_vector(
+    debt_total_ps,
+    allow_empty = TRUE,
+    name = "debt_total_ps"
+  )
+  validate_numeric_vector(
+    lease_obligations_ps,
+    allow_empty = TRUE,
+    name = "lease_obligations_ps"
+  )
   validate_numeric_vector(equity_ps, allow_empty = TRUE, name = "equity_ps")
 
   # Calculate invested capital

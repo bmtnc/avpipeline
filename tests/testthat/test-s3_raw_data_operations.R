@@ -35,8 +35,20 @@ test_that("generate_version_snapshot_s3_key generates correct key", {
 test_that("generate_version_snapshot_s3_key validates inputs", {
   test_date <- as.Date("2024-12-15")
 
-  expect_error(generate_version_snapshot_s3_key(123, "price", test_date), "ticker")
-  expect_error(generate_version_snapshot_s3_key("", "price", test_date), "ticker")
-  expect_error(generate_version_snapshot_s3_key("AAPL", "", test_date), "data_type")
-  expect_error(generate_version_snapshot_s3_key("AAPL", "price", "2024-12-15"), "snapshot_date")
+  expect_error(
+    generate_version_snapshot_s3_key(123, "price", test_date),
+    "ticker"
+  )
+  expect_error(
+    generate_version_snapshot_s3_key("", "price", test_date),
+    "ticker"
+  )
+  expect_error(
+    generate_version_snapshot_s3_key("AAPL", "", test_date),
+    "data_type"
+  )
+  expect_error(
+    generate_version_snapshot_s3_key("AAPL", "price", "2024-12-15"),
+    "snapshot_date"
+  )
 })

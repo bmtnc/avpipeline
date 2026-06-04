@@ -10,6 +10,7 @@
 #' @keywords internal
 equities_taxonomy <- function() {
   tibble::tribble(
+    #nolint start
     ~sector                  , ~subsector                   , ~industry                                  ,
     # BASIC MATERIALS
     "BASIC MATERIALS"        , "CHEMICALS"                  , "SPECIALTY CHEMICALS"                      ,
@@ -164,4 +165,5 @@ equities_taxonomy <- function() {
     "UTILITIES"              , "INDEPENDENT POWER"          , "UTILITIES - INDEPENDENT POWER PRODUCERS"  ,
     "UTILITIES"              , "INDEPENDENT POWER"          , "UTILITIES - RENEWABLE"
   )
+  #nolint end
 }

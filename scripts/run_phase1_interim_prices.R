@@ -24,7 +24,8 @@ if (s3_bucket == "") {
 }
 
 phase_start_time <- Sys.time()
-log_phase_start("PHASE 1 (DAILY): INTERIM PRICES",
+log_phase_start(
+  "PHASE 1 (DAILY): INTERIM PRICES",
   sprintf("ETF: %s | Bucket: %s | Mode: bulk_interim", etf_symbol, s3_bucket)
 )
 
@@ -47,10 +48,13 @@ interim <- fetch_and_store_interim_quotes(
 )
 
 duration <- round(
-  as.numeric(difftime(Sys.time(), phase_start_time, units = "mins")), 2
+  as.numeric(difftime(Sys.time(), phase_start_time, units = "mins")),
+  2
 )
 message(sprintf(
   "Interim quotes stored: %d rows across %d tickers (%d trading days) | %.2f min",
-  nrow(interim), length(unique(interim$ticker)),
-  length(unique(interim$date)), duration
+  nrow(interim),
+  length(unique(interim$ticker)),
+  length(unique(interim$date)),
+  duration
 ))

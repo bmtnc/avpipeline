@@ -17,8 +17,18 @@ test_that("output has exactly the price artifact columns", {
 
   expect_equal(
     names(result),
-    c("ticker", "date", "open", "high", "low", "close",
-      "adjusted_close", "volume", "dividend_amount", "split_coefficient")
+    c(
+      "ticker",
+      "date",
+      "open",
+      "high",
+      "low",
+      "close",
+      "adjusted_close",
+      "volume",
+      "dividend_amount",
+      "split_coefficient"
+    )
   )
 })
 

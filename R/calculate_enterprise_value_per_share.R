@@ -20,10 +20,26 @@ calculate_enterprise_value_per_share <- function(
 ) {
   # Input validation
   validate_numeric_vector(price, allow_empty = TRUE, name = "price")
-  validate_numeric_vector(debt_total_ps, allow_empty = TRUE, name = "debt_total_ps")
-  validate_numeric_vector(lease_obligations_ps, allow_empty = TRUE, name = "lease_obligations_ps")
-  validate_numeric_vector(cash_st_investments_ps, allow_empty = TRUE, name = "cash_st_investments_ps")
-  validate_numeric_vector(lt_investments_ps, allow_empty = TRUE, name = "lt_investments_ps")
+  validate_numeric_vector(
+    debt_total_ps,
+    allow_empty = TRUE,
+    name = "debt_total_ps"
+  )
+  validate_numeric_vector(
+    lease_obligations_ps,
+    allow_empty = TRUE,
+    name = "lease_obligations_ps"
+  )
+  validate_numeric_vector(
+    cash_st_investments_ps,
+    allow_empty = TRUE,
+    name = "cash_st_investments_ps"
+  )
+  validate_numeric_vector(
+    lt_investments_ps,
+    allow_empty = TRUE,
+    name = "lt_investments_ps"
+  )
 
   # Calculate enterprise value
   price +

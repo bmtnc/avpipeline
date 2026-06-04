@@ -12,11 +12,10 @@
 #' @return list: Named list with each data type as a tibble
 #' @keywords internal
 load_raw_data_for_tickers <- function(
-    local_dir,
-    tickers,
-    data_types = NULL
+  local_dir,
+  tickers,
+  data_types = NULL
 ) {
-
   validate_character_scalar(local_dir, name = "local_dir")
 
   if (!is.character(tickers)) {
@@ -24,13 +23,20 @@ load_raw_data_for_tickers <- function(
   }
 
   if (!is.null(data_types) && !is.character(data_types)) {
-    stop("load_raw_data_for_tickers(): [data_types] must be a character vector or NULL")
+    stop(
+      "load_raw_data_for_tickers(): [data_types] must be a character vector or NULL"
+    )
   }
 
   if (is.null(data_types)) {
     data_types <- c(
-      "balance_sheet", "income_statement", "cash_flow",
-      "earnings", "price", "splits", "overview"
+      "balance_sheet",
+      "income_statement",
+      "cash_flow",
+      "earnings",
+      "price",
+      "splits",
+      "overview"
     )
   }
 
@@ -44,25 +50,36 @@ load_raw_data_for_tickers <- function(
 
   n_cores <- min(length(data_types), parallel::detectCores())
 
-  results <- parallel::mclapply(data_types, function(dt) {
-    file_paths <- file.path(local_dir, tickers, paste0(dt, ".parquet"))
-    file_paths <- file_paths[file.exists(file_paths)]
+  results <- parallel::mclapply(
+    data_types,
+    function(dt) {
+      file_paths <- file.path(local_dir, tickers, paste0(dt, ".parquet"))
+      file_paths <- file_paths[file.exists(file_paths)]
 
-    tryCatch({
-      if (length(file_paths) == 0) {
-        return(list(data = tibble::tibble(), type = dt))
-      }
+      tryCatch(
+        {
+          if (length(file_paths) == 0) {
+            return(list(data = tibble::tibble(), type = dt))
+          }
 
-      dfs <- lapply(file_paths, function(path) {
-        tryCatch(arrow::read_parquet(path), error = function(e) NULL)
-      })
-      dfs <- dfs[!sapply(dfs, is.null)]
-      combined <- if (length(dfs) > 0) dplyr::bind_rows(dfs) else tibble::tibble()
-      list(data = combined, type = dt)
-    }, error = function(e) {
-      list(data = tibble::tibble(), type = dt)
-    })
-  }, mc.cores = n_cores)
+          dfs <- lapply(file_paths, function(path) {
+            tryCatch(arrow::read_parquet(path), error = function(e) NULL)
+          })
+          dfs <- dfs[!sapply(dfs, is.null)]
+          combined <- if (length(dfs) > 0) {
+            dplyr::bind_rows(dfs)
+          } else {
+            tibble::tibble()
+          }
+          list(data = combined, type = dt)
+        },
+        error = function(e) {
+          list(data = tibble::tibble(), type = dt)
+        }
+      )
+    },
+    mc.cores = n_cores
+  )
 
   result <- list()
   for (r in results) {

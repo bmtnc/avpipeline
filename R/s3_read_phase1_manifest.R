@@ -7,13 +7,13 @@
 #' @return tibble or NULL: Manifest tibble, or NULL if not found
 #' @keywords internal
 s3_read_phase1_manifest <- function(bucket_name, region = "us-east-1") {
-
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
 
   s3_uri <- sprintf(
     "s3://%s/raw/_metadata/phase1_manifest.parquet?region=%s",
-    bucket_name, region
+    bucket_name,
+    region
   )
 
   tryCatch(

@@ -9,11 +9,10 @@
 #' @return list with reprocess_tickers, unchanged_tickers, dropped_tickers, reason
 #' @keywords internal
 determine_phase2_reprocess_set <- function(
-    manifest,
-    previous_artifact_tickers,
-    s3_tickers
+  manifest,
+  previous_artifact_tickers,
+  s3_tickers
 ) {
-
   # Missing manifest (Phase 1 didn't run / wasn't written) → safe full reprocess.
   # An EMPTY manifest is different: Phase 1 ran and nothing was due, so it flows
   # to the incremental path below and reprocesses nothing (just new tickers).
@@ -37,7 +36,9 @@ determine_phase2_reprocess_set <- function(
   }
 
   if (!"ticker" %in% names(manifest)) {
-    stop("determine_phase2_reprocess_set(): manifest must contain 'ticker' column")
+    stop(
+      "determine_phase2_reprocess_set(): manifest must contain 'ticker' column"
+    )
   }
 
   manifest_tickers <- unique(manifest$ticker)
@@ -46,7 +47,10 @@ determine_phase2_reprocess_set <- function(
   new_tickers <- setdiff(s3_tickers, previous_artifact_tickers)
 
   # Reprocess: manifest UNION new, intersected with s3_tickers
-  reprocess_tickers <- intersect(union(manifest_tickers, new_tickers), s3_tickers)
+  reprocess_tickers <- intersect(
+    union(manifest_tickers, new_tickers),
+    s3_tickers
+  )
 
   # Unchanged: in previous artifact, still in S3, not being reprocessed
   unchanged_tickers <- setdiff(

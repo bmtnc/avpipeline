@@ -11,7 +11,11 @@
 #' @export
 #'
 fetch_etf_holdings <- function(etf_symbol, api_key = NULL) {
-  validate_character_scalar(etf_symbol, allow_empty = FALSE, name = "etf_symbol")
+  validate_character_scalar(
+    etf_symbol,
+    allow_empty = FALSE,
+    name = "etf_symbol"
+  )
 
   etf_symbol <- toupper(etf_symbol)
 

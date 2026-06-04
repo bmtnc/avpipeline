@@ -16,15 +16,15 @@
 #' @return tibble or NULL: Quarterly TTM financial data
 #' @keywords internal
 process_ticker_for_quarterly_artifact <- function(
-    ticker,
-    all_data,
-    start_date,
-    threshold = 4,
-    lookback = 5,
-    lookahead = 5,
-    end_window_size = 5,
-    end_threshold = 3,
-    min_obs = 10
+  ticker,
+  all_data,
+  start_date,
+  threshold = 4,
+  lookback = 5,
+  lookahead = 5,
+  end_window_size = 5,
+  end_threshold = 3,
+  min_obs = 10
 ) {
   validate_character_scalar(ticker, name = "ticker")
 

@@ -1,6 +1,6 @@
 test_that("validate_numeric_vector succeeds with valid vectors", {
   expect_null(validate_numeric_vector(c(1, 2, 3)))
-  expect_null(validate_numeric_vector(1))  # single value is valid
+  expect_null(validate_numeric_vector(1)) # single value is valid
   expect_null(validate_numeric_vector(c(1.5, 2.5)))
 })
 

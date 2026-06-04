@@ -2,9 +2,14 @@ q <- function(ticker, date, close) {
   tibble::tibble(
     ticker = ticker,
     date = as.Date(date),
-    open = close, high = close, low = close, close = close,
-    adjusted_close = close, volume = 1000,
-    dividend_amount = 0, split_coefficient = 1
+    open = close,
+    high = close,
+    low = close,
+    close = close,
+    adjusted_close = close,
+    volume = 1000,
+    dividend_amount = 0,
+    split_coefficient = 1
   )
 }
 
@@ -47,7 +52,8 @@ test_that("newest wins only for the overlapping day, others preserved", {
 
   expect_equal(nrow(result), 3)
   expect_equal(
-    result$close[result$date == as.Date("2026-05-28")], 999
+    result$close[result$date == as.Date("2026-05-28")],
+    999
   )
   expect_false(any(duplicated(result[c("ticker", "date")])))
 })

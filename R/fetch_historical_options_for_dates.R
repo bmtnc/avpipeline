@@ -8,13 +8,19 @@
 #'
 #' @return list with success_count, fail_count, total_rows
 #' @keywords internal
-fetch_historical_options_for_dates <- function(ticker,
-                                                dates,
-                                                bucket_name,
-                                                api_key,
-                                                region = "us-east-1") {
+fetch_historical_options_for_dates <- function(
+  ticker,
+  dates,
+  bucket_name,
+  api_key,
+  region = "us-east-1"
+) {
   validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
-  validate_character_scalar(bucket_name, allow_empty = FALSE, name = "bucket_name")
+  validate_character_scalar(
+    bucket_name,
+    allow_empty = FALSE,
+    name = "bucket_name"
+  )
 
   if (length(dates) == 0) {
     return(list(success_count = 0L, fail_count = 0L, total_rows = 0L))
@@ -26,15 +32,23 @@ fetch_historical_options_for_dates <- function(ticker,
 
   for (i in seq_along(dates)) {
     date_val <- dates[i]
-    message(sprintf("  [%s] Fetching options date %d/%d: %s",
-                    ticker, i, length(dates), format(date_val)))
+    message(sprintf(
+      "  [%s] Fetching options date %d/%d: %s",
+      ticker,
+      i,
+      length(dates),
+      format(date_val)
+    ))
 
-    result <- tryCatch({
-      fetch_historical_options(ticker, date_val, api_key = api_key)
-    }, error = function(e) {
-      message(sprintf("    WARN: %s", conditionMessage(e)))
-      NULL
-    })
+    result <- tryCatch(
+      {
+        fetch_historical_options(ticker, date_val, api_key = api_key)
+      },
+      error = function(e) {
+        message(sprintf("    WARN: %s", conditionMessage(e)))
+        NULL
+      }
+    )
 
     if (!is.null(result) && nrow(result) > 0) {
       fetched_data[[length(fetched_data) + 1]] <- result
@@ -45,14 +59,23 @@ fetch_historical_options_for_dates <- function(ticker,
   }
 
   if (length(fetched_data) == 0) {
-    return(list(success_count = success_count, fail_count = fail_count, total_rows = 0L))
+    return(list(
+      success_count = success_count,
+      fail_count = fail_count,
+      total_rows = 0L
+    ))
   }
 
   new_data <- dplyr::bind_rows(fetched_data)
 
   # Read existing data from S3 and append
   existing <- tryCatch(
-    s3_read_ticker_raw_data_single(ticker, "historical_options", bucket_name, region),
+    s3_read_ticker_raw_data_single(
+      ticker,
+      "historical_options",
+      bucket_name,
+      region
+    ),
     error = function(e) NULL
   )
 
@@ -66,7 +89,13 @@ fetch_historical_options_for_dates <- function(ticker,
   }
 
   # Write back to S3
-  s3_write_ticker_raw_data(combined, ticker, "historical_options", bucket_name, region)
+  s3_write_ticker_raw_data(
+    combined,
+    ticker,
+    "historical_options",
+    bucket_name,
+    region
+  )
 
   list(
     success_count = success_count,

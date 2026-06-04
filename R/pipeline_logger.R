@@ -5,8 +5,7 @@
 #' @return tibble: Empty log dataframe
 #' @keywords internal
 create_pipeline_log <- function() {
-
-tibble::tibble(
+  tibble::tibble(
     ticker = character(),
     phase = character(),
     data_type = character(),
@@ -33,7 +32,7 @@ tibble::tibble(
 #' @return tibble: Updated log dataframe
 #' @keywords internal
 add_log_entry <- function(
-log,
+  log,
   ticker,
   phase,
   data_type,

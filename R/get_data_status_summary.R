@@ -28,16 +28,23 @@ get_data_status_summary <- function(tracking, reference_date = Sys.Date()) {
   tracking %>%
     dplyr::mutate(
       price_days_stale = as.numeric(difftime(
-        reference_date, as.Date(price_last_date), units = "days"
+        reference_date,
+        as.Date(price_last_date),
+        units = "days"
       )),
       quarterly_days_stale = as.numeric(difftime(
-        reference_date, as.Date(quarterly_last_fetched_at), units = "days"
+        reference_date,
+        as.Date(quarterly_last_fetched_at),
+        units = "days"
       )),
       overview_days_stale = as.numeric(difftime(
-        reference_date, as.Date(overview_last_fetched_at), units = "days"
+        reference_date,
+        as.Date(overview_last_fetched_at),
+        units = "days"
       )),
       needs_price = is.na(price_last_date) | price_days_stale > 7,
-      needs_quarterly = is.na(quarterly_last_fetched_at) | quarterly_days_stale > 90
+      needs_quarterly = is.na(quarterly_last_fetched_at) |
+        quarterly_days_stale > 90
     ) %>%
     dplyr::select(
       ticker,

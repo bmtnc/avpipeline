@@ -9,7 +9,9 @@ test_that("equities_taxonomy has the expected structure; industry is the upperca
 
 test_that("each industry maps to exactly one subsector", {
   tax <- equities_taxonomy()
-  per_industry <- tapply(tax$subsector, tax$industry, function(x) length(unique(x)))
+  per_industry <- tapply(tax$subsector, tax$industry, function(x) {
+    length(unique(x))
+  })
   expect_true(all(per_industry == 1))
 })
 

@@ -18,8 +18,12 @@ get_api_function_for_data_type <- function(data_type) {
   )
 
   if (!data_type %in% names(mapping)) {
-    stop("Unknown data_type: ", data_type,
-         ". Must be one of: ", paste(names(mapping), collapse = ", "))
+    stop(
+      "Unknown data_type: ",
+      data_type,
+      ". Must be one of: ",
+      paste(names(mapping), collapse = ", ")
+    )
   }
 
   mapping[[data_type]]
@@ -38,9 +42,12 @@ get_api_function_for_data_type <- function(data_type) {
 #'   i.e. 120 req/min — held under the 150/min premium limit for headroom)
 #' @return list of request specs, each containing: request, ticker, data_type, extra_params
 #' @keywords internal
-build_batch_requests <- function(batch_plan, api_key,
-                                 throttle_capacity = 1,
-                                 throttle_fill_time = 0.5) {
+build_batch_requests <- function(
+  batch_plan,
+  api_key,
+  throttle_capacity = 1,
+  throttle_fill_time = 0.5
+) {
   validate_character_scalar(api_key, name = "api_key")
 
   if (length(batch_plan) == 0) {
@@ -57,10 +64,13 @@ build_batch_requests <- function(batch_plan, api_key,
       api_function <- get_api_function_for_data_type("price")
       extra_params <- list(outputsize = "full", datatype = "csv")
       req <- build_av_request(
-        ticker, api_function, api_key,
+        ticker,
+        api_function,
+        api_key,
         throttle_capacity = throttle_capacity,
         throttle_fill_time = throttle_fill_time,
-        outputsize = "full", datatype = "csv"
+        outputsize = "full",
+        datatype = "csv"
       )
       request_specs[[length(request_specs) + 1]] <- list(
         request = req,
@@ -73,7 +83,9 @@ build_batch_requests <- function(batch_plan, api_key,
     if (isTRUE(fetch_requirements$splits)) {
       api_function <- get_api_function_for_data_type("splits")
       req <- build_av_request(
-        ticker, api_function, api_key,
+        ticker,
+        api_function,
+        api_key,
         throttle_capacity = throttle_capacity,
         throttle_fill_time = throttle_fill_time
       )
@@ -88,7 +100,9 @@ build_batch_requests <- function(batch_plan, api_key,
     if (isTRUE(fetch_requirements$overview)) {
       api_function <- get_api_function_for_data_type("overview")
       req <- build_av_request(
-        ticker, api_function, api_key,
+        ticker,
+        api_function,
+        api_key,
         throttle_capacity = throttle_capacity,
         throttle_fill_time = throttle_fill_time
       )
@@ -101,11 +115,18 @@ build_batch_requests <- function(batch_plan, api_key,
     }
 
     if (isTRUE(fetch_requirements$quarterly)) {
-      quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings")
+      quarterly_types <- c(
+        "balance_sheet",
+        "income_statement",
+        "cash_flow",
+        "earnings"
+      )
       for (data_type in quarterly_types) {
         api_function <- get_api_function_for_data_type(data_type)
         req <- build_av_request(
-          ticker, api_function, api_key,
+          ticker,
+          api_function,
+          api_key,
           throttle_capacity = throttle_capacity,
           throttle_fill_time = throttle_fill_time
         )

@@ -12,13 +12,19 @@
 with_timeout <- function(expr, timeout_seconds, on_timeout = NULL) {
   validate_positive(timeout_seconds, name = "timeout_seconds")
 
-  setTimeLimit(cpu = timeout_seconds, elapsed = timeout_seconds, transient = TRUE)
+  setTimeLimit(
+    cpu = timeout_seconds,
+    elapsed = timeout_seconds,
+    transient = TRUE
+  )
   on.exit(setTimeLimit(cpu = Inf, elapsed = Inf, transient = FALSE), add = TRUE)
 
   tryCatch(
     expr,
     error = function(e) {
-      if (grepl("reached elapsed time limit|reached CPU time limit", e$message)) {
+      if (
+        grepl("reached elapsed time limit|reached CPU time limit", e$message)
+      ) {
         warning("Operation timed out after ", timeout_seconds, " seconds")
         on_timeout
       } else {

@@ -16,7 +16,9 @@ parse_bulk_quotes_response <- function(response) {
     stop("Alpha Vantage API error: ", data$Information)
   }
   if (!"data" %in% names(data) || length(data$data) == 0) {
-    stop("Unexpected REALTIME_BULK_QUOTES response: 'data' array not found or empty.")
+    stop(
+      "Unexpected REALTIME_BULK_QUOTES response: 'data' array not found or empty."
+    )
   }
 
   tibble::as_tibble(data$data) %>%

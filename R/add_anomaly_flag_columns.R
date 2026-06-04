@@ -84,7 +84,9 @@ add_anomaly_flag_columns <- function(
       unique_reasons <- unique(fail_reasons)
       cat(sprintf(
         "Anomaly detection skipped for ticker '%s' (%d/%d columns): %s\n",
-        ticker_name, length(failed_cols), length(metric_cols),
+        ticker_name,
+        length(failed_cols),
+        length(metric_cols),
         paste(unique_reasons, collapse = "; ")
       ))
     }

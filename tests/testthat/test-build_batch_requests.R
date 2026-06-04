@@ -3,25 +3,43 @@
 # --- get_api_function_for_data_type ---
 
 test_that("get_api_function_for_data_type returns correct mappings", {
-  expect_equal(get_api_function_for_data_type("price"), "TIME_SERIES_DAILY_ADJUSTED")
+  expect_equal(
+    get_api_function_for_data_type("price"),
+    "TIME_SERIES_DAILY_ADJUSTED"
+  )
   expect_equal(get_api_function_for_data_type("splits"), "SPLITS")
   expect_equal(get_api_function_for_data_type("balance_sheet"), "BALANCE_SHEET")
-  expect_equal(get_api_function_for_data_type("income_statement"), "INCOME_STATEMENT")
+  expect_equal(
+    get_api_function_for_data_type("income_statement"),
+    "INCOME_STATEMENT"
+  )
   expect_equal(get_api_function_for_data_type("cash_flow"), "CASH_FLOW")
   expect_equal(get_api_function_for_data_type("earnings"), "EARNINGS")
   expect_equal(get_api_function_for_data_type("overview"), "OVERVIEW")
 })
 
 test_that("get_api_function_for_data_type errors on unknown data_type", {
-  expect_error(get_api_function_for_data_type("unknown_type"), "Unknown data_type")
+  expect_error(
+    get_api_function_for_data_type("unknown_type"),
+    "Unknown data_type"
+  )
   expect_error(get_api_function_for_data_type(""), "Unknown data_type")
   expect_error(get_api_function_for_data_type("PRICE"), "Unknown data_type")
 })
 
 test_that("get_api_function_for_data_type validates input type", {
-  expect_error(get_api_function_for_data_type(123), "data_type.*character scalar")
-  expect_error(get_api_function_for_data_type(NULL), "data_type.*character scalar")
-  expect_error(get_api_function_for_data_type(c("price", "splits")), "data_type.*character scalar")
+  expect_error(
+    get_api_function_for_data_type(123),
+    "data_type.*character scalar"
+  )
+  expect_error(
+    get_api_function_for_data_type(NULL),
+    "data_type.*character scalar"
+  )
+  expect_error(
+    get_api_function_for_data_type(c("price", "splits")),
+    "data_type.*character scalar"
+  )
 })
 
 # --- build_batch_requests ---
@@ -55,7 +73,11 @@ test_that("build_batch_requests generates correct count for price+splits only", 
 test_that("build_batch_requests generates correct count for quarterly only", {
   batch_plan <- list(
     AAPL = list(
-      fetch_requirements = list(price = FALSE, splits = FALSE, quarterly = TRUE),
+      fetch_requirements = list(
+        price = FALSE,
+        splits = FALSE,
+        quarterly = TRUE
+      ),
       ticker_tracking = NULL
     )
   )
@@ -113,7 +135,11 @@ test_that("build_batch_requests preserves data_type metadata", {
 test_that("build_batch_requests includes outputsize for price", {
   batch_plan <- list(
     AAPL = list(
-      fetch_requirements = list(price = TRUE, splits = FALSE, quarterly = FALSE),
+      fetch_requirements = list(
+        price = TRUE,
+        splits = FALSE,
+        quarterly = FALSE
+      ),
       ticker_tracking = NULL
     )
   )
@@ -125,7 +151,11 @@ test_that("build_batch_requests includes outputsize for price", {
 test_that("build_batch_requests returns httr2_request objects", {
   batch_plan <- list(
     AAPL = list(
-      fetch_requirements = list(price = TRUE, splits = FALSE, quarterly = FALSE),
+      fetch_requirements = list(
+        price = TRUE,
+        splits = FALSE,
+        quarterly = FALSE
+      ),
       ticker_tracking = NULL
     )
   )
@@ -137,7 +167,11 @@ test_that("build_batch_requests returns httr2_request objects", {
 test_that("build_batch_requests skips tickers with nothing to fetch", {
   batch_plan <- list(
     AAPL = list(
-      fetch_requirements = list(price = FALSE, splits = FALSE, quarterly = FALSE),
+      fetch_requirements = list(
+        price = FALSE,
+        splits = FALSE,
+        quarterly = FALSE
+      ),
       ticker_tracking = NULL
     )
   )

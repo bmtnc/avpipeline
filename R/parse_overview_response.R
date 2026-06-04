@@ -14,8 +14,12 @@ parse_overview_response <- function(response, ticker) {
   response_content <- jsonlite::fromJSON(content)
 
   if (!is.list(response_content)) {
-    stop("API returned non-JSON response for ticker ", ticker, ". Response: ",
-         substr(as.character(response_content), 1, 200))
+    stop(
+      "API returned non-JSON response for ticker ",
+      ticker,
+      ". Response: ",
+      substr(as.character(response_content), 1, 200)
+    )
   }
 
   validate_api_response(response_content, ticker = ticker)
@@ -38,7 +42,11 @@ parse_overview_response <- function(response, ticker) {
 
   field <- function(name) {
     value <- response_content[[name]]
-    if (is.null(value) || length(value) == 0) NA_character_ else as.character(value)
+    if (is.null(value) || length(value) == 0) {
+      NA_character_
+    } else {
+      as.character(value)
+    }
   }
 
   tibble::tibble(

@@ -11,9 +11,14 @@
 #' @param ... Additional query parameters (outputsize, datatype, etc.)
 #' @return An unevaluated httr2_request object
 #' @keywords internal
-build_av_request <- function(ticker, api_function, api_key,
-                             throttle_capacity = 1, throttle_fill_time = 0.5,
-                             ...) {
+build_av_request <- function(
+  ticker,
+  api_function,
+  api_key,
+  throttle_capacity = 1,
+  throttle_fill_time = 0.5,
+  ...
+) {
   validate_character_scalar(ticker, name = "ticker")
   validate_character_scalar(api_function, name = "api_function")
   validate_character_scalar(api_key, name = "api_key")
@@ -46,7 +51,7 @@ build_av_request <- function(ticker, api_function, api_key,
     httr2::req_timeout(seconds = 60) %>%
     httr2::req_retry(
       max_tries = 3,
-      backoff = ~ 2
+      backoff = ~2
     )
 
   req

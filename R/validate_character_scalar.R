@@ -12,8 +12,12 @@
 validate_character_scalar <- function(x, allow_empty = TRUE, name = "Input") {
   if (!is.character(x) || length(x) != 1) {
     stop(paste0(
-      name, " must be a character scalar (length 1). ",
-      "Received: ", class(x)[1], " of length ", length(x)
+      name,
+      " must be a character scalar (length 1). ",
+      "Received: ",
+      class(x)[1],
+      " of length ",
+      length(x)
     ))
   }
   if (!allow_empty && !nzchar(x)) {

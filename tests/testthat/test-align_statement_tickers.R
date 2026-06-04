@@ -57,7 +57,10 @@ test_that("align_statement_tickers filters to common tickers", {
   result <- align_statement_tickers(statements)
 
   expect_type(result, "list")
-  expect_named(result, c("earnings", "cash_flow", "income_statement", "balance_sheet"))
+  expect_named(
+    result,
+    c("earnings", "cash_flow", "income_statement", "balance_sheet")
+  )
   expect_equal(nrow(result$earnings), 2)
   expect_equal(nrow(result$cash_flow), 2)
   expect_equal(unique(result$earnings$ticker), c("A", "B"))

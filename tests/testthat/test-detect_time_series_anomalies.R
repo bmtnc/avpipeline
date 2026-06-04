@@ -1,13 +1,25 @@
 # Test data setup
-test_values <- c(1, 2, 3, 4, 5, 100, 6, 7, 8, 9, 10)  # 100 should be anomalous
-test_values_normal <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)  # No anomalies
-test_values_same <- rep(5, 15)  # All same values
+test_values <- c(1, 2, 3, 4, 5, 100, 6, 7, 8, 9, 10) # 100 should be anomalous
+test_values_normal <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10) # No anomalies
+test_values_same <- rep(5, 15) # All same values
 test_values_with_na <- c(1, 2, 3, NA, 5, 6, 7, 8, 9, 10, 11)
-test_values_short <- c(1, 2, 3)  # Too few observations
+test_values_short <- c(1, 2, 3) # Too few observations
 
 testthat::test_that("normal operation detects anomalies correctly", {
   actual <- detect_time_series_anomalies(test_values)
-  expected <- c(FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE)
+  expected <- c(
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    TRUE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE
+  )
   testthat::expect_equal(actual, expected)
 })
 

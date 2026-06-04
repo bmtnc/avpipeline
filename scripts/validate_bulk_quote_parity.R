@@ -16,8 +16,16 @@
 
 # ── Configuration ────────────────────────────────────────────────────────────
 SAMPLE_TICKERS <- c(
-  "MSFT", "AAPL", "IBM", "NVDA", "JPM",
-  "XOM", "WMT", "KO", "PG", "DIS"
+  "MSFT",
+  "AAPL",
+  "IBM",
+  "NVDA",
+  "JPM",
+  "XOM",
+  "WMT",
+  "KO",
+  "PG",
+  "DIS"
 )
 PRICE_TOLERANCE <- 1e-4 # absolute $; settled-bar PASS threshold
 INTRADAY_BAND <- 0.02 # relative; OHLC drift tolerated for an intraday (pre-close) run
@@ -25,13 +33,23 @@ INTRADAY_BAND <- 0.02 # relative; OHLC drift tolerated for an intraday (pre-clos
 
 devtools::load_all(quiet = TRUE)
 
-cat("Fetching bulk quotes (", length(SAMPLE_TICKERS), " symbols, 1 call)...\n", sep = "")
+cat(
+  "Fetching bulk quotes (",
+  length(SAMPLE_TICKERS),
+  " symbols, 1 call)...\n",
+  sep = ""
+)
 bulk <- SAMPLE_TICKERS %>%
   split(ceiling(seq_along(.) / 100)) %>%
   lapply(fetch_bulk_quotes) %>%
   dplyr::bind_rows()
 
-cat("Fetching canonical daily-adjusted series (", length(SAMPLE_TICKERS), " calls)...\n", sep = "")
+cat(
+  "Fetching canonical daily-adjusted series (",
+  length(SAMPLE_TICKERS),
+  " calls)...\n",
+  sep = ""
+)
 daily_all <- SAMPLE_TICKERS %>%
   rlang::set_names() %>%
   lapply(function(tk) {
@@ -76,9 +94,26 @@ prev_check <- bulk %>%
 # Volume is reported as a relative diff but never flips the verdict (consolidated
 # vs primary feeds differ; intraday volume is still accumulating).
 sameday_check <- bulk %>%
-  dplyr::select(ticker, date, b_open = open, b_high = high, b_low = low, b_close = close, b_volume = volume) %>%
+  dplyr::select(
+    ticker,
+    date,
+    b_open = open,
+    b_high = high,
+    b_low = low,
+    b_close = close,
+    b_volume = volume
+  ) %>%
   dplyr::left_join(
-    daily_all %>% dplyr::select(ticker, date, d_open = open, d_high = high, d_low = low, d_close = close, d_volume = volume),
+    daily_all %>%
+      dplyr::select(
+        ticker,
+        date,
+        d_open = open,
+        d_high = high,
+        d_low = low,
+        d_close = close,
+        d_volume = volume
+      ),
     by = c("ticker", "date")
   ) %>%
   dplyr::mutate(
@@ -100,8 +135,14 @@ sameday_check <- bulk %>%
 
 # ── Report ────────────────────────────────────────────────────────────────────
 cat("\n", strrep("=", 70), "\n", sep = "")
-cat("LAYER 1 PARITY REPORT  (bulk date: ", as.character(bulk$date[1]),
-    ", tolerance: ", PRICE_TOLERANCE, ")\n", sep = "")
+cat(
+  "LAYER 1 PARITY REPORT  (bulk date: ",
+  as.character(bulk$date[1]),
+  ", tolerance: ",
+  PRICE_TOLERANCE,
+  ")\n",
+  sep = ""
+)
 cat(strrep("=", 70), "\n\n", sep = "")
 
 cat("Check 1 — previous_close vs prior daily close (settlement-independent):\n")
@@ -109,17 +150,40 @@ print(prev_check, n = Inf)
 
 cmp1 <- prev_check %>% dplyr::filter(status != "NO_DAILY_DATA")
 verdict1 <- all.equal(
-  cmp1$bulk_prev_close, cmp1$daily_prior_close,
+  cmp1$bulk_prev_close,
+  cmp1$daily_prior_close,
   tolerance = PRICE_TOLERANCE
 )
-cat("\n  all.equal: ", if (isTRUE(verdict1)) "TRUE" else paste(verdict1, collapse = "; "), "\n", sep = "")
-cat("  ", sum(prev_check$status == "PASS"), " PASS / ",
-    sum(prev_check$status == "FAIL"), " FAIL / ",
-    sum(prev_check$status == "NO_DAILY_DATA"), " no-data\n\n", sep = "")
+cat(
+  "\n  all.equal: ",
+  if (isTRUE(verdict1)) "TRUE" else paste(verdict1, collapse = "; "),
+  "\n",
+  sep = ""
+)
+cat(
+  "  ",
+  sum(prev_check$status == "PASS"),
+  " PASS / ",
+  sum(prev_check$status == "FAIL"),
+  " FAIL / ",
+  sum(prev_check$status == "NO_DAILY_DATA"),
+  " no-data\n\n",
+  sep = ""
+)
 
-cat("Check 2 — same-day OHLCV vs canonical bar (authoritative only post-close):\n")
+cat(
+  "Check 2 — same-day OHLCV vs canonical bar (authoritative only post-close):\n"
+)
 sameday_check %>%
-  dplyr::select(ticker, date, b_close, d_close, ohlc_rel_diff, volume_rel_diff, status) %>%
+  dplyr::select(
+    ticker,
+    date,
+    b_close,
+    d_close,
+    ohlc_rel_diff,
+    volume_rel_diff,
+    status
+  ) %>%
   print(n = Inf)
 
 n_pass <- sum(sameday_check$status == "PASS")
@@ -129,13 +193,36 @@ n_pend <- sum(sameday_check$status == "PENDING_SETTLEMENT")
 
 settled <- sameday_check %>% dplyr::filter(status == "PASS")
 if (nrow(settled) > 0) {
-  verdict2 <- all.equal(settled$b_close, settled$d_close, tolerance = PRICE_TOLERANCE)
-  cat("\n  settled-bar close all.equal: ",
-      if (isTRUE(verdict2)) "TRUE" else paste(verdict2, collapse = "; "), "\n", sep = "")
+  verdict2 <- all.equal(
+    settled$b_close,
+    settled$d_close,
+    tolerance = PRICE_TOLERANCE
+  )
+  cat(
+    "\n  settled-bar close all.equal: ",
+    if (isTRUE(verdict2)) "TRUE" else paste(verdict2, collapse = "; "),
+    "\n",
+    sep = ""
+  )
 }
 if (n_fail == 0 && n_drift > 0) {
-  cat("\n  No FAILs. ", n_drift, " row(s) within the intraday band — expected for a\n",
-      "  pre-close run; price scale agrees. Re-run after close for the exact gate.\n", sep = "")
+  cat(
+    "\n  No FAILs. ",
+    n_drift,
+    " row(s) within the intraday band — expected for a\n",
+    "  pre-close run; price scale agrees. Re-run after close for the exact gate.\n",
+    sep = ""
+  )
 }
-cat("  ", n_pass, " PASS / ", n_fail, " FAIL / ",
-    n_drift, " intraday-drift / ", n_pend, " pending\n", sep = "")
+cat(
+  "  ",
+  n_pass,
+  " PASS / ",
+  n_fail,
+  " FAIL / ",
+  n_drift,
+  " intraday-drift / ",
+  n_pend,
+  " pending\n",
+  sep = ""
+)

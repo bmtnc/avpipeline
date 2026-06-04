@@ -7,8 +7,11 @@
 #' @param region character: AWS region (default: "us-east-1")
 #' @return invisible(TRUE) if successful
 #' @keywords internal
-s3_write_phase1_manifest <- function(pipeline_log, bucket_name, region = "us-east-1") {
-
+s3_write_phase1_manifest <- function(
+  pipeline_log,
+  bucket_name,
+  region = "us-east-1"
+) {
   validate_df_type(pipeline_log)
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")

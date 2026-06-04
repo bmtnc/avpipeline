@@ -10,7 +10,9 @@
 #' @keywords internal
 s3_list_tickers_with_overview <- function(bucket_name, region = "us-east-1") {
   if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop("s3_list_tickers_with_overview(): [bucket_name] must be a character scalar")
+    stop(
+      "s3_list_tickers_with_overview(): [bucket_name] must be a character scalar"
+    )
   }
 
   s3_prefix <- paste0("s3://", bucket_name, "/raw/")
@@ -23,9 +25,11 @@ s3_list_tickers_with_overview <- function(bucket_name, region = "us-east-1") {
     stderr = TRUE
   )
 
-  if (is_timeout_result(result) ||
+  if (
+    is_timeout_result(result) ||
       (!is.null(attr(result, "status")) && attr(result, "status") != 0) ||
-      length(result) == 0) {
+      length(result) == 0
+  ) {
     return(character(0))
   }
 

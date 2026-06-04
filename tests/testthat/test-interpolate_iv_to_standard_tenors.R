@@ -14,8 +14,11 @@ test_that("interpolate_iv_to_standard_tenors interpolates correctly", {
   result <- interpolate_iv_to_standard_tenors(term_structure)
 
   expect_s3_class(result, "tbl_df")
-  expect_equal(names(result), c("ticker", "observation_date", "tenor_days", "iv"))
-  expect_equal(nrow(result), 5)  # 30, 60, 90, 180, 365
+  expect_equal(
+    names(result),
+    c("ticker", "observation_date", "tenor_days", "iv")
+  )
+  expect_equal(nrow(result), 5) # 30, 60, 90, 180, 365
 
   # Known points should be exact
   expect_equal(result$iv[result$tenor_days == 30], 0.30)
@@ -92,7 +95,10 @@ test_that("interpolate_iv_to_standard_tenors returns empty for empty input", {
   result <- interpolate_iv_to_standard_tenors(term_structure)
 
   expect_equal(nrow(result), 0)
-  expect_equal(names(result), c("ticker", "observation_date", "tenor_days", "iv"))
+  expect_equal(
+    names(result),
+    c("ticker", "observation_date", "tenor_days", "iv")
+  )
 })
 
 test_that("interpolate_iv_to_standard_tenors accepts custom tenors", {
@@ -108,7 +114,10 @@ test_that("interpolate_iv_to_standard_tenors accepts custom tenors", {
     spot_price = rep(100, 2)
   )
 
-  result <- interpolate_iv_to_standard_tenors(term_structure, tenors = c(45, 75))
+  result <- interpolate_iv_to_standard_tenors(
+    term_structure,
+    tenors = c(45, 75)
+  )
 
   expect_equal(nrow(result), 2)
   expect_equal(result$tenor_days, c(45, 75))

@@ -1,6 +1,6 @@
 test_that("validate_character_scalar succeeds with valid string", {
   expect_null(validate_character_scalar("test"))
-  expect_null(validate_character_scalar(""))  # empty string allowed by default
+  expect_null(validate_character_scalar("")) # empty string allowed by default
 })
 
 test_that("validate_character_scalar rejects non-character types", {

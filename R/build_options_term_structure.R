@@ -11,23 +11,32 @@
 #'
 #' @return List with raw_term_structure and interpolated_term_structure tibbles
 #' @export
-build_options_term_structure <- function(ticker,
-                                         options_data,
-                                         price_data,
-                                         tenors = c(30, 60, 90, 180, 365),
-                                         moneyness_threshold = 0.05) {
+build_options_term_structure <- function(
+  ticker,
+  options_data,
+  price_data,
+  tenors = c(30, 60, 90, 180, 365),
+  moneyness_threshold = 0.05
+) {
   validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
 
   empty_result <- list(
     raw_term_structure = tibble::tibble(
-      ticker = character(), observation_date = as.Date(character()),
-      expiration = as.Date(character()), days_to_expiration = numeric(),
-      atm_iv = numeric(), atm_iv_call = numeric(), atm_iv_put = numeric(),
-      atm_strike = numeric(), spot_price = numeric()
+      ticker = character(),
+      observation_date = as.Date(character()),
+      expiration = as.Date(character()),
+      days_to_expiration = numeric(),
+      atm_iv = numeric(),
+      atm_iv_call = numeric(),
+      atm_iv_put = numeric(),
+      atm_strike = numeric(),
+      spot_price = numeric()
     ),
     interpolated_term_structure = tibble::tibble(
-      ticker = character(), observation_date = as.Date(character()),
-      tenor_days = numeric(), iv = numeric()
+      ticker = character(),
+      observation_date = as.Date(character()),
+      tenor_days = numeric(),
+      iv = numeric()
     )
   )
 
@@ -56,14 +65,19 @@ build_options_term_structure <- function(ticker,
         dplyr::pull(adjusted_close)
     }
 
-    if (length(spot) == 0 || is.na(spot[1])) next
+    if (length(spot) == 0 || is.na(spot[1])) {
+      next
+    }
     spot_price <- spot[1]
 
     chain <- options_data %>%
       dplyr::filter(date == obs_date)
 
     raw_ts <- calculate_iv_term_structure(
-      chain, spot_price, obs_date, moneyness_threshold
+      chain,
+      spot_price,
+      obs_date,
+      moneyness_threshold
     )
 
     if (nrow(raw_ts) > 0) {

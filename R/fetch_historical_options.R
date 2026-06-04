@@ -6,7 +6,12 @@
 #' @param datatype character: "json" or "csv"
 #' @return tibble with option chain data
 #' @keywords internal
-fetch_historical_options <- function(ticker, date, api_key = NULL, datatype = "csv") {
+fetch_historical_options <- function(
+  ticker,
+  date,
+  api_key = NULL,
+  datatype = "csv"
+) {
   validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
 
   date_str <- format(as.Date(date), "%Y-%m-%d")

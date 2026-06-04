@@ -9,10 +9,17 @@
 #' @param extra_params list: Additional parameters (e.g., datatype for price)
 #' @return Parsed data (tibble or data.frame)
 #' @keywords internal
-parse_response_by_type <- function(response, ticker, data_type, extra_params = list()) {
-  switch(data_type,
+parse_response_by_type <- function(
+  response,
+  ticker,
+  data_type,
+  extra_params = list()
+) {
+  switch(
+    data_type,
     "price" = parse_price_response(
-      response, ticker,
+      response,
+      ticker,
       datatype = extra_params$datatype %||% "json"
     ),
     "splits" = parse_splits_response(response, ticker),
@@ -37,7 +44,12 @@ parse_response_by_type <- function(response, ticker, data_type, extra_params = l
 #' @return Named list by ticker, each containing named list by data_type with
 #'   success, data, error, outputsize_used
 #' @keywords internal
-process_batch_responses <- function(responses, request_specs, bucket_name, region) {
+process_batch_responses <- function(
+  responses,
+  request_specs,
+  bucket_name,
+  region
+) {
   results <- list()
   write_tasks <- list()
 
@@ -53,38 +65,43 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
       results[[ticker]] <- list()
     }
 
-    result <- tryCatch({
-      if (inherits(resp, "error")) {
+    result <- tryCatch(
+      {
+        if (inherits(resp, "error")) {
+          list(
+            success = FALSE,
+            data = NULL,
+            error = conditionMessage(resp),
+            outputsize_used = extra_params$outputsize
+          )
+        } else {
+          data <- parse_response_by_type(resp, ticker, data_type, extra_params)
+
+          if (!is.null(data) && nrow(data) > 0) {
+            write_tasks[[length(write_tasks) + 1]] <- list(
+              data = data,
+              ticker = ticker,
+              data_type = data_type
+            )
+          }
+
+          list(
+            success = TRUE,
+            data = data,
+            error = NULL,
+            outputsize_used = extra_params$outputsize
+          )
+        }
+      },
+      error = function(e) {
         list(
           success = FALSE,
           data = NULL,
-          error = conditionMessage(resp),
-          outputsize_used = extra_params$outputsize
-        )
-      } else {
-        data <- parse_response_by_type(resp, ticker, data_type, extra_params)
-
-        if (!is.null(data) && nrow(data) > 0) {
-          write_tasks[[length(write_tasks) + 1]] <- list(
-            data = data, ticker = ticker, data_type = data_type
-          )
-        }
-
-        list(
-          success = TRUE,
-          data = data,
-          error = NULL,
+          error = conditionMessage(e),
           outputsize_used = extra_params$outputsize
         )
       }
-    }, error = function(e) {
-      list(
-        success = FALSE,
-        data = NULL,
-        error = conditionMessage(e),
-        outputsize_used = extra_params$outputsize
-      )
-    })
+    )
 
     results[[ticker]][[data_type]] <- result
   }
@@ -97,15 +114,22 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
 
     # Write all parquet files locally (fast, disk I/O only)
     for (task in write_tasks) {
-      tryCatch({
-        s3_key <- generate_raw_data_s3_key(task$ticker, task$data_type)
-        local_path <- file.path(temp_dir, s3_key)
-        dir.create(dirname(local_path), recursive = TRUE, showWarnings = FALSE)
-        arrow::write_parquet(task$data, local_path)
-      }, error = function(e) {
-        results[[task$ticker]][[task$data_type]]$success <<- FALSE
-        results[[task$ticker]][[task$data_type]]$error <<- conditionMessage(e)
-      })
+      tryCatch(
+        {
+          s3_key <- generate_raw_data_s3_key(task$ticker, task$data_type)
+          local_path <- file.path(temp_dir, s3_key)
+          dir.create(
+            dirname(local_path),
+            recursive = TRUE,
+            showWarnings = FALSE
+          )
+          arrow::write_parquet(task$data, local_path)
+        },
+        error = function(e) {
+          results[[task$ticker]][[task$data_type]]$success <<- FALSE
+          results[[task$ticker]][[task$data_type]]$error <<- conditionMessage(e)
+        }
+      )
     }
 
     # Batch upload to S3 (AWS CLI uses parallel transfers by default)
@@ -114,8 +138,16 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
 
     sync_result <- system2_with_timeout(
       "aws",
-      args = c("s3", "cp", "--recursive", local_raw_dir, s3_target,
-               "--region", region, "--only-show-errors"),
+      args = c(
+        "s3",
+        "cp",
+        "--recursive",
+        local_raw_dir,
+        s3_target,
+        "--region",
+        region,
+        "--only-show-errors"
+      ),
       timeout_seconds = 300,
       stdout = TRUE,
       stderr = TRUE
@@ -124,13 +156,18 @@ process_batch_responses <- function(responses, request_specs, bucket_name, regio
     if (is_timeout_result(sync_result)) {
       for (task in write_tasks) {
         results[[task$ticker]][[task$data_type]]$success <- FALSE
-        results[[task$ticker]][[task$data_type]]$error <- "S3 batch upload timed out"
+        results[[task$ticker]][[
+          task$data_type
+        ]]$error <- "S3 batch upload timed out"
       }
-    } else if (!is.null(attr(sync_result, "status")) && attr(sync_result, "status") != 0) {
+    } else if (
+      !is.null(attr(sync_result, "status")) && attr(sync_result, "status") != 0
+    ) {
       for (task in write_tasks) {
         results[[task$ticker]][[task$data_type]]$success <- FALSE
         results[[task$ticker]][[task$data_type]]$error <- paste(
-          "S3 batch upload failed:", paste(sync_result, collapse = "\n")
+          "S3 batch upload failed:",
+          paste(sync_result, collapse = "\n")
         )
       }
     }

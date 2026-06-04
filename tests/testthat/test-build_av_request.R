@@ -14,8 +14,13 @@ test_that("build_av_request includes correct URL query params", {
 })
 
 test_that("build_av_request passes additional params", {
-  req <- build_av_request("AAPL", "TIME_SERIES_DAILY_ADJUSTED", "test_key",
-                          outputsize = "full", datatype = "json")
+  req <- build_av_request(
+    "AAPL",
+    "TIME_SERIES_DAILY_ADJUSTED",
+    "test_key",
+    outputsize = "full",
+    datatype = "json"
+  )
   url <- req$url
   expect_true(grepl("outputsize=full", url))
   expect_true(grepl("datatype=json", url))
@@ -23,18 +28,36 @@ test_that("build_av_request passes additional params", {
 
 test_that("build_av_request validates ticker is character scalar", {
   expect_error(build_av_request(123, "FUNC", "key"), "ticker.*character scalar")
-  expect_error(build_av_request(c("A", "B"), "FUNC", "key"), "ticker.*character scalar")
-  expect_error(build_av_request(NULL, "FUNC", "key"), "ticker.*character scalar")
+  expect_error(
+    build_av_request(c("A", "B"), "FUNC", "key"),
+    "ticker.*character scalar"
+  )
+  expect_error(
+    build_av_request(NULL, "FUNC", "key"),
+    "ticker.*character scalar"
+  )
 })
 
 test_that("build_av_request validates api_function is character scalar", {
-  expect_error(build_av_request("AAPL", 123, "key"), "api_function.*character scalar")
-  expect_error(build_av_request("AAPL", NULL, "key"), "api_function.*character scalar")
+  expect_error(
+    build_av_request("AAPL", 123, "key"),
+    "api_function.*character scalar"
+  )
+  expect_error(
+    build_av_request("AAPL", NULL, "key"),
+    "api_function.*character scalar"
+  )
 })
 
 test_that("build_av_request validates api_key is character scalar", {
-  expect_error(build_av_request("AAPL", "FUNC", 123), "api_key.*character scalar")
-  expect_error(build_av_request("AAPL", "FUNC", NULL), "api_key.*character scalar")
+  expect_error(
+    build_av_request("AAPL", "FUNC", 123),
+    "api_key.*character scalar"
+  )
+  expect_error(
+    build_av_request("AAPL", "FUNC", NULL),
+    "api_key.*character scalar"
+  )
 })
 
 # --- Webfakes throttle tests ---
@@ -103,7 +126,11 @@ test_that("token bucket allows initial burst up to capacity", {
   # Build exactly capacity number of requests
   requests <- lapply(1:5, function(i) {
     httr2::request(server$url("/query")) %>%
-      httr2::req_throttle(capacity = 5, fill_time_s = 1, realm = "av_test_burst")
+      httr2::req_throttle(
+        capacity = 5,
+        fill_time_s = 1,
+        realm = "av_test_burst"
+      )
   })
 
   start <- Sys.time()

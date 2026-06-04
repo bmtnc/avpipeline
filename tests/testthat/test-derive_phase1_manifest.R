@@ -10,8 +10,14 @@ test_that("derive_phase1_manifest returns empty tibble for empty log", {
 test_that("derive_phase1_manifest filters to success status only", {
   log <- create_pipeline_log()
   log <- add_log_entry(log, "AAPL", "fetch", "price", "success", rows = 100L)
-  log <- add_log_entry(log, "BAD", "fetch", "price", "error",
-                       error_message = "API error")
+  log <- add_log_entry(
+    log,
+    "BAD",
+    "fetch",
+    "price",
+    "error",
+    error_message = "API error"
+  )
   log <- add_log_entry(log, "SKIP", "fetch", "price", "skipped")
 
   result <- derive_phase1_manifest(log)
@@ -24,7 +30,14 @@ test_that("derive_phase1_manifest consolidates data types per ticker", {
   log <- create_pipeline_log()
   log <- add_log_entry(log, "AAPL", "fetch", "price", "success", rows = 100L)
   log <- add_log_entry(log, "AAPL", "fetch", "splits", "success", rows = 5L)
-  log <- add_log_entry(log, "AAPL", "fetch", "balance_sheet", "success", rows = 20L)
+  log <- add_log_entry(
+    log,
+    "AAPL",
+    "fetch",
+    "balance_sheet",
+    "success",
+    rows = 20L
+  )
 
   result <- derive_phase1_manifest(log)
 
@@ -38,8 +51,14 @@ test_that("derive_phase1_manifest handles multiple tickers", {
   log <- add_log_entry(log, "AAPL", "fetch", "price", "success", rows = 100L)
   log <- add_log_entry(log, "MSFT", "fetch", "price", "success", rows = 90L)
   log <- add_log_entry(log, "MSFT", "fetch", "earnings", "success", rows = 10L)
-  log <- add_log_entry(log, "BAD", "fetch", "price", "error",
-                       error_message = "fail")
+  log <- add_log_entry(
+    log,
+    "BAD",
+    "fetch",
+    "price",
+    "error",
+    error_message = "fail"
+  )
 
   result <- derive_phase1_manifest(log)
 
@@ -71,10 +90,22 @@ test_that("derive_phase1_manifest rejects non-dataframe input", {
 
 test_that("derive_phase1_manifest returns empty when all entries are errors", {
   log <- create_pipeline_log()
-  log <- add_log_entry(log, "BAD1", "fetch", "price", "error",
-                       error_message = "fail")
-  log <- add_log_entry(log, "BAD2", "fetch", "price", "error",
-                       error_message = "fail")
+  log <- add_log_entry(
+    log,
+    "BAD1",
+    "fetch",
+    "price",
+    "error",
+    error_message = "fail"
+  )
+  log <- add_log_entry(
+    log,
+    "BAD2",
+    "fetch",
+    "price",
+    "error",
+    error_message = "fail"
+  )
 
   result <- derive_phase1_manifest(log)
 

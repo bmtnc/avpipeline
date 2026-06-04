@@ -15,13 +15,22 @@ test_that("process_batch_responses handles error responses gracefully", {
   err <- simpleError("Connection timed out")
 
   request_specs <- list(
-    list(ticker = "AAPL", data_type = "price", extra_params = list(outputsize = "full")),
+    list(
+      ticker = "AAPL",
+      data_type = "price",
+      extra_params = list(outputsize = "full")
+    ),
     list(ticker = "AAPL", data_type = "splits", extra_params = list())
   )
 
   responses <- list(err, err)
 
-  results <- process_batch_responses(responses, request_specs, "test-bucket", "us-east-1")
+  results <- process_batch_responses(
+    responses,
+    request_specs,
+    "test-bucket",
+    "us-east-1"
+  )
 
   expect_true("AAPL" %in% names(results))
   expect_false(results$AAPL$price$success)
@@ -33,14 +42,27 @@ test_that("process_batch_responses groups results by ticker", {
   err <- simpleError("test error")
 
   request_specs <- list(
-    list(ticker = "AAPL", data_type = "price", extra_params = list(outputsize = "full")),
-    list(ticker = "MSFT", data_type = "price", extra_params = list(outputsize = "full")),
+    list(
+      ticker = "AAPL",
+      data_type = "price",
+      extra_params = list(outputsize = "full")
+    ),
+    list(
+      ticker = "MSFT",
+      data_type = "price",
+      extra_params = list(outputsize = "full")
+    ),
     list(ticker = "AAPL", data_type = "splits", extra_params = list())
   )
 
   responses <- list(err, err, err)
 
-  results <- process_batch_responses(responses, request_specs, "test-bucket", "us-east-1")
+  results <- process_batch_responses(
+    responses,
+    request_specs,
+    "test-bucket",
+    "us-east-1"
+  )
 
   expect_equal(sort(names(results)), c("AAPL", "MSFT"))
   expect_true("price" %in% names(results$AAPL))
@@ -52,12 +74,21 @@ test_that("process_batch_responses preserves outputsize_used", {
   err <- simpleError("test error")
 
   request_specs <- list(
-    list(ticker = "AAPL", data_type = "price", extra_params = list(outputsize = "full"))
+    list(
+      ticker = "AAPL",
+      data_type = "price",
+      extra_params = list(outputsize = "full")
+    )
   )
 
   responses <- list(err)
 
-  results <- process_batch_responses(responses, request_specs, "test-bucket", "us-east-1")
+  results <- process_batch_responses(
+    responses,
+    request_specs,
+    "test-bucket",
+    "us-east-1"
+  )
   expect_equal(results$AAPL$price$outputsize_used, "full")
 })
 

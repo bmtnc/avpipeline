@@ -1,13 +1,12 @@
-
 test_that("generates monthly dates for single year", {
   start_date <- as.Date("2020-01-31")
   end_date <- as.Date("2020-12-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2020-01-31"),
-    as.Date("2020-02-29"),  # leap year
+    as.Date("2020-02-29"), # leap year
     as.Date("2020-03-31"),
     as.Date("2020-04-30"),
     as.Date("2020-05-31"),
@@ -19,16 +18,16 @@ test_that("generates monthly dates for single year", {
     as.Date("2020-11-30"),
     as.Date("2020-12-31")
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("generates monthly dates for multiple years", {
   start_date <- as.Date("2019-11-30")
   end_date <- as.Date("2020-03-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2019-11-30"),
     as.Date("2019-12-31"),
@@ -36,90 +35,90 @@ test_that("generates monthly dates for multiple years", {
     as.Date("2020-02-29"),
     as.Date("2020-03-31")
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("generates single month when start equals end", {
   start_date <- as.Date("2020-06-30")
   end_date <- as.Date("2020-06-30")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- as.Date("2020-06-30")
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("handles leap year February correctly", {
   start_date <- as.Date("2020-01-31")
   end_date <- as.Date("2020-03-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2020-01-31"),
-    as.Date("2020-02-29"),  # leap year
+    as.Date("2020-02-29"), # leap year
     as.Date("2020-03-31")
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("handles non-leap year February correctly", {
   start_date <- as.Date("2021-01-31")
   end_date <- as.Date("2021-03-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2021-01-31"),
-    as.Date("2021-02-28"),  # non-leap year
+    as.Date("2021-02-28"), # non-leap year
     as.Date("2021-03-31")
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("handles different month lengths correctly", {
   start_date <- as.Date("2020-01-31")
   end_date <- as.Date("2020-05-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
-    as.Date("2020-01-31"),  # 31 days
-    as.Date("2020-02-29"),  # 29 days (leap)
-    as.Date("2020-03-31"),  # 31 days
-    as.Date("2020-04-30"),  # 30 days
-    as.Date("2020-05-31")   # 31 days
+    as.Date("2020-01-31"), # 31 days
+    as.Date("2020-02-29"), # 29 days (leap)
+    as.Date("2020-03-31"), # 31 days
+    as.Date("2020-04-30"), # 30 days
+    as.Date("2020-05-31") # 31 days
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("generates monthly dates starting from February", {
   start_date <- as.Date("2020-02-29")
   end_date <- as.Date("2020-05-31")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2020-02-29"),
     as.Date("2020-03-31"),
     as.Date("2020-04-30"),
     as.Date("2020-05-31")
   )
-  
+
   expect_equal(actual, expected)
 })
 
 test_that("generates monthly dates across year boundary", {
   start_date <- as.Date("2020-10-31")
   end_date <- as.Date("2021-02-28")
-  
+
   actual <- generate_month_end_dates(start_date, end_date)
-  
+
   expected <- c(
     as.Date("2020-10-31"),
     as.Date("2020-11-30"),
@@ -127,7 +126,7 @@ test_that("generates monthly dates across year boundary", {
     as.Date("2021-01-31"),
     as.Date("2021-02-28")
   )
-  
+
   expect_equal(actual, expected)
 })
 

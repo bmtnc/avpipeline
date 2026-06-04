@@ -7,10 +7,12 @@
 #'
 #' @return Tibble with one row per expiration containing ATM IV and days to expiration
 #' @export
-calculate_iv_term_structure <- function(options_chain,
-                                        spot_price,
-                                        observation_date,
-                                        moneyness_threshold = 0.05) {
+calculate_iv_term_structure <- function(
+  options_chain,
+  spot_price,
+  observation_date,
+  moneyness_threshold = 0.05
+) {
   if (nrow(options_chain) == 0 || is.na(spot_price) || spot_price <= 0) {
     return(tibble::tibble(
       ticker = character(),
@@ -65,18 +67,27 @@ calculate_iv_term_structure <- function(options_chain,
   # Pivot to get call/put IV side by side per expiration
   call_iv <- atm %>%
     dplyr::filter(type == "call") %>%
-    dplyr::select(expiration, atm_iv_call = implied_volatility, strike_call = strike)
+    dplyr::select(
+      expiration,
+      atm_iv_call = implied_volatility,
+      strike_call = strike
+    )
 
   put_iv <- atm %>%
     dplyr::filter(type == "put") %>%
-    dplyr::select(expiration, atm_iv_put = implied_volatility, strike_put = strike)
+    dplyr::select(
+      expiration,
+      atm_iv_put = implied_volatility,
+      strike_put = strike
+    )
 
   # Full join on expiration to handle cases where only call or put exists
   term_structure <- dplyr::full_join(call_iv, put_iv, by = "expiration") %>%
     dplyr::mutate(
       # Average call/put IV; use whichever is available if only one exists
       atm_iv = dplyr::case_when(
-        !is.na(atm_iv_call) & !is.na(atm_iv_put) ~ (atm_iv_call + atm_iv_put) / 2,
+        !is.na(atm_iv_call) & !is.na(atm_iv_put) ~ (atm_iv_call + atm_iv_put) /
+          2,
         !is.na(atm_iv_call) ~ atm_iv_call,
         TRUE ~ atm_iv_put
       ),
@@ -89,8 +100,15 @@ calculate_iv_term_structure <- function(options_chain,
     # Filter out expired options
     dplyr::filter(days_to_expiration > 0) %>%
     dplyr::select(
-      ticker, observation_date, expiration, days_to_expiration,
-      atm_iv, atm_iv_call, atm_iv_put, atm_strike, spot_price
+      ticker,
+      observation_date,
+      expiration,
+      days_to_expiration,
+      atm_iv,
+      atm_iv_call,
+      atm_iv_put,
+      atm_strike,
+      spot_price
     ) %>%
     dplyr::arrange(days_to_expiration)
 

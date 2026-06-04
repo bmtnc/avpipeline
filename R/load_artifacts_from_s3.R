@@ -8,9 +8,9 @@
 #' @return tibble: Quarterly TTM financial data
 #' @export
 load_quarterly_artifact <- function(
-    bucket_name,
-    artifact_date = NULL,
-    region = "us-east-1"
+  bucket_name,
+  artifact_date = NULL,
+  region = "us-east-1"
 ) {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
@@ -22,7 +22,9 @@ load_quarterly_artifact <- function(
   date_string <- format(artifact_date, "%Y-%m-%d")
   s3_uri <- sprintf(
     "s3://%s/ttm-artifacts/%s/ttm_quarterly_artifact.parquet?region=%s",
-    bucket_name, date_string, region
+    bucket_name,
+    date_string,
+    region
   )
 
   arrow::read_parquet(s3_uri)
@@ -39,9 +41,9 @@ load_quarterly_artifact <- function(
 #' @return tibble: Daily price data
 #' @export
 load_price_artifact <- function(
-    bucket_name,
-    artifact_date = NULL,
-    region = "us-east-1"
+  bucket_name,
+  artifact_date = NULL,
+  region = "us-east-1"
 ) {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(region, name = "region")
@@ -53,7 +55,9 @@ load_price_artifact <- function(
   date_string <- format(artifact_date, "%Y-%m-%d")
   s3_uri <- sprintf(
     "s3://%s/ttm-artifacts/%s/price_artifact.parquet?region=%s",
-    bucket_name, date_string, region
+    bucket_name,
+    date_string,
+    region
   )
 
   arrow::read_parquet(s3_uri)
@@ -73,9 +77,11 @@ find_latest_artifact_date <- function(bucket_name, region) {
   result <- system2(
     "aws",
     args = c(
-      "s3", "ls",
+      "s3",
+      "ls",
       sprintf("s3://%s/ttm-artifacts/", bucket_name),
-      "--region", region
+      "--region",
+      region
     ),
     stdout = TRUE,
     stderr = FALSE
@@ -107,11 +113,11 @@ find_latest_artifact_date <- function(bucket_name, region) {
 #' @return tibble: Daily-frequency TTM per-share artifact
 #' @export
 load_daily_ttm_artifact <- function(
-    bucket_name,
-    artifact_date = NULL,
-    tickers = NULL,
-    start_date = NULL,
-    region = "us-east-1"
+  bucket_name,
+  artifact_date = NULL,
+  tickers = NULL,
+  start_date = NULL,
+  region = "us-east-1"
 ) {
   # Load both artifacts
   quarterly_df <- load_quarterly_artifact(bucket_name, artifact_date, region)

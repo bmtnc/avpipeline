@@ -21,14 +21,18 @@ test_that("build_market_cap_with_splits validates start_date parameter", {
 
   expect_error(
     build_market_cap_with_splits(
-      price_data, splits_data, financial_statements,
+      price_data,
+      splits_data,
+      financial_statements,
       start_date = "2020-01-01"
     ),
     "^start_date must be a Date object\\. Received: character$"
   )
   expect_error(
     build_market_cap_with_splits(
-      price_data, splits_data, financial_statements,
+      price_data,
+      splits_data,
+      financial_statements,
       start_date = c(as.Date("2020-01-01"), as.Date("2020-01-02"))
     ),
     "^start_date must be a Date scalar \\(length 1\\)\\. Received length: 2$"
@@ -57,16 +61,24 @@ test_that("build_market_cap_with_splits returns correct structure", {
   )
 
   result <- build_market_cap_with_splits(
-    price_data, splits_data, financial_statements,
+    price_data,
+    splits_data,
+    financial_statements,
     start_date = as.Date("2020-01-01")
   )
 
   # Check structure
   expect_s3_class(result, "tbl_df")
-  expect_named(result, c(
-    "ticker", "date", "post_filing_split_multiplier",
-    "effective_shares_outstanding", "market_cap"
-  ))
+  expect_named(
+    result,
+    c(
+      "ticker",
+      "date",
+      "post_filing_split_multiplier",
+      "effective_shares_outstanding",
+      "market_cap"
+    )
+  )
 
   # Should have 3 rows (one per price date)
   expect_equal(nrow(result), 3)
@@ -95,7 +107,9 @@ test_that("build_market_cap_with_splits calculates market cap correctly without 
   )
 
   result <- build_market_cap_with_splits(
-    price_data, splits_data, financial_statements,
+    price_data,
+    splits_data,
+    financial_statements,
     start_date = as.Date("2020-01-01")
   )
 
@@ -130,7 +144,9 @@ test_that("build_market_cap_with_splits handles empty inputs", {
   )
 
   result <- build_market_cap_with_splits(
-    price_data, splits_data, financial_statements,
+    price_data,
+    splits_data,
+    financial_statements,
     start_date = as.Date("2020-01-01")
   )
 
@@ -159,11 +175,13 @@ test_that("build_market_cap_with_splits filters by start_date", {
   )
 
   result <- build_market_cap_with_splits(
-    price_data, splits_data, financial_statements,
+    price_data,
+    splits_data,
+    financial_statements,
     start_date = as.Date("2020-01-01")
   )
 
   # Should only include dates >= start_date
   expect_true(all(result$date >= as.Date("2020-01-01")))
-  expect_equal(nrow(result), 2)  # Only 2020-01-01 and 2020-01-02
+  expect_equal(nrow(result), 2) # Only 2020-01-01 and 2020-01-02
 })

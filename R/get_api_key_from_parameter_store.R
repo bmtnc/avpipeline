@@ -40,7 +40,9 @@ get_api_key_from_parameter_store <- function(
   )
 
   if (is_timeout_result(result)) {
-    stop("get_api_key_from_parameter_store(): Parameter Store request timed out after 30 seconds")
+    stop(
+      "get_api_key_from_parameter_store(): Parameter Store request timed out after 30 seconds"
+    )
   }
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {

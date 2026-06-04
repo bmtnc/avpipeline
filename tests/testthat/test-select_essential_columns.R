@@ -101,7 +101,9 @@ test_that("select_essential_columns preserves column order", {
 
   col_names <- names(result)
   expect_true(which(col_names == "date") < which(col_names == "ticker"))
-  expect_true(which(col_names == "ticker") < which(col_names == "revenue_per_share"))
+  expect_true(
+    which(col_names == "ticker") < which(col_names == "revenue_per_share")
+  )
 })
 
 test_that("select_essential_columns validates input types", {

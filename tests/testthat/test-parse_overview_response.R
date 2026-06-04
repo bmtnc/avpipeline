@@ -18,7 +18,16 @@ test_that("parses an overview response to the expected schema and values", {
   expect_equal(nrow(result), 1)
   expect_equal(
     names(result),
-    c("ticker", "cik", "exchange", "currency", "country", "sector", "industry", "as_of_date")
+    c(
+      "ticker",
+      "cik",
+      "exchange",
+      "currency",
+      "country",
+      "sector",
+      "industry",
+      "as_of_date"
+    )
   )
   expect_equal(result$ticker, "IBM")
   expect_equal(result$cik, "51143")
@@ -53,10 +62,16 @@ test_that("missing optional fields become NA, not an error", {
 
 test_that("errors on a premium/rate-limit Note response", {
   note <- '{"Note":"rate limit reached"}'
-  expect_error(parse_overview_response(fake_response(note), "IBM"), "rate limit")
+  expect_error(
+    parse_overview_response(fake_response(note), "IBM"),
+    "rate limit"
+  )
 })
 
 test_that("errors on a standard Error Message response", {
   err <- '{"Error Message":"Invalid API call"}'
-  expect_error(parse_overview_response(fake_response(err), "IBM"), "Invalid API call")
+  expect_error(
+    parse_overview_response(fake_response(err), "IBM"),
+    "Invalid API call"
+  )
 })

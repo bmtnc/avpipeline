@@ -12,13 +12,17 @@
 #' @param chunk_size integer: Symbols per API call (default: 100, the endpoint max)
 #' @return tibble: the full accumulated interim store that was written
 #' @keywords internal
-fetch_and_store_interim_quotes <- function(symbols,
-                                           bucket_name,
-                                           api_key = NULL,
-                                           region = "us-east-1",
-                                           chunk_size = 100) {
+fetch_and_store_interim_quotes <- function(
+  symbols,
+  bucket_name,
+  api_key = NULL,
+  region = "us-east-1",
+  chunk_size = 100
+) {
   if (!is.character(symbols) || length(symbols) == 0) {
-    stop("fetch_and_store_interim_quotes(): [symbols] must be a non-empty character vector")
+    stop(
+      "fetch_and_store_interim_quotes(): [symbols] must be a non-empty character vector"
+    )
   }
   validate_character_scalar(bucket_name, name = "bucket_name")
 

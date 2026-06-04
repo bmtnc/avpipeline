@@ -22,8 +22,17 @@ test_that("parses a success response to the expected schema and types", {
   expect_equal(nrow(result), 2)
   expect_equal(
     names(result),
-    c("ticker", "date", "timestamp", "open", "high", "low", "close",
-      "volume", "previous_close")
+    c(
+      "ticker",
+      "date",
+      "timestamp",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "previous_close"
+    )
   )
   expect_type(result$close, "double")
   expect_s3_class(result$date, "Date")
@@ -41,12 +50,18 @@ test_that("extracts values correctly", {
 
 test_that("errors on a premium/rate-limit Information response", {
   info <- '{"Information":"premium endpoint"}'
-  expect_error(parse_bulk_quotes_response(fake_response(info)), "Information|premium")
+  expect_error(
+    parse_bulk_quotes_response(fake_response(info)),
+    "Information|premium"
+  )
 })
 
 test_that("errors on a standard Error Message response", {
   err <- '{"Error Message":"Invalid API call"}'
-  expect_error(parse_bulk_quotes_response(fake_response(err)), "Invalid API call")
+  expect_error(
+    parse_bulk_quotes_response(fake_response(err)),
+    "Invalid API call"
+  )
 })
 
 test_that("errors when the data array is missing or empty", {
@@ -55,7 +70,9 @@ test_that("errors when the data array is missing or empty", {
     "data"
   )
   expect_error(
-    parse_bulk_quotes_response(fake_response('{"message":"success","data":[]}')),
+    parse_bulk_quotes_response(fake_response(
+      '{"message":"success","data":[]}'
+    )),
     "data"
   )
 })

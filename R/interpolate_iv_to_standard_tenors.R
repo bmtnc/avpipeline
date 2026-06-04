@@ -6,8 +6,10 @@
 #'
 #' @return Tibble with one row per tenor containing interpolated IV
 #' @export
-interpolate_iv_to_standard_tenors <- function(term_structure,
-                                               tenors = c(30, 60, 90, 180, 365)) {
+interpolate_iv_to_standard_tenors <- function(
+  term_structure,
+  tenors = c(30, 60, 90, 180, 365)
+) {
   if (nrow(term_structure) == 0) {
     return(tibble::tibble(
       ticker = character(),

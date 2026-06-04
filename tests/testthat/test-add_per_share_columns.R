@@ -47,7 +47,10 @@ test_that("add_per_share_columns skips columns already ending in _per_share", {
     commonStockSharesOutstanding = c(100, 200)
   )
 
-  result <- add_per_share_columns(data, cols = c("revenue", "revenue_per_share"))
+  result <- add_per_share_columns(
+    data,
+    cols = c("revenue", "revenue_per_share")
+  )
 
   # Should only have one revenue_per_share column (the new calculated one)
   expect_equal(sum(names(result) == "revenue_per_share"), 1)
@@ -60,7 +63,11 @@ test_that("add_per_share_columns uses custom shares column", {
     my_shares = c(50, 100)
   )
 
-  result <- add_per_share_columns(data, cols = "revenue", shares_col = "my_shares")
+  result <- add_per_share_columns(
+    data,
+    cols = "revenue",
+    shares_col = "my_shares"
+  )
 
   expect_equal(result$revenue_per_share, c(20, 20))
 })

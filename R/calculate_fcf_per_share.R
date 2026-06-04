@@ -9,7 +9,11 @@
 #' @keywords internal
 calculate_fcf_per_share <- function(operating_cf_ps, capex_ps) {
   # Input validation
-  validate_numeric_vector(operating_cf_ps, allow_empty = TRUE, name = "operating_cf_ps")
+  validate_numeric_vector(
+    operating_cf_ps,
+    allow_empty = TRUE,
+    name = "operating_cf_ps"
+  )
   validate_numeric_vector(capex_ps, allow_empty = TRUE, name = "capex_ps")
 
   dplyr::if_else(

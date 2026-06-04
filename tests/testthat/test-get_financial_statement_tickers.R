@@ -1,8 +1,10 @@
 test_that("get_financial_statement_tickers returns manual tickers when provided", {
   manual_tickers <- c("AAPL", "MSFT", "GOOGL")
-  
-  result <- suppressMessages(get_financial_statement_tickers(manual_tickers = manual_tickers))
-  
+
+  result <- suppressMessages(get_financial_statement_tickers(
+    manual_tickers = manual_tickers
+  ))
+
   expect_equal(result, manual_tickers)
   expect_type(result, "character")
   expect_length(result, 3)
@@ -10,12 +12,12 @@ test_that("get_financial_statement_tickers returns manual tickers when provided"
 
 test_that("get_financial_statement_tickers prefers manual tickers over ETF", {
   manual_tickers <- c("AAPL", "MSFT")
-  
+
   result <- suppressMessages(get_financial_statement_tickers(
     etf_symbol = "SPY",
     manual_tickers = manual_tickers
   ))
-  
+
   expect_equal(result, manual_tickers)
 })
 
@@ -43,7 +45,7 @@ test_that("get_financial_statement_tickers validates manual_tickers is character
     get_financial_statement_tickers(manual_tickers = 123),
     "^get_financial_statement_tickers\\(\\): \\[manual_tickers\\] must be a character vector, not numeric$"
   )
-  
+
   expect_error(
     get_financial_statement_tickers(manual_tickers = list("AAPL")),
     "^get_financial_statement_tickers\\(\\): \\[manual_tickers\\] must be a character vector, not list$"
@@ -51,8 +53,10 @@ test_that("get_financial_statement_tickers validates manual_tickers is character
 })
 
 test_that("get_financial_statement_tickers handles single manual ticker", {
-  result <- suppressMessages(get_financial_statement_tickers(manual_tickers = "AAPL"))
-  
+  result <- suppressMessages(get_financial_statement_tickers(
+    manual_tickers = "AAPL"
+  ))
+
   expect_equal(result, "AAPL")
   expect_length(result, 1)
 })

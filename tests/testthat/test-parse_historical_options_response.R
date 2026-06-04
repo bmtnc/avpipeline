@@ -1,31 +1,34 @@
 test_that("parse_historical_options_response parses JSON correctly", {
-  sample_json <- jsonlite::toJSON(list(
-    endpoint = "Historical Options",
-    message = "success",
-    data = data.frame(
-      contractID = c("AAPL260220C00200000", "AAPL260220P00200000"),
-      symbol = c("AAPL", "AAPL"),
-      expiration = c("2026-02-20", "2026-02-20"),
-      strike = c("200.00", "200.00"),
-      type = c("call", "put"),
-      last = c("45.50", "1.20"),
-      mark = c("46.00", "1.15"),
-      bid = c("45.00", "1.10"),
-      bid_size = c("10", "20"),
-      ask = c("47.00", "1.20"),
-      ask_size = c("15", "25"),
-      volume = c("100", "50"),
-      open_interest = c("500", "300"),
-      date = c("2026-02-11", "2026-02-11"),
-      implied_volatility = c("0.32500", "0.33000"),
-      delta = c("0.85000", "-0.15000"),
-      gamma = c("0.01200", "0.01200"),
-      theta = c("-0.15000", "-0.10000"),
-      vega = c("0.25000", "0.25000"),
-      rho = c("0.05000", "-0.05000"),
-      stringsAsFactors = FALSE
-    )
-  ), auto_unbox = TRUE)
+  sample_json <- jsonlite::toJSON(
+    list(
+      endpoint = "Historical Options",
+      message = "success",
+      data = data.frame(
+        contractID = c("AAPL260220C00200000", "AAPL260220P00200000"),
+        symbol = c("AAPL", "AAPL"),
+        expiration = c("2026-02-20", "2026-02-20"),
+        strike = c("200.00", "200.00"),
+        type = c("call", "put"),
+        last = c("45.50", "1.20"),
+        mark = c("46.00", "1.15"),
+        bid = c("45.00", "1.10"),
+        bid_size = c("10", "20"),
+        ask = c("47.00", "1.20"),
+        ask_size = c("15", "25"),
+        volume = c("100", "50"),
+        open_interest = c("500", "300"),
+        date = c("2026-02-11", "2026-02-11"),
+        implied_volatility = c("0.32500", "0.33000"),
+        delta = c("0.85000", "-0.15000"),
+        gamma = c("0.01200", "0.01200"),
+        theta = c("-0.15000", "-0.10000"),
+        vega = c("0.25000", "0.25000"),
+        rho = c("0.05000", "-0.05000"),
+        stringsAsFactors = FALSE
+      )
+    ),
+    auto_unbox = TRUE
+  )
 
   mock_response <- structure(
     list(body = charToRaw(as.character(sample_json))),
@@ -37,7 +40,11 @@ test_that("parse_historical_options_response parses JSON correctly", {
     .package = "httr2"
   )
 
-  result <- parse_historical_options_response(mock_response, "AAPL", datatype = "json")
+  result <- parse_historical_options_response(
+    mock_response,
+    "AAPL",
+    datatype = "json"
+  )
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
@@ -72,7 +79,11 @@ test_that("parse_historical_options_response parses CSV correctly", {
     .package = "httr2"
   )
 
-  result <- parse_historical_options_response(mock_response, "AAPL", datatype = "csv")
+  result <- parse_historical_options_response(
+    mock_response,
+    "AAPL",
+    datatype = "csv"
+  )
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 2)
@@ -83,11 +94,14 @@ test_that("parse_historical_options_response parses CSV correctly", {
 })
 
 test_that("parse_historical_options_response returns empty tibble for empty JSON data", {
-  empty_json <- jsonlite::toJSON(list(
-    endpoint = "Historical Options",
-    message = "success",
-    data = list()
-  ), auto_unbox = TRUE)
+  empty_json <- jsonlite::toJSON(
+    list(
+      endpoint = "Historical Options",
+      message = "success",
+      data = list()
+    ),
+    auto_unbox = TRUE
+  )
 
   mock_response <- structure(
     list(body = charToRaw(as.character(empty_json))),
@@ -98,7 +112,11 @@ test_that("parse_historical_options_response returns empty tibble for empty JSON
     .package = "httr2"
   )
 
-  result <- parse_historical_options_response(mock_response, "AAPL", datatype = "json")
+  result <- parse_historical_options_response(
+    mock_response,
+    "AAPL",
+    datatype = "json"
+  )
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 0)
@@ -116,16 +134,23 @@ test_that("parse_historical_options_response returns empty tibble for empty CSV"
     .package = "httr2"
   )
 
-  result <- parse_historical_options_response(mock_response, "AAPL", datatype = "csv")
+  result <- parse_historical_options_response(
+    mock_response,
+    "AAPL",
+    datatype = "csv"
+  )
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 0)
 })
 
 test_that("parse_historical_options_response propagates API errors", {
-  error_json <- jsonlite::toJSON(list(
-    `Error Message` = "Invalid API call"
-  ), auto_unbox = TRUE)
+  error_json <- jsonlite::toJSON(
+    list(
+      `Error Message` = "Invalid API call"
+    ),
+    auto_unbox = TRUE
+  )
 
   mock_response <- structure(
     list(body = charToRaw(as.character(error_json))),
@@ -163,13 +188,33 @@ test_that("parse_historical_options_response has correct column order", {
     .package = "httr2"
   )
 
-  result <- parse_historical_options_response(mock_response, "TEST", datatype = "csv")
+  result <- parse_historical_options_response(
+    mock_response,
+    "TEST",
+    datatype = "csv"
+  )
 
   expected_cols <- c(
-    "ticker", "contractID", "date", "expiration", "strike", "type",
-    "last", "mark", "bid", "bid_size", "ask", "ask_size",
-    "volume", "open_interest",
-    "implied_volatility", "delta", "gamma", "theta", "vega", "rho"
+    "ticker",
+    "contractID",
+    "date",
+    "expiration",
+    "strike",
+    "type",
+    "last",
+    "mark",
+    "bid",
+    "bid_size",
+    "ask",
+    "ask_size",
+    "volume",
+    "open_interest",
+    "implied_volatility",
+    "delta",
+    "gamma",
+    "theta",
+    "vega",
+    "rho"
   )
   expect_equal(names(result), expected_cols)
 })

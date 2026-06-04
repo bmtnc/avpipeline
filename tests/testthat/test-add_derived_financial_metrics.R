@@ -19,32 +19,32 @@ test_that("add_derived_financial_metrics adds all derived metrics", {
     totalAssets_per_share                   = c(300.0,   300.0)
   )
   # nolint end
-  
+
   result <- add_derived_financial_metrics(input_data)
-  
+
   # Check that new columns exist
   expect_true("fcf_ttm_per_share" %in% names(result))
   expect_true("nopat_ttm_per_share" %in% names(result))
   expect_true("enterprise_value_per_share" %in% names(result))
   expect_true("invested_capital_per_share" %in% names(result))
   expect_true("has_complete_financial_data" %in% names(result))
-  
+
   # Check FCF calculation
   expect_equal(result$fcf_ttm_per_share, c(12.0, 12.0))
-  
+
   # Check NOPAT calculation (EBIT + Amortization) * (1 - 0.2375)
   # Amortization = 20 - 15 = 5
   # (100 + 5) * 0.7625 = 80.0625
   expect_equal(result$nopat_ttm_per_share, c(80.0625, 80.0625))
-  
+
   # Check enterprise value calculation
   # 150 + 10 + 5 - 20 - 10 = 135
   expect_equal(result$enterprise_value_per_share, c(135, 135))
-  
+
   # Check invested capital calculation
   # 10 + 5 + 200 = 215
   expect_equal(result$invested_capital_per_share, c(215, 215))
-  
+
   # Check data quality flag
   expect_equal(result$has_complete_financial_data, c(TRUE, TRUE))
 })
@@ -70,12 +70,12 @@ test_that("add_derived_financial_metrics handles missing financial data flag", {
     totalAssets_per_share                   = c(300.0,   300.0)
   )
   # nolint end
-  
+
   result <- add_derived_financial_metrics(input_data)
-  
+
   # First row has complete data
   expect_equal(result$has_complete_financial_data[1], TRUE)
-  
+
   # Second row missing both revenue and operating cashflow
   expect_equal(result$has_complete_financial_data[2], FALSE)
 })
@@ -102,9 +102,9 @@ test_that("add_derived_financial_metrics preserves original columns", {
     totalAssets_per_share                   = c(300.0)
   )
   # nolint end
-  
+
   result <- add_derived_financial_metrics(input_data)
-  
+
   # Original columns should still exist
   expect_true("ticker" %in% names(result))
   expect_true("date" %in% names(result))
@@ -133,19 +133,19 @@ test_that("add_derived_financial_metrics handles NA values in calculations", {
     totalAssets_per_share                   = c(300.0)
   )
   # nolint end
-  
+
   result <- add_derived_financial_metrics(input_data)
-  
+
   # FCF should be NA (operating cashflow is NA)
   expect_true(is.na(result$fcf_ttm_per_share))
-  
+
   # NOPAT should be NA (EBIT is NA)
   expect_true(is.na(result$nopat_ttm_per_share))
-  
+
   # Enterprise value should use coalesce for NA debt (treated as 0)
   # 150 + 0 + 5 - 20 - 10 = 125
   expect_equal(result$enterprise_value_per_share, 125)
-  
+
   # Invested capital should use coalesce for NA debt
   # 0 + 5 + 200 = 205
   expect_equal(result$invested_capital_per_share, 205)
