@@ -1,0 +1,39 @@
+name: R-CMD-check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+# Cancel an in-progress run when newer commits land on the same ref.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  R-CMD-check:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      # rcmdcheck fails the job on this severity or worse. NOTEs (placeholder
+      # DESCRIPTION fields, NSE global-variable bindings) are pre-existing and
+      # do not block; WARNINGs and ERRORs do.
+      R_CHECK_ERROR_ON: warning
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-renv@v2
+
+      # rcmdcheck is a dev-only tool, not in renv.lock; install it ad hoc.
+      - name: Install rcmdcheck
+        run: Rscript -e 'renv::install("rcmdcheck")'
+
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          args: 'c("--no-manual")'
+          error-on: '"warning"'
+          upload-snapshots: true

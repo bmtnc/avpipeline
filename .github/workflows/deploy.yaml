@@ -1,0 +1,51 @@
+name: deploy
+
+# Build the Docker image and push it to ECR whenever main advances. The ECS
+# task definitions reference the ":latest" tag, so the next scheduled pipeline
+# run (weekly full / daily price-only via EventBridge) picks up the new image.
+# This does no traffic cutover — there is nothing running to swap.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Required for OIDC: id-token lets the runner request a token to assume the
+# AWS role; no long-lived access keys are stored in GitHub.
+permissions:
+  id-token: write
+  contents: read
+
+# Never run two deploys against ECR concurrently.
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+      ECR_REPOSITORY: avpipeline
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push image
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          IMAGE="$REGISTRY/$ECR_REPOSITORY"
+          docker build --platform linux/amd64 -t "$IMAGE:$IMAGE_TAG" -t "$IMAGE:latest" .
+          docker push "$IMAGE:$IMAGE_TAG"
+          docker push "$IMAGE:latest"
+          echo "Pushed $IMAGE:latest and $IMAGE:$IMAGE_TAG" >> "$GITHUB_STEP_SUMMARY"
