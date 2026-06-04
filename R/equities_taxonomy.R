@@ -124,6 +124,7 @@ equities_taxonomy <- function() {
     "INDUSTRIALS"            , "INDUSTRIAL SERVICES"        , "WASTE MANAGEMENT"                         ,
     "INDUSTRIALS"            , "INDUSTRIAL SERVICES"        , "POLLUTION & TREATMENT CONTROLS"           ,
     "INDUSTRIALS"            , "INDUSTRIAL SERVICES"        , "BUSINESS EQUIPMENT & SUPPLIES"            ,
+    "INDUSTRIALS"            , "INDUSTRIAL SERVICES"        , "INFRASTRUCTURE OPERATIONS"                ,
     "INDUSTRIALS"            , "AEROSPACE & DEFENSE"        , "AEROSPACE & DEFENSE"                      ,
     "INDUSTRIALS"            , "TRANSPORTATION"             , "INTEGRATED FREIGHT & LOGISTICS"           ,
     "INDUSTRIALS"            , "TRANSPORTATION"             , "TRUCKING"                                 ,
@@ -144,6 +145,7 @@ equities_taxonomy <- function() {
     "REAL ESTATE"            , "MORTGAGE REITs"             , "REIT - MORTGAGE"                          ,
     "REAL ESTATE"            , "REAL ESTATE SERVICES"       , "REAL ESTATE SERVICES"                     ,
     "REAL ESTATE"            , "REAL ESTATE SERVICES"       , "REAL ESTATE - DEVELOPMENT"                ,
+    "REAL ESTATE"            , "REAL ESTATE SERVICES"       , "REAL ESTATE - DIVERSIFIED"                ,
     # TECHNOLOGY
     "TECHNOLOGY"             , "SOFTWARE"                   , "SOFTWARE - APPLICATION"                   ,
     "TECHNOLOGY"             , "SOFTWARE"                   , "SOFTWARE - INFRASTRUCTURE"                ,

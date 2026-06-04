@@ -31,6 +31,19 @@ test_that("join_equities_taxonomy adds subsector keyed on industry", {
   expect_equal(nrow(result), 2)
 })
 
+test_that("diversified real estate and infrastructure industries map to a subsector", {
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~ticker, ~industry,
+    "JOE",   "REAL ESTATE - DIVERSIFIED",
+    "BEEP",  "INFRASTRUCTURE OPERATIONS"
+  )
+  # nolint end
+  result <- join_equities_taxonomy(data)
+  expect_equal(result$subsector, c("REAL ESTATE SERVICES", "INDUSTRIAL SERVICES"))
+})
+
 test_that("unmapped or NA industry yields NA subsector", {
   # nolint start
   # fmt: skip
