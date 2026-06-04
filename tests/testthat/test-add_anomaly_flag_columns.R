@@ -1,4 +1,6 @@
 # Test data
+# nolint start
+# fmt: skip
 test_df <- tibble::tribble(
   ~ticker , ~date        , ~metric1 , ~metric2 ,
   "AAPL"  , "2020-03-31" ,       10 ,      100 ,
@@ -17,6 +19,7 @@ test_df <- tibble::tribble(
   "AAPL"  , "2023-06-30" ,       14 ,      155 ,
   "AAPL"  , "2023-09-30" ,       16 ,      160
 )
+# nolint end
 
 test_that("returns data frame with anomaly flag columns added", {
   actual <- add_anomaly_flag_columns(test_df, c("metric1", "metric2"))

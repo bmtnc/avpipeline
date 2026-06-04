@@ -16,10 +16,14 @@ test_that("each industry maps to exactly one subsector", {
 })
 
 test_that("join_equities_taxonomy adds subsector keyed on industry", {
-  data <- tibble::tibble(
-    ticker = c("AAPL", "JPM"),
-    industry = c("CONSUMER ELECTRONICS", "BANKS - DIVERSIFIED")
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~ticker, ~industry,
+    "AAPL",  "CONSUMER ELECTRONICS",
+    "JPM",   "BANKS - DIVERSIFIED"
   )
+  # nolint end
   result <- join_equities_taxonomy(data)
 
   expect_true("subsector" %in% names(result))
@@ -28,10 +32,14 @@ test_that("join_equities_taxonomy adds subsector keyed on industry", {
 })
 
 test_that("unmapped or NA industry yields NA subsector", {
-  data <- tibble::tibble(
-    ticker = c("BABA", "ZZZ"),
-    industry = c(NA_character_, "NOT A REAL INDUSTRY")
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~ticker, ~industry,
+    "BABA",  NA_character_,
+    "ZZZ",   "NOT A REAL INDUSTRY"
   )
+  # nolint end
   result <- join_equities_taxonomy(data)
   expect_true(all(is.na(result$subsector)))
 })

@@ -1,30 +1,12 @@
 test_that("select_essential_columns selects all essential columns", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker                  = c("AAPL", "AAPL"),
-    date                    = as.Date(c("2023-01-01", "2023-01-02")),
-    initial_date            = as.Date(c("2022-01-01", "2022-01-01")),
-    latest_date             = as.Date(c("2023-01-01", "2023-01-02")),
-    fiscalDateEnding        = as.Date(c("2022-12-31", "2022-12-31")),
-    reportedDate            = as.Date(c("2023-01-01", "2023-01-01")),
-    calendar_quarter_ending = as.Date(c("2022-12-31", "2022-12-31")),
-    open                    = c(100, 101),
-    high                    = c(105, 106),
-    low                     = c(99, 100),
-    adjusted_close          = c(102, 103),
-    volume                  = c(1000000, 1100000),
-    dividend_amount         = c(0, 0),
-    split_coefficient       = c(1, 1),
-    n                       = c(4, 4),
-    post_filing_split_multiplier = c(1, 1),
-    effective_shares_outstanding = c(1e9, 1e9),
-    commonStockSharesOutstanding = c(1e9, 1e9),
-    market_cap              = c(102000, 103000),
-    revenue_per_share       = c(10, 10),
-    ebit_per_share          = c(2, 2),
-    extra_column            = c("should_be_removed", "should_be_removed")
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~date,        ~initial_date, ~latest_date, ~fiscalDateEnding, ~reportedDate, ~calendar_quarter_ending, ~open, ~high, ~low, ~adjusted_close, ~volume,  ~dividend_amount, ~split_coefficient, ~n, ~post_filing_split_multiplier, ~effective_shares_outstanding, ~commonStockSharesOutstanding, ~market_cap, ~revenue_per_share, ~ebit_per_share, ~extra_column,
+    "AAPL",  "2023-01-01", "2022-01-01",  "2023-01-01", "2022-12-31",      "2023-01-01",  "2022-12-31",             100,   105,   99,   102,             1000000, 0,                1,                  4,  1,                             1e9,                           1e9,                           102000,      10,                 2,               "should_be_removed",
+    "AAPL",  "2023-01-02", "2022-01-01",  "2023-01-02", "2022-12-31",      "2023-01-01",  "2022-12-31",             101,   106,   100,  103,             1100000, 0,                1,                  4,  1,                             1e9,                           1e9,                           103000,      10,                 2,               "should_be_removed"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(date, initial_date, latest_date, fiscalDateEnding, reportedDate, calendar_quarter_ending), as.Date))
   # nolint end
 
   result <- select_essential_columns(test_data)
@@ -44,12 +26,12 @@ test_that("select_essential_columns selects all essential columns", {
 test_that("select_essential_columns handles missing columns gracefully", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker         = c("AAPL", "AAPL"),
-    date           = as.Date(c("2023-01-01", "2023-01-02")),
-    adjusted_close = c(102, 103),
-    revenue_per_share = c(10, 10)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~date,        ~adjusted_close, ~revenue_per_share,
+    "AAPL",  "2023-01-01", 102,             10,
+    "AAPL",  "2023-01-02", 103,             10
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- select_essential_columns(test_data)
@@ -65,15 +47,11 @@ test_that("select_essential_columns handles missing columns gracefully", {
 test_that("select_essential_columns selects all per_share columns", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker                  = c("AAPL"),
-    date                    = as.Date("2023-01-01"),
-    revenue_per_share       = 10,
-    ebit_per_share          = 2,
-    fcf_per_share           = 3,
-    invested_capital_per_share = 50,
-    other_column            = 100
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~date,        ~revenue_per_share, ~ebit_per_share, ~fcf_per_share, ~invested_capital_per_share, ~other_column,
+    "AAPL",  "2023-01-01", 10,                 2,               3,              50,                          100
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- select_essential_columns(test_data)
@@ -88,13 +66,11 @@ test_that("select_essential_columns selects all per_share columns", {
 test_that("select_essential_columns preserves column order", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker         = c("AAPL"),
-    other_column   = c(1),
-    date           = as.Date("2023-01-01"),
-    adjusted_close = c(102),
-    revenue_per_share = c(10)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~other_column, ~date,        ~adjusted_close, ~revenue_per_share,
+    "AAPL",  1,             "2023-01-01", 102,             10
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- select_essential_columns(test_data)

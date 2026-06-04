@@ -1,12 +1,16 @@
 # Test data setup
+# nolint start
+# fmt: skip
 test_df <- tibble::tribble(
-  ~ticker , ~fiscalDateEnding     , ~revenue , ~expenses , ~profit ,
-  "AAPL"  , as.Date("2023-12-31") ,      100 ,        80 ,      20 ,
-  "AAPL"  , as.Date("2023-09-30") , NA       , NA        , NA      ,
-  "MSFT"  , as.Date("2023-12-31") ,      200 ,       150 ,      50 ,
-  "MSFT"  , as.Date("2023-09-30") , NA       , NA        , NA      ,
-  "GOOGL" , as.Date("2023-12-31") ,      150 ,       120 ,      30
-)
+  ~ticker , ~fiscalDateEnding , ~revenue , ~expenses , ~profit ,
+  "AAPL"  , "2023-12-31"      ,      100 ,        80 ,      20 ,
+  "AAPL"  , "2023-09-30"      , NA       , NA        , NA      ,
+  "MSFT"  , "2023-12-31"      ,      200 ,       150 ,      50 ,
+  "MSFT"  , "2023-09-30"      , NA       , NA        , NA      ,
+  "GOOGL" , "2023-12-31"      ,      150 ,       120 ,      30
+) %>%
+  dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+# nolint end
 
 test_that("function removes rows where all financial columns are NA", {
   financial_cols <- c("revenue", "expenses", "profit")
@@ -44,12 +48,15 @@ test_that("function returns original data when financial_cols is empty", {
 })
 
 test_that("function works with data missing ticker and fiscalDateEnding columns", {
+  # nolint start
+  # fmt: skip
   minimal_df <- tibble::tribble(
     ~revenue , ~expenses , ~profit ,
          100 ,        80 ,      20 ,
     NA       , NA        , NA      ,
          200 ,       150 ,      50
   )
+  # nolint end
   financial_cols <- c("revenue", "expenses", "profit")
   actual <- identify_all_na_rows(minimal_df, financial_cols, "test statement")
   expected <- minimal_df %>%

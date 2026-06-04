@@ -1,4 +1,6 @@
 # Test data setup
+# nolint start
+# fmt: skip
 test_df <- tibble::tribble(
   ~ticker , ~fiscalDateEnding , ~revenue , ~ebitda , ~netIncome ,
   "AAPL"  , "2020-03-31"      ,    58313 ,   13273 ,      11249 ,
@@ -33,6 +35,7 @@ test_df <- tibble::tribble(
   "MSFT"  , "2023-09-30"      ,    56517 ,   22318 ,      22291
 ) %>%
   dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+# nolint end
 
 test_that("cleans end-window anomalies successfully", {
   actual <- clean_end_window_anomalies(test_df, c("revenue", "ebitda"))
@@ -50,6 +53,8 @@ test_that("cleans end-window anomalies successfully", {
 
 test_that("returns original data when no anomalies detected", {
   # Create data with consistent ~5% growth (no anomalies)
+  # nolint start
+  # fmt: skip
   normal_data <- tibble::tribble(
     ~ticker , ~revenue , ~ebitda ,
     "TEST"  ,      100 ,      20 ,
@@ -65,6 +70,7 @@ test_that("returns original data when no anomalies detected", {
     "TEST"  ,      163 ,      30 , # Changed from 145
     "TEST"  ,      171 ,      31 # Changed from 150
   )
+  # nolint end
 
   actual <- clean_end_window_anomalies(normal_data, c("revenue", "ebitda"))
   expected <- normal_data
@@ -101,12 +107,15 @@ test_that("handles custom threshold parameter", {
 
 test_that("handles custom min_observations parameter", {
   # Create small dataset that won't meet min_observations
+  # nolint start
+  # fmt: skip
   small_data <- tibble::tribble(
     ~ticker , ~revenue ,
     "TEST"  ,      100 ,
     "TEST"  ,      110 ,
     "TEST"  ,     1000 # Anomaly but insufficient data
   )
+  # nolint end
 
   actual <- clean_end_window_anomalies(
     small_data,
@@ -119,6 +128,8 @@ test_that("handles custom min_observations parameter", {
 })
 
 test_that("handles data with all NA values in metric column", {
+  # nolint start
+  # fmt: skip
   na_data <- tibble::tribble(
     ~ticker , ~revenue , ~ebitda ,
     "TEST"  , NA_real_ ,     100 ,
@@ -134,6 +145,7 @@ test_that("handles data with all NA values in metric column", {
     "TEST"  , NA_real_ ,     150 ,
     "TEST"  , NA_real_ ,     155
   )
+  # nolint end
 
   actual <- clean_end_window_anomalies(na_data, c("revenue", "ebitda"))
 
@@ -188,6 +200,8 @@ test_that("fails when min_observations is not positive integer", {
 
 test_that("handles unusual data without errors", {
   # Create data with very small alternating values
+  # nolint start
+  # fmt: skip
   unusual_data <- tibble::tribble(
     ~ticker , ~revenue ,
     "TEST"  ,    1e-10 ,
@@ -203,6 +217,7 @@ test_that("handles unusual data without errors", {
     "TEST"  ,    1e-10 ,
     "TEST"  ,    2e-10
   )
+  # nolint end
 
   # Should not throw an error
   expect_no_error(

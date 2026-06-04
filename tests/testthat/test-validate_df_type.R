@@ -4,7 +4,13 @@ test_that("validate_df_type succeeds with data.frame", {
 })
 
 test_that("validate_df_type succeeds with tibble", {
-  df <- tibble::tibble(a = 1, b = 2)
+  # nolint start
+  # fmt: skip
+  df <- tibble::tribble(
+    ~a, ~b,
+    1,  2
+  )
+  # nolint end
   expect_null(validate_df_type(df))
 })
 

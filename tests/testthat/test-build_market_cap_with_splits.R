@@ -1,10 +1,13 @@
 test_that("build_market_cap_with_splits validates start_date parameter", {
   # Create minimal test data
-  price_data <- tibble::tibble(
-    ticker = "TEST",
-    date = as.Date("2020-01-01"),
-    close = 100
-  )
+  # nolint start
+  # fmt: skip
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~close,
+    "TEST",  "2020-01-01", 100
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
   # Empty splits_data with proper column structure
   splits_data <- tibble::tibble(
     ticker = character(),
@@ -12,12 +15,14 @@ test_that("build_market_cap_with_splits validates start_date parameter", {
     split_factor = numeric(),
     as_of_date = as.Date(character())
   )
-  financial_statements <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-01-01"),
-    reportedDate = as.Date("2020-01-15"),
-    commonStockSharesOutstanding = 1000000
-  )
+  # nolint start
+  # fmt: skip
+  financial_statements <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~commonStockSharesOutstanding,
+    "TEST",  "2020-01-01",      "2020-01-15",  1000000
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   expect_error(
     build_market_cap_with_splits(
@@ -41,11 +46,16 @@ test_that("build_market_cap_with_splits validates start_date parameter", {
 
 test_that("build_market_cap_with_splits returns correct structure", {
   # Create test data
-  price_data <- tibble::tibble(
-    ticker = "TEST",
-    date = as.Date(c("2020-01-01", "2020-01-02", "2020-01-03")),
-    close = c(100, 101, 102)
-  )
+  # nolint start
+  # fmt: skip
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~close,
+    "TEST",  "2020-01-01", 100,
+    "TEST",  "2020-01-02", 101,
+    "TEST",  "2020-01-03", 102
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
   # Empty splits_data with proper column structure
   splits_data <- tibble::tibble(
     ticker = character(),
@@ -53,12 +63,14 @@ test_that("build_market_cap_with_splits returns correct structure", {
     split_factor = numeric(),
     as_of_date = as.Date(character())
   )
-  financial_statements <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-01-01"),
-    reportedDate = as.Date("2020-01-01"),
-    commonStockSharesOutstanding = 1000000
-  )
+  # nolint start
+  # fmt: skip
+  financial_statements <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~commonStockSharesOutstanding,
+    "TEST",  "2020-01-01",      "2020-01-01",  1000000
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   result <- build_market_cap_with_splits(
     price_data,
@@ -87,11 +99,15 @@ test_that("build_market_cap_with_splits returns correct structure", {
 
 test_that("build_market_cap_with_splits calculates market cap correctly without splits", {
   # Create simple test case without splits
-  price_data <- tibble::tibble(
-    ticker = "TEST",
-    date = as.Date(c("2020-01-02", "2020-01-03")),
-    close = c(10, 20)
-  )
+  # nolint start
+  # fmt: skip
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~close,
+    "TEST",  "2020-01-02", 10,
+    "TEST",  "2020-01-03", 20
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
   # Empty splits_data with proper column structure
   splits_data <- tibble::tibble(
     ticker = character(),
@@ -99,12 +115,14 @@ test_that("build_market_cap_with_splits calculates market cap correctly without 
     split_factor = numeric(),
     as_of_date = as.Date(character())
   )
-  financial_statements <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-01-01"),
-    reportedDate = as.Date("2020-01-01"),
-    commonStockSharesOutstanding = 100
-  )
+  # nolint start
+  # fmt: skip
+  financial_statements <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~commonStockSharesOutstanding,
+    "TEST",  "2020-01-01",      "2020-01-01",  100
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   result <- build_market_cap_with_splits(
     price_data,
@@ -155,11 +173,16 @@ test_that("build_market_cap_with_splits handles empty inputs", {
 })
 
 test_that("build_market_cap_with_splits filters by start_date", {
-  price_data <- tibble::tibble(
-    ticker = "TEST",
-    date = as.Date(c("2019-12-31", "2020-01-01", "2020-01-02")),
-    close = c(100, 101, 102)
-  )
+  # nolint start
+  # fmt: skip
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~close,
+    "TEST",  "2019-12-31", 100,
+    "TEST",  "2020-01-01", 101,
+    "TEST",  "2020-01-02", 102
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
   # Empty splits_data with proper column structure
   splits_data <- tibble::tibble(
     ticker = character(),
@@ -167,12 +190,15 @@ test_that("build_market_cap_with_splits filters by start_date", {
     split_factor = numeric(),
     as_of_date = as.Date(character())
   )
-  financial_statements <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date(c("2019-12-31", "2020-01-01")),
-    reportedDate = as.Date(c("2019-12-31", "2020-01-01")),
-    commonStockSharesOutstanding = c(1000000, 1000000)
-  )
+  # nolint start
+  # fmt: skip
+  financial_statements <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~commonStockSharesOutstanding,
+    "TEST",  "2019-12-31",      "2019-12-31",  1000000,
+    "TEST",  "2020-01-01",      "2020-01-01",  1000000
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   result <- build_market_cap_with_splits(
     price_data,

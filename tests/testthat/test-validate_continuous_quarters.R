@@ -1,4 +1,6 @@
 # Test data setup
+# nolint start
+# fmt: skip
 test_df <- tibble::tribble(
   ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
   "AAPL"  , "2020-01-31"      ,        1 , NA         , TRUE          ,      100 ,
@@ -9,12 +11,15 @@ test_df <- tibble::tribble(
   "AAPL"  , "2021-01-31"      ,        6 ,         92 , TRUE          ,      140
 ) %>%
   dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+# nolint end
 
 test_that("finds continuous quarterly series ignoring invalid month-end dates", {
   actual <- validate_continuous_quarters(test_df)
 
   # CHANGED: Updated to include full continuous quarterly series starting from 2020-01-31
   # After filtering invalid 2020-02-15, the remaining dates form a perfect quarterly pattern
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-01-31"      ,      100 ,
@@ -24,11 +29,14 @@ test_that("finds continuous quarterly series ignoring invalid month-end dates", 
     "AAPL"  , "2021-01-31"      ,      140
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("finds continuous quarterly series from beginning when all valid", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-02-29"      ,        1 , NA         , TRUE          ,      100 ,
@@ -37,9 +45,12 @@ test_that("finds continuous quarterly series from beginning when all valid", {
     "AAPL"  , "2020-11-30"      ,        4 ,         91 , TRUE          ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-02-29"      ,      100 ,
@@ -48,11 +59,14 @@ test_that("finds continuous quarterly series from beginning when all valid", {
     "AAPL"  , "2020-11-30"      ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("returns single quarter when only one valid month-end exists", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-02-15"      ,        1 , NA         , FALSE         ,      100 ,
@@ -60,14 +74,18 @@ test_that("returns single quarter when only one valid month-end exists", {
     "AAPL"  , "2020-08-15"      ,        3 ,         76 , FALSE         ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-05-31"      ,      120
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
@@ -75,6 +93,8 @@ test_that("returns single quarter when only one valid month-end exists", {
 # ... existing code ...
 
 test_that("finds longest continuous sequence when multiple gaps exist", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-01-31"      ,        1 , NA         , TRUE          ,      100 ,
@@ -85,9 +105,12 @@ test_that("finds longest continuous sequence when multiple gaps exist", {
     "AAPL"  , "2021-06-30"      ,        6 ,         91 , TRUE          ,      150
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-06-30"      ,      115 ,
@@ -97,12 +120,15 @@ test_that("finds longest continuous sequence when multiple gaps exist", {
     "AAPL"  , "2021-06-30"      ,      150
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 # ... rest of existing code ...
 test_that("handles non-calendar fiscal quarters correctly", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-01-31"      ,        1 , NA         , TRUE          ,      100 ,
@@ -112,9 +138,12 @@ test_that("handles non-calendar fiscal quarters correctly", {
     "AAPL"  , "2021-01-31"      ,        5 ,         92 , TRUE          ,      140
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-01-31"      ,      100 ,
@@ -124,11 +153,14 @@ test_that("handles non-calendar fiscal quarters correctly", {
     "AAPL"  , "2021-01-31"      ,      140
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("returns empty data frame when no valid month-end dates exist", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-02-15"      ,        1 , NA         , FALSE         ,      100 ,
@@ -136,6 +168,7 @@ test_that("returns empty data frame when no valid month-end dates exist", {
     "AAPL"  , "2020-08-15"      ,        3 ,         92 , FALSE         ,      120
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
@@ -150,6 +183,8 @@ test_that("returns empty data frame when no valid month-end dates exist", {
 })
 
 test_that("returns empty data frame when no continuous series found", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-01-31"      ,        1 , NA         , TRUE          ,      100 ,
@@ -157,19 +192,25 @@ test_that("returns empty data frame when no continuous series found", {
     "AAPL"  , "2020-12-31"      ,        3 ,        184 , FALSE         ,      140
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data)
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-01-31"      ,      100
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("works with custom date column name", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~custom_date , ~row_num , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-03-31" ,        1 , NA         , TRUE          ,      110 ,
@@ -177,9 +218,12 @@ test_that("works with custom date column name", {
     "AAPL"  , "2020-09-30" ,        3 ,         92 , TRUE          ,      130
   ) %>%
     dplyr::mutate(custom_date = as.Date(custom_date))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data, date_col = "custom_date")
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~custom_date , ~revenue ,
     "AAPL"  , "2020-03-31" ,      110 ,
@@ -187,11 +231,14 @@ test_that("works with custom date column name", {
     "AAPL"  , "2020-09-30" ,      130
   ) %>%
     dplyr::mutate(custom_date = as.Date(custom_date))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("works with custom row number column name", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~custom_row , ~days_diff , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-03-31"      ,           1 , NA         , TRUE          ,      110 ,
@@ -199,9 +246,12 @@ test_that("works with custom row number column name", {
     "AAPL"  , "2020-09-30"      ,           3 ,         92 , TRUE          ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(test_data, row_num_col = "custom_row")
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~revenue ,
     "AAPL"  , "2020-03-31"      ,      110 ,
@@ -209,11 +259,14 @@ test_that("works with custom row number column name", {
     "AAPL"  , "2020-09-30"      ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })
 
 test_that("works with custom cleanup columns", {
+  # nolint start
+  # fmt: skip
   test_data <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~temp_col , ~is_quarterly , ~revenue ,
     "AAPL"  , "2020-03-31"      ,        1 , "remove"  , TRUE          ,      110 ,
@@ -221,12 +274,15 @@ test_that("works with custom cleanup columns", {
     "AAPL"  , "2020-09-30"      ,        3 , "remove"  , TRUE          ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   actual <- validate_continuous_quarters(
     test_data,
     cleanup_cols = c("temp_col", "is_quarterly")
   )
 
+  # nolint start
+  # fmt: skip
   expected <- tibble::tribble(
     ~ticker , ~fiscalDateEnding , ~row_num , ~revenue ,
     "AAPL"  , "2020-03-31"      ,        1 ,      110 ,
@@ -234,6 +290,7 @@ test_that("works with custom cleanup columns", {
     "AAPL"  , "2020-09-30"      ,        3 ,      130
   ) %>%
     dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
 
   expect_equal(actual, expected)
 })

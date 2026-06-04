@@ -1,25 +1,37 @@
 test_that("validate_and_prepare_statements validates threshold parameter", {
   # Create minimal test data
-  cash_flow <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    operatingCashflow = 1000
-  )
-  income_statement <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    totalRevenue = 5000
-  )
-  balance_sheet <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    totalAssets = 10000
-  )
-  earnings <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    reportedDate = as.Date("2020-04-15")
-  )
+  # nolint start
+  # fmt: skip
+  cash_flow <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~operatingCashflow,
+    "TEST",  "2020-03-31",      1000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  income_statement <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~totalRevenue,
+    "TEST",  "2020-03-31",      5000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  balance_sheet <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~totalAssets,
+    "TEST",  "2020-03-31",      10000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  earnings <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate,
+    "TEST",  "2020-03-31",      "2020-04-15"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   expect_error(
     validate_and_prepare_statements(
@@ -55,26 +67,38 @@ test_that("validate_and_prepare_statements validates threshold parameter", {
 
 test_that("validate_and_prepare_statements validates lookback parameter", {
   # Create minimal test data
-  cash_flow <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    operatingCashflow = 1000
-  )
-  income_statement <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    totalRevenue = 5000
-  )
-  balance_sheet <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    totalAssets = 10000
-  )
-  earnings <- tibble::tibble(
-    ticker = "TEST",
-    fiscalDateEnding = as.Date("2020-03-31"),
-    reportedDate = as.Date("2020-04-15")
-  )
+  # nolint start
+  # fmt: skip
+  cash_flow <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~operatingCashflow,
+    "TEST",  "2020-03-31",      1000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  income_statement <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~totalRevenue,
+    "TEST",  "2020-03-31",      5000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  balance_sheet <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~totalAssets,
+    "TEST",  "2020-03-31",      10000
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
+  # nolint end
+  # nolint start
+  # fmt: skip
+  earnings <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate,
+    "TEST",  "2020-03-31",      "2020-04-15"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   expect_error(
     validate_and_prepare_statements(

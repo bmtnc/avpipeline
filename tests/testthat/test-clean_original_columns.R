@@ -1,4 +1,6 @@
 # Test data
+# nolint start
+# fmt: skip
 test_df <- tibble::tribble(
   ~ticker , ~date        , ~metric1 , ~metric2 , ~metric1_anomaly , ~metric2_anomaly ,
   "AAPL"  , "2020-01-01" ,      100 ,      200 , FALSE            , FALSE            ,
@@ -10,6 +12,7 @@ test_df <- tibble::tribble(
   "MSFT"  , "2020-03-01" ,      300 ,      180 , TRUE             , FALSE            ,
   "MSFT"  , "2020-04-01" ,      100 ,      190 , FALSE            , FALSE
 )
+# nolint end
 
 test_that("cleans anomalous values and interpolates correctly", {
   metric_cols <- c("metric1", "metric2")

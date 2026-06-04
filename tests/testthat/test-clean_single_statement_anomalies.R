@@ -8,11 +8,12 @@ test_that("clean_single_statement_anomalies validates data parameter", {
 test_that("clean_single_statement_anomalies validates metrics parameter", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   expect_error(
@@ -24,11 +25,12 @@ test_that("clean_single_statement_anomalies validates metrics parameter", {
 test_that("clean_single_statement_anomalies validates statement_name parameter", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   expect_error(
@@ -44,11 +46,12 @@ test_that("clean_single_statement_anomalies validates statement_name parameter",
 test_that("clean_single_statement_anomalies validates threshold parameter", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   expect_error(
@@ -65,11 +68,12 @@ test_that("clean_single_statement_anomalies validates threshold parameter", {
 test_that("clean_single_statement_anomalies validates min_obs parameter", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   expect_error(
@@ -86,11 +90,12 @@ test_that("clean_single_statement_anomalies validates min_obs parameter", {
 test_that("clean_single_statement_anomalies handles insufficient observations", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   result <- clean_single_statement_anomalies(

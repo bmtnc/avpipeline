@@ -17,26 +17,34 @@ test_that("align_statement_dates validates required names", {
 test_that("align_statement_dates finds common ticker-date combinations", {
   # nolint start
   # fmt: skip
-  cash_flow_data <- tibble::tibble(
-    ticker           = c("A", "A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31", "2020-12-31"))
-  )
+  cash_flow_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "A",     "2021-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   # nolint start
   # fmt: skip
-  income_statement_data <- tibble::tibble(
-    ticker           = c("A", "A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31", "2020-12-31"))
-  )
+  income_statement_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "A",     "2021-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   # nolint start
   # fmt: skip
-  balance_sheet_data <- tibble::tibble(
-    ticker           = c("A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2020-12-31"))
-  )
+  balance_sheet_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   statements <- list(

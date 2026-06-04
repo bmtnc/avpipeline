@@ -8,16 +8,12 @@ test_that("add_quality_flags validates financial_statements parameter", {
 test_that("add_quality_flags adds quality flag columns", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker            = c("A", "B"),
-    fiscalDateEnding  = as.Date(c("2020-12-31", "2020-12-31")),
-    reportedDate      = as.Date(c("2021-01-15", NA)),
-    totalRevenue      = c(1000, NA),
-    netIncome         = c(150, NA),
-    totalAssets       = c(5000, NA),
-    totalLiabilities  = c(3000, NA),
-    operatingCashflow = c(100, NA)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~totalRevenue, ~netIncome, ~totalAssets, ~totalLiabilities, ~operatingCashflow,
+    "A",     "2020-12-31",      "2021-01-15",  1000,          150,        5000,         3000,              100,
+    "B",     "2020-12-31",      NA,            NA,            NA,         NA,           NA,                NA
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
   # nolint end
 
   result <- add_quality_flags(test_data)

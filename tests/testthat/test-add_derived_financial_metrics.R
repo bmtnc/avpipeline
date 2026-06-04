@@ -1,23 +1,12 @@
 test_that("add_derived_financial_metrics adds all derived metrics", {
   # nolint start
   # fmt: skip
-  input_data <- tibble::tibble(
-    ticker                                  = c("AAPL",  "AAPL"),
-    date                                    = as.Date(c("2023-01-01", "2023-01-02")),
-    operatingCashflow_ttm_per_share         = c(10.0,    10.0),
-    capitalExpenditures_ttm_per_share       = c(-2.0,    -2.0),
-    ebit_ttm_per_share                      = c(100.0,   100.0),
-    depreciationAndAmortization_ttm_per_share = c(20.0,  20.0),
-    depreciation_ttm_per_share              = c(15.0,    15.0),
-    adjusted_close                          = c(150.0,   150.0),
-    shortLongTermDebtTotal_per_share        = c(10.0,    10.0),
-    capitalLeaseObligations_per_share       = c(5.0,     5.0),
-    cashAndShortTermInvestments_per_share   = c(20.0,    20.0),
-    longTermInvestments_per_share           = c(10.0,    10.0),
-    totalShareholderEquity_per_share        = c(200.0,   200.0),
-    totalRevenue_ttm_per_share              = c(50.0,    50.0),
-    totalAssets_per_share                   = c(300.0,   300.0)
-  )
+  input_data <- tibble::tribble(
+    ~ticker, ~date,        ~operatingCashflow_ttm_per_share, ~capitalExpenditures_ttm_per_share, ~ebit_ttm_per_share, ~depreciationAndAmortization_ttm_per_share, ~depreciation_ttm_per_share, ~adjusted_close, ~shortLongTermDebtTotal_per_share, ~capitalLeaseObligations_per_share, ~cashAndShortTermInvestments_per_share, ~longTermInvestments_per_share, ~totalShareholderEquity_per_share, ~totalRevenue_ttm_per_share, ~totalAssets_per_share,
+    "AAPL",  "2023-01-01", 10.0,                             -2.0,                               100.0,               20.0,                                       15.0,                        150.0,           10.0,                              5.0,                                20.0,                                   10.0,                           200.0,                             50.0,                        300.0,
+    "AAPL",  "2023-01-02", 10.0,                             -2.0,                               100.0,               20.0,                                       15.0,                        150.0,           10.0,                              5.0,                                20.0,                                   10.0,                           200.0,                             50.0,                        300.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- add_derived_financial_metrics(input_data)
@@ -52,23 +41,12 @@ test_that("add_derived_financial_metrics adds all derived metrics", {
 test_that("add_derived_financial_metrics handles missing financial data flag", {
   # nolint start
   # fmt: skip
-  input_data <- tibble::tibble(
-    ticker                                  = c("AAPL",  "AAPL"),
-    date                                    = as.Date(c("2023-01-01", "2023-01-02")),
-    operatingCashflow_ttm_per_share         = c(10.0,    NA_real_),
-    capitalExpenditures_ttm_per_share       = c(-2.0,    -2.0),
-    ebit_ttm_per_share                      = c(100.0,   100.0),
-    depreciationAndAmortization_ttm_per_share = c(20.0,  20.0),
-    depreciation_ttm_per_share              = c(15.0,    15.0),
-    adjusted_close                          = c(150.0,   150.0),
-    shortLongTermDebtTotal_per_share        = c(10.0,    10.0),
-    capitalLeaseObligations_per_share       = c(5.0,     5.0),
-    cashAndShortTermInvestments_per_share   = c(20.0,    20.0),
-    longTermInvestments_per_share           = c(10.0,    10.0),
-    totalShareholderEquity_per_share        = c(200.0,   200.0),
-    totalRevenue_ttm_per_share              = c(50.0,    NA_real_),
-    totalAssets_per_share                   = c(300.0,   300.0)
-  )
+  input_data <- tibble::tribble(
+    ~ticker, ~date,        ~operatingCashflow_ttm_per_share, ~capitalExpenditures_ttm_per_share, ~ebit_ttm_per_share, ~depreciationAndAmortization_ttm_per_share, ~depreciation_ttm_per_share, ~adjusted_close, ~shortLongTermDebtTotal_per_share, ~capitalLeaseObligations_per_share, ~cashAndShortTermInvestments_per_share, ~longTermInvestments_per_share, ~totalShareholderEquity_per_share, ~totalRevenue_ttm_per_share, ~totalAssets_per_share,
+    "AAPL",  "2023-01-01", 10.0,                             -2.0,                               100.0,               20.0,                                       15.0,                        150.0,           10.0,                              5.0,                                20.0,                                   10.0,                           200.0,                             50.0,                        300.0,
+    "AAPL",  "2023-01-02", NA_real_,                         -2.0,                               100.0,               20.0,                                       15.0,                        150.0,           10.0,                              5.0,                                20.0,                                   10.0,                           200.0,                             NA_real_,                    300.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- add_derived_financial_metrics(input_data)
@@ -83,24 +61,11 @@ test_that("add_derived_financial_metrics handles missing financial data flag", {
 test_that("add_derived_financial_metrics preserves original columns", {
   # nolint start
   # fmt: skip
-  input_data <- tibble::tibble(
-    ticker                                  = c("AAPL"),
-    date                                    = as.Date("2023-01-01"),
-    custom_column                           = c("test"),
-    operatingCashflow_ttm_per_share         = c(10.0),
-    capitalExpenditures_ttm_per_share       = c(-2.0),
-    ebit_ttm_per_share                      = c(100.0),
-    depreciationAndAmortization_ttm_per_share = c(20.0),
-    depreciation_ttm_per_share              = c(15.0),
-    adjusted_close                          = c(150.0),
-    shortLongTermDebtTotal_per_share        = c(10.0),
-    capitalLeaseObligations_per_share       = c(5.0),
-    cashAndShortTermInvestments_per_share   = c(20.0),
-    longTermInvestments_per_share           = c(10.0),
-    totalShareholderEquity_per_share        = c(200.0),
-    totalRevenue_ttm_per_share              = c(50.0),
-    totalAssets_per_share                   = c(300.0)
-  )
+  input_data <- tibble::tribble(
+    ~ticker, ~date,        ~custom_column, ~operatingCashflow_ttm_per_share, ~capitalExpenditures_ttm_per_share, ~ebit_ttm_per_share, ~depreciationAndAmortization_ttm_per_share, ~depreciation_ttm_per_share, ~adjusted_close, ~shortLongTermDebtTotal_per_share, ~capitalLeaseObligations_per_share, ~cashAndShortTermInvestments_per_share, ~longTermInvestments_per_share, ~totalShareholderEquity_per_share, ~totalRevenue_ttm_per_share, ~totalAssets_per_share,
+    "AAPL",  "2023-01-01", "test",         10.0,                             -2.0,                               100.0,               20.0,                                       15.0,                        150.0,           10.0,                              5.0,                                20.0,                                   10.0,                           200.0,                             50.0,                        300.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- add_derived_financial_metrics(input_data)
@@ -115,23 +80,11 @@ test_that("add_derived_financial_metrics preserves original columns", {
 test_that("add_derived_financial_metrics handles NA values in calculations", {
   # nolint start
   # fmt: skip
-  input_data <- tibble::tibble(
-    ticker                                  = c("AAPL"),
-    date                                    = as.Date("2023-01-01"),
-    operatingCashflow_ttm_per_share         = c(NA_real_),
-    capitalExpenditures_ttm_per_share       = c(-2.0),
-    ebit_ttm_per_share                      = c(NA_real_),
-    depreciationAndAmortization_ttm_per_share = c(20.0),
-    depreciation_ttm_per_share              = c(15.0),
-    adjusted_close                          = c(150.0),
-    shortLongTermDebtTotal_per_share        = c(NA_real_),
-    capitalLeaseObligations_per_share       = c(5.0),
-    cashAndShortTermInvestments_per_share   = c(20.0),
-    longTermInvestments_per_share           = c(10.0),
-    totalShareholderEquity_per_share        = c(200.0),
-    totalRevenue_ttm_per_share              = c(50.0),
-    totalAssets_per_share                   = c(300.0)
-  )
+  input_data <- tibble::tribble(
+    ~ticker, ~date,        ~operatingCashflow_ttm_per_share, ~capitalExpenditures_ttm_per_share, ~ebit_ttm_per_share, ~depreciationAndAmortization_ttm_per_share, ~depreciation_ttm_per_share, ~adjusted_close, ~shortLongTermDebtTotal_per_share, ~capitalLeaseObligations_per_share, ~cashAndShortTermInvestments_per_share, ~longTermInvestments_per_share, ~totalShareholderEquity_per_share, ~totalRevenue_ttm_per_share, ~totalAssets_per_share,
+    "AAPL",  "2023-01-01", NA_real_,                         -2.0,                               NA_real_,            20.0,                                       15.0,                        150.0,           NA_real_,                          5.0,                                20.0,                                   10.0,                           200.0,                             50.0,                        300.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- add_derived_financial_metrics(input_data)

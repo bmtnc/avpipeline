@@ -1,35 +1,26 @@
 test_that("join_daily_and_financial_data joins data correctly", {
   # nolint start
   # fmt: skip
-  price_data <- tibble::tibble(
-    ticker      = c("AAPL",  "AAPL"),
-    date        = as.Date(c("2023-01-01", "2023-01-02")),
-    open        = c(150.0,   151.0),
-    close       = c(152.0,   153.0),
-    as_of_date  = as.Date(c("2023-01-01", "2023-01-02"))
-  )
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~open, ~close, ~as_of_date,
+    "AAPL",  "2023-01-01", 150.0, 152.0, "2023-01-01",
+    "AAPL",  "2023-01-02", 151.0, 153.0, "2023-01-02"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(date, as_of_date), as.Date))
 
-  market_cap_data <- tibble::tibble(
-    ticker = c("AAPL", "AAPL"),
-    date = as.Date(c("2023-01-01", "2023-01-02")),
-    market_cap = c(2500000, 2510000),
-    effective_shares_outstanding = c(16000, 16100),
-    as_of_date = as.Date(c("2023-01-01", "2023-01-02")),
-    close = c(152.0, 153.0),
-    commonStockSharesOutstanding = c(16000, 16100),
-    has_financial_data = c(TRUE, TRUE),
-    days_since_financial_report = c(10, 11),
-    reportedDate = as.Date(c("2022-12-20", "2022-12-20"))
-  )
+  market_cap_data <- tibble::tribble(
+    ~ticker, ~date,        ~market_cap, ~effective_shares_outstanding, ~as_of_date,  ~close, ~commonStockSharesOutstanding, ~has_financial_data, ~days_since_financial_report, ~reportedDate,
+    "AAPL",  "2023-01-01", 2500000,     16000,                         "2023-01-01", 152.0,  16000,                         TRUE,                10,                           "2022-12-20",
+    "AAPL",  "2023-01-02", 2510000,     16100,                         "2023-01-02", 153.0,  16100,                         TRUE,                11,                           "2022-12-20"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(date, as_of_date, reportedDate), as.Date))
 
-  ttm_data <- tibble::tibble(
-    ticker = c("AAPL", "AAPL"),
-    date = as.Date(c("2023-01-01", "2023-01-02")),
-    totalRevenue_ttm = c(400000, 400000),
-    calendar_quarter_ending = as.Date(c("2022-12-31", "2022-12-31")),
-    fiscalDateEnding = as.Date(c("2022-12-31", "2022-12-31")),
-    reportedDate = as.Date(c("2022-12-20", "2022-12-20"))
-  )
+  ttm_data <- tibble::tribble(
+    ~ticker, ~date,        ~totalRevenue_ttm, ~calendar_quarter_ending, ~fiscalDateEnding, ~reportedDate,
+    "AAPL",  "2023-01-01", 400000,            "2022-12-31",             "2022-12-31",      "2022-12-20",
+    "AAPL",  "2023-01-02", 400000,            "2022-12-31",             "2022-12-31",      "2022-12-20"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(date, calendar_quarter_ending, fiscalDateEnding, reportedDate), as.Date))
   # nolint end
 
   result <- join_daily_and_financial_data(price_data, market_cap_data, ttm_data)
@@ -59,25 +50,23 @@ test_that("join_daily_and_financial_data joins data correctly", {
 test_that("join_daily_and_financial_data orders columns correctly", {
   # nolint start
   # fmt: skip
-  price_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date   = as.Date("2023-01-01"),
-    open   = c(150.0)
-  )
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~open,
+    "AAPL",  "2023-01-01", 150.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
 
-  market_cap_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01"),
-    market_cap = c(2500000)
-  )
+  market_cap_data <- tibble::tribble(
+    ~ticker, ~date,        ~market_cap,
+    "AAPL",  "2023-01-01", 2500000
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
 
-  ttm_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01"),
-    totalRevenue_ttm = c(400000),
-    calendar_quarter_ending = as.Date("2022-12-31"),
-    fiscalDateEnding = as.Date("2022-12-31")
-  )
+  ttm_data <- tibble::tribble(
+    ~ticker, ~date,        ~totalRevenue_ttm, ~calendar_quarter_ending, ~fiscalDateEnding,
+    "AAPL",  "2023-01-01", 400000,            "2022-12-31",             "2022-12-31"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(date, calendar_quarter_ending, fiscalDateEnding), as.Date))
   # nolint end
 
   result <- join_daily_and_financial_data(price_data, market_cap_data, ttm_data)
@@ -94,10 +83,14 @@ test_that("join_daily_and_financial_data orders columns correctly", {
 })
 
 test_that("join_daily_and_financial_data validates input types", {
-  valid_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01")
-  )
+  # nolint start
+  # fmt: skip
+  valid_data <- tibble::tribble(
+    ~ticker, ~date,
+    "AAPL",  "2023-01-01"
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
 
   expect_error(
     join_daily_and_financial_data("not_a_dataframe", valid_data, valid_data),
@@ -117,15 +110,20 @@ test_that("join_daily_and_financial_data validates input types", {
 
 test_that("join_daily_and_financial_data validates required columns", {
   # Missing ticker column
-  invalid_price <- tibble::tibble(
-    date = as.Date("2023-01-01"),
-    open = c(150.0)
-  )
+  # nolint start
+  # fmt: skip
+  invalid_price <- tibble::tribble(
+    ~date,        ~open,
+    "2023-01-01", 150.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
 
-  valid_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01")
-  )
+  valid_data <- tibble::tribble(
+    ~ticker, ~date,
+    "AAPL",  "2023-01-01"
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
 
   expect_error(
     join_daily_and_financial_data(invalid_price, valid_data, valid_data),
@@ -133,10 +131,13 @@ test_that("join_daily_and_financial_data validates required columns", {
   )
 
   # Missing date column from market_cap_data
-  invalid_market <- tibble::tibble(
-    ticker = c("AAPL"),
-    market_cap = c(2500000)
+  # nolint start
+  # fmt: skip
+  invalid_market <- tibble::tribble(
+    ~ticker, ~market_cap,
+    "AAPL",  2500000
   )
+  # nolint end
 
   expect_error(
     join_daily_and_financial_data(valid_data, invalid_market, valid_data),
@@ -144,10 +145,14 @@ test_that("join_daily_and_financial_data validates required columns", {
   )
 
   # Missing ticker column from ttm_data
-  invalid_ttm <- tibble::tibble(
-    date = as.Date("2023-01-01"),
-    totalRevenue_ttm = c(400000)
-  )
+  # nolint start
+  # fmt: skip
+  invalid_ttm <- tibble::tribble(
+    ~date,        ~totalRevenue_ttm,
+    "2023-01-01", 400000
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
 
   expect_error(
     join_daily_and_financial_data(valid_data, valid_data, invalid_ttm),
@@ -158,23 +163,26 @@ test_that("join_daily_and_financial_data validates required columns", {
 test_that("join_daily_and_financial_data handles missing matches with left join", {
   # nolint start
   # fmt: skip
-  price_data <- tibble::tibble(
-    ticker = c("AAPL",  "AAPL",  "MSFT"),
-    date   = as.Date(c("2023-01-01", "2023-01-02", "2023-01-01")),
-    open   = c(150.0,   151.0,   250.0)
-  )
+  price_data <- tibble::tribble(
+    ~ticker, ~date,        ~open,
+    "AAPL",  "2023-01-01", 150.0,
+    "AAPL",  "2023-01-02", 151.0,
+    "MSFT",  "2023-01-01", 250.0
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
 
-  market_cap_data <- tibble::tibble(
-    ticker = c("AAPL", "AAPL"),
-    date = as.Date(c("2023-01-01", "2023-01-02")),
-    market_cap = c(2500000, 2510000)
-  )
+  market_cap_data <- tibble::tribble(
+    ~ticker, ~date,        ~market_cap,
+    "AAPL",  "2023-01-01", 2500000,
+    "AAPL",  "2023-01-02", 2510000
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
 
-  ttm_data <- tibble::tibble(
-    ticker = c("AAPL"),
-    date = as.Date("2023-01-01"),
-    totalRevenue_ttm = c(400000)
-  )
+  ttm_data <- tibble::tribble(
+    ~ticker, ~date,        ~totalRevenue_ttm,
+    "AAPL",  "2023-01-01", 400000
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
   # nolint end
 
   result <- join_daily_and_financial_data(price_data, market_cap_data, ttm_data)
