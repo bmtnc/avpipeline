@@ -1,3 +1,7 @@
 linters: linters_with_defaults(
-    line_length_linter(120L)
+    line_length_linter(120L),
+    pipe_consistency_linter(pipe = "%>%"),
+    object_usage_linter = NULL,
+    object_length_linter = NULL,
+    commented_code_linter = NULL
   )

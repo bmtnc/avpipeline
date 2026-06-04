@@ -39,7 +39,7 @@ test_that("clean_single_statement_anomalies validates statement_name parameter",
       c("metric1"),
       c("test1", "test2")
     ),
-    "^clean_single_statement_anomalies\\(\\): \\[statement_name\\] must be a character scalar, not character of length 2$"
+    "^clean_single_statement_anomalies\\(\\): \\[statement_name\\] must be a character scalar, not character of length 2$" # nolint: line_length_linter.
   )
 })
 

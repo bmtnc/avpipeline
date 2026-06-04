@@ -40,14 +40,6 @@ align_statement_tickers <- function(statements) {
   )
   common_tickers <- Reduce(intersect, all_tickers)
 
-  all_unique_tickers <- unique(c(
-    earnings_tickers,
-    cash_flow_tickers,
-    income_statement_tickers,
-    balance_sheet_tickers
-  ))
-  removed_tickers <- setdiff(all_unique_tickers, common_tickers)
-
   list(
     earnings = statements$earnings %>%
       dplyr::filter(ticker %in% common_tickers),

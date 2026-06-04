@@ -48,5 +48,5 @@ parse_balance_sheet_response <- function(response, ticker) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
 
-  return(result)
+  result
 }

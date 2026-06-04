@@ -133,7 +133,7 @@ s3_clear_checkpoint <- function(bucket_name, phase, region = "us-east-1") {
   s3_key <- paste0("checkpoint/", phase, "_checkpoint.json")
   s3_uri <- paste0("s3://", bucket_name, "/", s3_key)
 
-  result <- system2_with_timeout(
+  system2_with_timeout(
     "aws",
     args = c("s3", "rm", s3_uri, "--region", region),
     timeout_seconds = 30,

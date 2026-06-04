@@ -49,7 +49,7 @@ parse_price_response <- function(response, ticker, datatype) {
     prices_df <- dplyr::bind_rows(prices_list) %>%
       dplyr::arrange(date)
 
-    return(prices_df)
+    prices_df
   } else if (datatype == "csv") {
     # Parse CSV response
     content <- httr2::resp_body_string(response)
@@ -63,6 +63,6 @@ parse_price_response <- function(response, ticker, datatype) {
       dplyr::select(-timestamp) %>%
       dplyr::arrange(date)
 
-    return(prices_df)
+    prices_df
   }
 }

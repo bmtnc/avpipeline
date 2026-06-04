@@ -64,9 +64,9 @@ test_that("parse_historical_options_response parses JSON correctly", {
 
 test_that("parse_historical_options_response parses CSV correctly", {
   csv_content <- paste(
-    "contractID,symbol,expiration,strike,type,last,mark,bid,bid_size,ask,ask_size,volume,open_interest,date,implied_volatility,delta,gamma,theta,vega,rho",
-    "AAPL260220C00200000,AAPL,2026-02-20,200.00,call,45.50,46.00,45.00,10,47.00,15,100,500,2026-02-11,0.32500,0.85000,0.01200,-0.15000,0.25000,0.05000",
-    "AAPL260220P00200000,AAPL,2026-02-20,200.00,put,1.20,1.15,1.10,20,1.20,25,50,300,2026-02-11,0.33000,-0.15000,0.01200,-0.10000,0.25000,-0.05000",
+    "contractID,symbol,expiration,strike,type,last,mark,bid,bid_size,ask,ask_size,volume,open_interest,date,implied_volatility,delta,gamma,theta,vega,rho", # nolint: line_length_linter.
+    "AAPL260220C00200000,AAPL,2026-02-20,200.00,call,45.50,46.00,45.00,10,47.00,15,100,500,2026-02-11,0.32500,0.85000,0.01200,-0.15000,0.25000,0.05000", # nolint: line_length_linter.
+    "AAPL260220P00200000,AAPL,2026-02-20,200.00,put,1.20,1.15,1.10,20,1.20,25,50,300,2026-02-11,0.33000,-0.15000,0.01200,-0.10000,0.25000,-0.05000", # nolint: line_length_linter.
     sep = "\n"
   )
 
@@ -177,8 +177,8 @@ test_that("parse_historical_options_response errors on invalid datatype", {
 
 test_that("parse_historical_options_response has correct column order", {
   csv_content <- paste(
-    "contractID,symbol,expiration,strike,type,last,mark,bid,bid_size,ask,ask_size,volume,open_interest,date,implied_volatility,delta,gamma,theta,vega,rho",
-    "TEST260220C00100000,TEST,2026-02-20,100.00,call,5.00,5.10,5.00,10,5.20,15,100,500,2026-02-11,0.30000,0.50000,0.02000,-0.05000,0.20000,0.03000",
+    "contractID,symbol,expiration,strike,type,last,mark,bid,bid_size,ask,ask_size,volume,open_interest,date,implied_volatility,delta,gamma,theta,vega,rho", # nolint: line_length_linter.
+    "TEST260220C00100000,TEST,2026-02-20,100.00,call,5.00,5.10,5.00,10,5.20,15,100,500,2026-02-11,0.30000,0.50000,0.02000,-0.05000,0.20000,0.03000", # nolint: line_length_linter.
     sep = "\n"
   )
 

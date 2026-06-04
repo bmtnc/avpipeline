@@ -71,7 +71,7 @@ clean_single_statement_anomalies <- function(
       )
     },
     error = function(e) {
-      return(data)
+      data
     }
   )
 
@@ -89,7 +89,7 @@ clean_single_statement_anomalies <- function(
         dplyr::ungroup()
     },
     error = function(e) {
-      return(data_cleaned)
+      data_cleaned
     }
   )
 

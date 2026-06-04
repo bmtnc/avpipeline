@@ -35,5 +35,5 @@ fetch_etf_holdings <- function(etf_symbol, api_key = NULL) {
     "\n"
   )
 
-  return(tickers)
+  tickers
 }

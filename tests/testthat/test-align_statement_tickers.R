@@ -10,7 +10,7 @@ test_that("align_statement_tickers validates required names", {
 
   expect_error(
     align_statement_tickers(incomplete_list),
-    "^align_statement_tickers\\(\\): \\[statements\\] must contain: earnings, cash_flow, income_statement, balance_sheet$"
+    "^align_statement_tickers\\(\\): \\[statements\\] must contain: earnings, cash_flow, income_statement, balance_sheet$" # nolint: line_length_linter.
   )
 })
 

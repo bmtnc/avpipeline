@@ -58,5 +58,5 @@ parse_splits_response <- function(response, ticker) {
   # Sort by effective_date (ascending - oldest first)
   splits_df <- splits_df[order(splits_df$effective_date), ]
 
-  return(splits_df)
+  splits_df
 }

@@ -51,5 +51,5 @@ parse_etf_profile_response <- function(response) {
   }
 
   # Return unique ticker symbols
-  return(unique(tickers))
+  unique(tickers)
 }
