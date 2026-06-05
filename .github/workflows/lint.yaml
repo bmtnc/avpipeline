@@ -24,5 +24,9 @@ jobs:
 
       - uses: r-lib/actions/setup-renv@v2
 
+      # lintr is a dev-only tool, not in renv.lock; install it ad hoc.
+      - name: Install lintr
+        run: Rscript -e 'renv::install("lintr")'
+
       - name: Lint package
         run: Rscript scripts/lint.R
