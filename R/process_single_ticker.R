@@ -32,13 +32,13 @@ process_single_ticker <- function(
   validate_date_type(start_date, scalar = TRUE, name = "start_date")
   validate_positive(threshold, name = "threshold")
   validate_numeric_scalar(delay_seconds, name = "delay_seconds", gte = 0)
-  
+
   # ============================================================================
   # FETCH ALL DATA
   # ============================================================================
-  
+
   all_data <- fetch_all_ticker_data(ticker, delay_seconds)
-  
+
   # Extract components
   balance_sheet <- all_data$balance_sheet
   income_statement <- all_data$income_statement
@@ -47,16 +47,16 @@ process_single_ticker <- function(
   price_data <- all_data$price_data
   splits_data <- all_data$splits_data
   api_log <- all_data$api_log
-  
+
   # Check if we have minimal data (earnings and price required)
   if (nrow(earnings) == 0 || nrow(price_data) == 0) {
     return(list(data = NULL, api_log = api_log))
   }
-  
+
   # ============================================================================
   # VALIDATE AND PREPARE FINANCIAL STATEMENTS
   # ============================================================================
-  
+
   financial_statements <- validate_and_prepare_statements(
     cash_flow = cash_flow,
     income_statement = income_statement,
@@ -69,32 +69,32 @@ process_single_ticker <- function(
     end_threshold = end_threshold,
     min_obs = min_obs
   )
-  
+
   # Check if we have financial data after cleaning
   if (nrow(financial_statements) == 0) {
     return(list(data = NULL, api_log = api_log))
   }
-  
+
   # ============================================================================
   # BUILD MARKET CAP WITH SPLIT ADJUSTMENT
   # ============================================================================
-  
+
   market_cap <- build_market_cap_with_splits(
     price_data = price_data,
     splits_data = splits_data,
     financial_statements = financial_statements,
     start_date = start_date
   )
-  
+
   # ============================================================================
   # CALCULATE TTM METRICS AND PER-SHARE VALUES
   # ============================================================================
-  
+
   ttm_per_share_data <- calculate_unified_ttm_per_share_metrics(
     financial_statements = financial_statements,
     price_data = price_data,
     market_cap = market_cap
   )
-  
+
   list(data = ttm_per_share_data, api_log = api_log)
 }

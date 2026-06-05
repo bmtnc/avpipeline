@@ -11,6 +11,11 @@
 # The daily TTM artifact (with forward-fill and per-share metrics) is created
 # on-demand locally using create_daily_ttm_artifact().
 #
+# Supports two modes via PHASE2_MODE environment variable:
+#   - "incremental" (default): Only reprocess tickers updated in Phase 1,
+#     merge with unchanged rows from previous artifact
+#   - "full": Reprocess all tickers from scratch
+#
 # Input: s3://{bucket}/raw/{TICKER}/*.parquet
 # Output:
 #   s3://{bucket}/ttm-artifacts/{YYYY-MM-DD}/ttm_quarterly_artifact.parquet
@@ -27,9 +32,13 @@ start_date_str <- Sys.getenv("START_DATE", "2004-12-31")
 start_date <- as.Date(start_date_str)
 aws_region <- Sys.getenv("AWS_REGION", "us-east-1")
 s3_bucket <- Sys.getenv("S3_BUCKET")
+phase2_mode <- Sys.getenv("PHASE2_MODE", "incremental")
 
 if (s3_bucket == "") {
   stop("S3_BUCKET environment variable is required")
+}
+if (!phase2_mode %in% c("incremental", "full", "price_only")) {
+  stop("PHASE2_MODE must be 'incremental', 'full', or 'price_only'")
 }
 
 threshold <- 4
@@ -40,67 +49,289 @@ end_threshold <- 3
 min_obs <- 10
 
 phase_start_time <- Sys.time()
-log_phase_start("PHASE 2: GENERATE TTM ARTIFACTS",
-  sprintf("Start date: %s | Bucket: %s", start_date, s3_bucket)
+log_phase_start(
+  "PHASE 2: GENERATE TTM ARTIFACTS",
+  sprintf(
+    "Start date: %s | Bucket: %s | Mode: %s",
+    start_date,
+    s3_bucket,
+    phase2_mode
+  )
 )
 
 # ============================================================================
-# LOAD ALL DATA
+# LOAD DATA AND DETERMINE REPROCESS SET
 # ============================================================================
 
-log_pipeline("Loading all raw data using Arrow datasets...")
+previous_artifact <- NULL
+reprocess_info <- NULL
+
+if (phase2_mode == "incremental") {
+  log_pipeline("Incremental mode: determining reprocess set...")
+
+  # Read manifest from Phase 1
+  manifest <- s3_read_phase1_manifest(s3_bucket, aws_region)
+  if (!is.null(manifest)) {
+    log_pipeline(sprintf(
+      "Manifest loaded: %d tickers updated in Phase 1",
+      nrow(manifest)
+    ))
+  } else {
+    log_pipeline("No manifest found, will fall back to full reprocess")
+  }
+
+  # Get all tickers currently in S3
+  s3_tickers <- s3_list_existing_tickers(s3_bucket, aws_region)
+  log_pipeline(sprintf("S3 raw data: %d tickers", length(s3_tickers)))
+
+  # Load previous quarterly artifact
+  previous_artifact <- tryCatch(
+    {
+      artifact <- load_quarterly_artifact(s3_bucket, region = aws_region)
+      log_pipeline(sprintf(
+        "Previous artifact loaded: %d rows, %d tickers",
+        nrow(artifact),
+        length(unique(artifact$ticker))
+      ))
+      artifact
+    },
+    error = function(e) {
+      log_pipeline(sprintf("No previous artifact found: %s", e$message))
+      NULL
+    }
+  )
+
+  previous_artifact_tickers <- if (!is.null(previous_artifact)) {
+    unique(previous_artifact$ticker)
+  } else {
+    character(0)
+  }
+
+  # Determine what to reprocess
+  reprocess_info <- determine_phase2_reprocess_set(
+    manifest = manifest,
+    previous_artifact_tickers = previous_artifact_tickers,
+    s3_tickers = s3_tickers
+  )
+
+  log_pipeline(sprintf(
+    "Reprocess set (%s): %d to reprocess | %d unchanged | %d dropped",
+    reprocess_info$reason,
+    length(reprocess_info$reprocess_tickers),
+    length(reprocess_info$unchanged_tickers),
+    length(reprocess_info$dropped_tickers)
+  ))
+
+  if (length(reprocess_info$dropped_tickers) > 0) {
+    log_pipeline(sprintf(
+      "Dropped tickers (no longer in S3): %s",
+      paste(head(reprocess_info$dropped_tickers, 20), collapse = ", ")
+    ))
+  }
+}
+
+# ============================================================================
+# SYNC AND LOAD RAW DATA
+# ============================================================================
+
+log_pipeline("Syncing raw data from S3...")
 load_start <- Sys.time()
 
-all_data <- s3_load_all_raw_data(s3_bucket, aws_region)
+# Price-only daily runs touch no financials, so load only price raw data.
+load_types <- if (phase2_mode == "price_only") "price" else NULL
+all_data <- s3_load_all_raw_data(s3_bucket, aws_region, data_types = load_types)
 
 load_duration <- as.numeric(difftime(Sys.time(), load_start, units = "secs"))
 log_pipeline(sprintf("All data loaded in %.1f seconds", load_duration))
 
-# Get unique tickers from the data
-tickers <- unique(all_data$earnings$ticker)
-n_tickers <- length(tickers)
-log_pipeline(sprintf("Processing %d tickers", n_tickers))
+# Save price data before splitting (needed intact for price artifact later)
+price_data <- all_data$price
 
-# ============================================================================
-# PROCESS TICKERS FOR QUARTERLY ARTIFACT (PARALLEL)
-# ============================================================================
+# Overlay provisional interim bulk-quote bars on top of authoritative history.
+# No-op when no interim file exists (e.g. weekly run after reconciliation).
+# Authoritative wins on shared dates; interim only fills beyond the frontier.
+interim_quotes <- s3_read_interim_quotes(s3_bucket, aws_region)
+if (!is.null(interim_quotes)) {
+  rows_before <- nrow(price_data)
+  price_data <- merge_interim_quotes(price_data, interim_quotes)
+  fresh_rows <- nrow(price_data) - rows_before
+  log_pipeline(sprintf(
+    "Overlaid interim quotes: +%d provisional rows",
+    fresh_rows
+  ))
 
-n_cores <- parallel::detectCores()
-log_pipeline(sprintf("Processing tickers for quarterly TTM artifact using %d cores...", n_cores))
-process_start <- Sys.time()
+  # Authoritative has fully caught up (no interim bar beyond the frontier) ->
+  # the interim store is entirely stale; clear it. Fires on the weekly run.
+  if (fresh_rows == 0) {
+    s3_clear_interim_quotes(s3_bucket, aws_region)
+    log_pipeline("Interim quotes fully superseded by authoritative; cleared.")
+  }
+}
 
-quarterly_results <- parallel::mclapply(tickers, function(ticker) {
-  tryCatch({
-    process_ticker_for_quarterly_artifact(
-      ticker = ticker,
-      all_data = all_data,
-      start_date = start_date,
-      threshold = threshold,
-      lookback = lookback,
-      lookahead = lookahead,
-      end_window_size = end_window_size,
-      end_threshold = end_threshold,
-      min_obs = min_obs
+if (phase2_mode == "price_only") {
+  # Daily price refresh: financials are unchanged, so skip all quarterly
+  # reprocessing and carry the previous quarterly artifact forward verbatim.
+  # (Re-uploaded below under today's date so the artifact pair stays colocated.)
+  log_pipeline(
+    "Price-only mode: reusing previous quarterly artifact unchanged."
+  )
+  quarterly_artifact <- load_quarterly_artifact(s3_bucket, region = aws_region)
+  log_pipeline(sprintf(
+    "Previous quarterly artifact: %d rows",
+    nrow(quarterly_artifact)
+  ))
+
+  # No tickers reprocessed in this mode; define summary counters for the footer.
+  n_tickers <- 0L
+  success_count <- 0L
+} else {
+  # Determine tickers to process
+  if (phase2_mode == "incremental" && reprocess_info$reason == "incremental") {
+    tickers <- reprocess_info$reprocess_tickers
+    # Filter all_data to only reprocess tickers (reduce memory for pre-split)
+    for (dt in names(all_data)) {
+      if (dt == "price") {
+        next
+      }
+      if (nrow(all_data[[dt]]) > 0 && "ticker" %in% names(all_data[[dt]])) {
+        all_data[[dt]] <- dplyr::filter(all_data[[dt]], ticker %in% tickers)
+      }
+    }
+  } else {
+    tickers <- unique(all_data$earnings$ticker)
+  }
+
+  # Pre-split data by ticker for O(1) lookups in parallel workers
+  log_pipeline("Pre-splitting data by ticker...")
+  split_start <- Sys.time()
+
+  for (dt in names(all_data)) {
+    if (dt == "price") {
+      next
+    }
+    if (nrow(all_data[[dt]]) > 0 && "ticker" %in% names(all_data[[dt]])) {
+      all_data[[dt]] <- split(all_data[[dt]], all_data[[dt]]$ticker)
+    }
+  }
+
+  split_duration <- as.numeric(difftime(
+    Sys.time(),
+    split_start,
+    units = "secs"
+  ))
+  log_pipeline(sprintf(
+    "Data pre-split by ticker in %.1f seconds",
+    split_duration
+  ))
+
+  n_tickers <- length(tickers)
+  log_pipeline(sprintf("Processing %d tickers", n_tickers))
+
+  # ============================================================================
+  # PROCESS TICKERS FOR QUARTERLY ARTIFACT (PARALLEL)
+  # ============================================================================
+
+  n_cores <- parallel::detectCores()
+  log_pipeline(sprintf(
+    "Processing tickers for quarterly TTM artifact using %d cores...",
+    n_cores
+  ))
+  process_start <- Sys.time()
+
+  quarterly_results <- parallel::mclapply(
+    tickers,
+    function(ticker) {
+      tryCatch(
+        {
+          process_ticker_for_quarterly_artifact(
+            ticker = ticker,
+            all_data = all_data,
+            start_date = start_date,
+            threshold = threshold,
+            lookback = lookback,
+            lookahead = lookahead,
+            end_window_size = end_window_size,
+            end_threshold = end_threshold,
+            min_obs = min_obs
+          )
+        },
+        error = function(e) {
+          NULL
+        }
+      )
+    },
+    mc.cores = n_cores
+  )
+
+  # Combine quarterly results from reprocessed tickers
+  log_pipeline("Combining quarterly results...")
+  reprocessed_artifact <- dplyr::bind_rows(quarterly_results)
+
+  # Count successes/skips
+  success_count <- sum(sapply(quarterly_results, function(x) {
+    !is.null(x) && nrow(x) > 0
+  }))
+  skip_count <- n_tickers - success_count
+
+  process_duration <- as.numeric(difftime(
+    Sys.time(),
+    process_start,
+    units = "secs"
+  ))
+  log_pipeline(sprintf(
+    "Quarterly processing complete: %d success, %d skipped in %.1f seconds",
+    success_count,
+    skip_count,
+    process_duration
+  ))
+
+  # ============================================================================
+  # MERGE WITH PREVIOUS ARTIFACT (INCREMENTAL MODE)
+  # ============================================================================
+
+  if (
+    phase2_mode == "incremental" &&
+      !is.null(previous_artifact) &&
+      reprocess_info$reason == "incremental" &&
+      length(reprocess_info$unchanged_tickers) > 0
+  ) {
+    log_pipeline(sprintf(
+      "Merging %d unchanged tickers from previous artifact...",
+      length(reprocess_info$unchanged_tickers)
+    ))
+
+    unchanged_rows <- dplyr::filter(
+      previous_artifact,
+      ticker %in% reprocess_info$unchanged_tickers
     )
-  }, error = function(e) {
-    NULL
-  })
-}, mc.cores = n_cores)
 
-# Combine quarterly results
-log_pipeline("Combining quarterly results...")
-quarterly_artifact <- dplyr::bind_rows(quarterly_results)
+    quarterly_artifact <- dplyr::bind_rows(unchanged_rows, reprocessed_artifact)
 
-# Count successes/skips
-success_count <- sum(sapply(quarterly_results, function(x) {
-  !is.null(x) && nrow(x) > 0
-}))
-skip_count <- n_tickers - success_count
+    log_pipeline(sprintf(
+      "Merged: %d unchanged rows + %d reprocessed rows = %d total",
+      nrow(unchanged_rows),
+      nrow(reprocessed_artifact),
+      nrow(quarterly_artifact)
+    ))
+  } else {
+    quarterly_artifact <- reprocessed_artifact
+  }
 
-process_duration <- as.numeric(difftime(Sys.time(), process_start, units = "secs"))
-log_pipeline(sprintf("Quarterly processing complete: %d success, %d skipped in %.1f seconds",
-                     success_count, skip_count, process_duration))
-log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
+  log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
+} # end quarterly processing (skipped in price_only mode)
+
+# Backfill subsector for ALL rows from the equities taxonomy. Done here (not only
+# per-ticker) so carried-forward/unchanged rows from a previous artifact — which
+# predate subsector — get it too. Idempotent: drop any existing column, recompute.
+quarterly_artifact <- quarterly_artifact %>%
+  dplyr::select(-dplyr::any_of("subsector")) %>%
+  join_equities_taxonomy()
+
+log_pipeline(sprintf(
+  "Subsector assigned: %d of %d rows mapped",
+  sum(!is.na(quarterly_artifact$subsector)),
+  nrow(quarterly_artifact)
+))
 
 # ============================================================================
 # PREPARE PRICE ARTIFACT
@@ -109,11 +340,11 @@ log_pipeline(sprintf("Quarterly artifact: %d rows", nrow(quarterly_artifact)))
 log_pipeline("Preparing price artifact...")
 
 # Combine all price data and clean it
-price_artifact <- all_data$price |>
+price_artifact <- price_data %>%
   dplyr::filter(
     date >= start_date,
     !is.na(close) & close > 0
-  ) |>
+  ) %>%
   dplyr::select(
     ticker,
     date,
@@ -125,8 +356,8 @@ price_artifact <- all_data$price |>
     volume,
     dividend_amount,
     split_coefficient
-  ) |>
-  dplyr::distinct() |>
+  ) %>%
+  dplyr::distinct() %>%
   dplyr::arrange(ticker, date)
 
 log_pipeline(sprintf("Price artifact: %d rows", nrow(price_artifact)))
@@ -143,7 +374,11 @@ log_pipeline("Uploading quarterly TTM artifact to S3...")
 local_quarterly_path <- tempfile(fileext = ".parquet")
 arrow::write_parquet(quarterly_artifact, local_quarterly_path)
 
-quarterly_s3_key <- paste0("ttm-artifacts/", date_string, "/ttm_quarterly_artifact.parquet")
+quarterly_s3_key <- paste0(
+  "ttm-artifacts/",
+  date_string,
+  "/ttm_quarterly_artifact.parquet"
+)
 upload_artifact_to_s3(
   local_path = local_quarterly_path,
   bucket_name = s3_bucket,
@@ -172,8 +407,13 @@ log_pipeline(sprintf("Uploaded: s3://%s/%s", s3_bucket, price_s3_key))
 # SUMMARY
 # ============================================================================
 
-phase_duration <- as.numeric(difftime(Sys.time(), phase_start_time, units = "secs"))
-log_phase_end("PHASE 2: GENERATE TTM ARTIFACTS",
+phase_duration <- as.numeric(difftime(
+  Sys.time(),
+  phase_start_time,
+  units = "secs"
+))
+log_phase_end(
+  "PHASE 2: GENERATE TTM ARTIFACTS",
   total = n_tickers,
   successful = success_count,
   failed = 0,
@@ -183,7 +423,7 @@ log_phase_end("PHASE 2: GENERATE TTM ARTIFACTS",
 log_pipeline(sprintf(
   "Artifacts created:\n  - Quarterly: %d rows (%.1f MB estimated)\n  - Price: %d rows (%.1f MB estimated)",
   nrow(quarterly_artifact),
-  nrow(quarterly_artifact) * 500 / 1e6,  # rough estimate
+  nrow(quarterly_artifact) * 500 / 1e6, # rough estimate
   nrow(price_artifact),
-  nrow(price_artifact) * 100 / 1e6  # rough estimate
+  nrow(price_artifact) * 100 / 1e6 # rough estimate
 ))

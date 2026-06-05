@@ -62,6 +62,6 @@ test_that("remove_all_na_financial_observations validates required names", {
 
   expect_error(
     remove_all_na_financial_observations(incomplete_list),
-    "^remove_all_na_financial_observations\\(\\): \\[statements\\] must contain: cash_flow, income_statement, balance_sheet$"
+    "^remove_all_na_financial_observations\\(\\): \\[statements\\] must contain: cash_flow, income_statement, balance_sheet$" # nolint: line_length_linter.
   )
 })

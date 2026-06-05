@@ -8,18 +8,12 @@ test_that("filter_essential_financial_columns validates financial_statements par
 test_that("filter_essential_financial_columns filters to essential columns", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker            = c("A", "B"),
-    fiscalDateEnding  = as.Date(c("2020-12-31", "2020-12-31")),
-    reportedDate      = as.Date(c("2021-01-15", "2021-01-15")),
-    reportedCurrency  = c("USD", "USD"),
-    totalRevenue      = c(1000, 2000),
-    netIncome         = c(150, 300),
-    totalAssets       = c(5000, 8000),
-    operatingCashflow = c(100, 200),
-    extra_column1     = c("X", "Y"),
-    extra_column2     = c(1, 2)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedDate, ~reportedCurrency, ~totalRevenue, ~netIncome, ~totalAssets, ~operatingCashflow, ~extra_column1, ~extra_column2,
+    "A",     "2020-12-31",      "2021-01-15",  "USD",             1000,          150,        5000,         100,                "X",            1,
+    "B",     "2020-12-31",      "2021-01-15",  "USD",             2000,          300,        8000,         200,                "Y",            2
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
   # nolint end
 
   result <- filter_essential_financial_columns(test_data)

@@ -1,6 +1,6 @@
 #' Parse Price Response to Tibble
 #'
-#' @param response Raw httr response object
+#' @param response httr2 response object
 #' @param ticker Character. The equity ticker
 #' @param datatype Character. Either "json" or "csv"
 #'
@@ -9,20 +9,24 @@
 parse_price_response <- function(response, ticker, datatype) {
   if (datatype == "json") {
     # Parse JSON response
-    content <- httr::content(response, as = "text", encoding = "UTF-8")
+    content <- httr2::resp_body_string(response)
     data <- jsonlite::fromJSON(content)
 
     # Check for API error messages
     validate_api_response(data, ticker = ticker)
-    
+
     # Extract time series data
     time_series_key <- "Time Series (Daily)"
     if (!time_series_key %in% names(data)) {
-      stop("Unexpected API response structure. Expected '", time_series_key, "' key not found.")
+      stop(
+        "Unexpected API response structure. Expected '",
+        time_series_key,
+        "' key not found."
+      )
     }
-    
+
     time_series <- data[[time_series_key]]
-    
+
     # Convert to tibble using base R operations
     dates <- names(time_series)
     prices_list <- lapply(dates, function(date) {
@@ -41,16 +45,15 @@ parse_price_response <- function(response, ticker, datatype) {
         stringsAsFactors = FALSE
       )
     })
-    
+
     prices_df <- dplyr::bind_rows(prices_list) %>%
       dplyr::arrange(date)
-    
-    return(prices_df)
-    
+
+    prices_df
   } else if (datatype == "csv") {
     # Parse CSV response
-    content <- httr::content(response, as = "text", encoding = "UTF-8")
-    
+    content <- httr2::resp_body_string(response)
+
     # Read CSV data using base R
     prices_df <- read.csv(text = content, stringsAsFactors = FALSE) %>%
       dplyr::mutate(
@@ -59,7 +62,7 @@ parse_price_response <- function(response, ticker, datatype) {
       ) %>%
       dplyr::select(-timestamp) %>%
       dplyr::arrange(date)
-    
-    return(prices_df)
+
+    prices_df
   }
 }

@@ -53,10 +53,6 @@ align_statement_dates <- function(statements) {
       in_all_three = in_cash_flow & in_income_statement & in_balance_sheet
     )
 
-  total_observations <- nrow(date_alignment)
-  valid_observations <- sum(date_alignment$in_all_three)
-  removed_observations <- total_observations - valid_observations
-
   valid_dates <- date_alignment %>%
     dplyr::filter(in_all_three) %>%
     dplyr::select(ticker, fiscalDateEnding)

@@ -16,21 +16,27 @@ variable "bucket_suffix" {
 }
 
 variable "schedule_expression" {
-  description = "EventBridge cron expression for pipeline execution"
+  description = "EventBridge cron expression for the weekly full pipeline run"
   type        = string
   default     = "cron(0 6 ? * SUN *)"
 }
 
+variable "daily_schedule_expression" {
+  description = "EventBridge cron expression for the daily price-only pipeline run (Tue-Sat 07:00 UTC captures the prior trading day's close)"
+  type        = string
+  default     = "cron(0 7 ? * TUE-SAT *)"
+}
+
 variable "task_cpu" {
-  description = "CPU units for ECS task (1024 = 1 vCPU)"
+  description = "CPU units for Phase 1 ECS task (4096 = 4 vCPU for parallel S3 writes)"
   type        = number
-  default     = 1024
+  default     = 4096
 }
 
 variable "task_memory" {
-  description = "Memory for Phase 1 ECS task in MB (4GB sufficient for ticker-by-ticker fetch)"
+  description = "Memory for Phase 1 ECS task in MB (8GB for parallel batch processing)"
   type        = number
-  default     = 4096
+  default     = 8192
 }
 
 variable "phase2_cpu" {
@@ -61,4 +67,10 @@ variable "fetch_mode" {
   description = "Fetch mode for Phase 1 (full, price_only, quarterly_only)"
   type        = string
   default     = "full"
+}
+
+variable "phase2_mode" {
+  description = "Phase 2 processing mode (incremental, full)"
+  type        = string
+  default     = "incremental"
 }

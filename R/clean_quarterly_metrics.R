@@ -33,7 +33,11 @@ clean_quarterly_metrics <- function(
   }
 
   validate_character_scalar(date_col, allow_empty = FALSE, name = "date_col")
-  validate_character_scalar(ticker_col, allow_empty = FALSE, name = "ticker_col")
+  validate_character_scalar(
+    ticker_col,
+    allow_empty = FALSE,
+    name = "ticker_col"
+  )
   validate_df_type(data)
 
   if (nrow(data) == 0) {

@@ -8,7 +8,12 @@
 #' @param datatype character: "json" or "csv"
 #' @return tibble with daily price data
 #' @keywords internal
-fetch_price <- function(ticker, api_key = NULL, outputsize = "compact", datatype = "json") {
+fetch_price <- function(
+  ticker,
+  api_key = NULL,
+  outputsize = "compact",
+  datatype = "json"
+) {
   validate_character_scalar(ticker, allow_empty = FALSE, name = "ticker")
 
   response <- make_av_request(

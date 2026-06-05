@@ -7,9 +7,15 @@
 #' @param earnings_data tibble: Earnings data (or NULL)
 #' @return tibble: Single row tracking entry
 #' @keywords internal
-extract_tracking_from_ticker_data <- function(ticker, price_data, earnings_data) {
+extract_tracking_from_ticker_data <- function(
+  ticker,
+  price_data,
+  earnings_data
+) {
   if (!is.character(ticker) || length(ticker) != 1) {
-    stop("extract_tracking_from_ticker_data(): [ticker] must be a character scalar")
+    stop(
+      "extract_tracking_from_ticker_data(): [ticker] must be a character scalar"
+    )
   }
 
   row <- create_default_ticker_tracking(ticker)
@@ -24,7 +30,10 @@ extract_tracking_from_ticker_data <- function(ticker, price_data, earnings_data)
 
   if (!is.null(earnings_data) && nrow(earnings_data) > 0) {
     if ("fiscalDateEnding" %in% names(earnings_data)) {
-      row$last_fiscal_date_ending <- max(earnings_data$fiscalDateEnding, na.rm = TRUE)
+      row$last_fiscal_date_ending <- max(
+        earnings_data$fiscalDateEnding,
+        na.rm = TRUE
+      )
       row$quarterly_last_fetched_at <- as.POSIXct(NA)
     }
     if ("reportedDate" %in% names(earnings_data)) {

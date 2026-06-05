@@ -6,3 +6,15 @@
 ^cache$
 ^\.clinerules$
 ^memory-bank$
+^deploy$
+^scripts$
+^\.github$
+^Dockerfile$
+^\.dockerignore$
+^\.lintr$
+^\.claude$
+^\.continue$
+^docs$
+^FUNCTION_USAGE_ANALYSIS\.md$
+^housecleaning\.md$
+^implementation_plan_.*\.md$

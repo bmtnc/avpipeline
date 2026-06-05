@@ -1,10 +1,12 @@
 test_that("add_per_share_columns creates correct per-share columns", {
-  data <- tibble::tibble(
-    ticker = c("AAPL", "AAPL"),
-    revenue = c(1000, 2000),
-    assets = c(500, 600),
-    commonStockSharesOutstanding = c(100, 200)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~ticker, ~revenue, ~assets, ~commonStockSharesOutstanding,
+    "AAPL",  1000,     500,     100,
+    "AAPL",  2000,     600,     200
   )
+  # nolint end
 
   result <- add_per_share_columns(data, cols = c("revenue", "assets"))
 
@@ -15,10 +17,15 @@ test_that("add_per_share_columns creates correct per-share columns", {
 })
 
 test_that("add_per_share_columns handles NA in metrics", {
-  data <- tibble::tibble(
-    revenue = c(1000, NA, 3000),
-    commonStockSharesOutstanding = c(100, 100, 100)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~revenue, ~commonStockSharesOutstanding,
+    1000,     100,
+    NA,       100,
+    3000,     100
   )
+  # nolint end
 
   result <- add_per_share_columns(data, cols = "revenue")
 
@@ -28,10 +35,15 @@ test_that("add_per_share_columns handles NA in metrics", {
 })
 
 test_that("add_per_share_columns handles NA and zero shares", {
-  data <- tibble::tibble(
-    revenue = c(1000, 2000, 3000),
-    commonStockSharesOutstanding = c(100, NA, 0)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~revenue, ~commonStockSharesOutstanding,
+    1000,     100,
+    2000,     NA,
+    3000,     0
   )
+  # nolint end
 
   result <- add_per_share_columns(data, cols = "revenue")
 
@@ -41,13 +53,19 @@ test_that("add_per_share_columns handles NA and zero shares", {
 })
 
 test_that("add_per_share_columns skips columns already ending in _per_share", {
-  data <- tibble::tibble(
-    revenue = c(1000, 2000),
-    revenue_per_share = c(5, 10),
-    commonStockSharesOutstanding = c(100, 200)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~revenue, ~revenue_per_share, ~commonStockSharesOutstanding,
+    1000,     5,                  100,
+    2000,     10,                 200
   )
+  # nolint end
 
-  result <- add_per_share_columns(data, cols = c("revenue", "revenue_per_share"))
+  result <- add_per_share_columns(
+    data,
+    cols = c("revenue", "revenue_per_share")
+  )
 
   # Should only have one revenue_per_share column (the new calculated one)
   expect_equal(sum(names(result) == "revenue_per_share"), 1)
@@ -55,21 +73,33 @@ test_that("add_per_share_columns skips columns already ending in _per_share", {
 })
 
 test_that("add_per_share_columns uses custom shares column", {
-  data <- tibble::tibble(
-    revenue = c(1000, 2000),
-    my_shares = c(50, 100)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~revenue, ~my_shares,
+    1000,     50,
+    2000,     100
   )
+  # nolint end
 
-  result <- add_per_share_columns(data, cols = "revenue", shares_col = "my_shares")
+  result <- add_per_share_columns(
+    data,
+    cols = "revenue",
+    shares_col = "my_shares"
+  )
 
   expect_equal(result$revenue_per_share, c(20, 20))
 })
 
 test_that("add_per_share_columns returns original data when no valid cols", {
-  data <- tibble::tibble(
-    revenue_per_share = c(10, 20),
-    commonStockSharesOutstanding = c(100, 200)
+  # nolint start
+  # fmt: skip
+  data <- tibble::tribble(
+    ~revenue_per_share, ~commonStockSharesOutstanding,
+    10,                 100,
+    20,                 200
   )
+  # nolint end
 
   result <- add_per_share_columns(data, cols = "revenue_per_share")
 

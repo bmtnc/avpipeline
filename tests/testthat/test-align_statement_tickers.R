@@ -10,41 +10,50 @@ test_that("align_statement_tickers validates required names", {
 
   expect_error(
     align_statement_tickers(incomplete_list),
-    "^align_statement_tickers\\(\\): \\[statements\\] must contain: earnings, cash_flow, income_statement, balance_sheet$"
+    "^align_statement_tickers\\(\\): \\[statements\\] must contain: earnings, cash_flow, income_statement, balance_sheet$" # nolint: line_length_linter.
   )
 })
 
 test_that("align_statement_tickers filters to common tickers", {
   # nolint start
   # fmt: skip
-  earnings_data <- tibble::tibble(
-    ticker           = c("A", "B", "C"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2020-12-31", "2020-12-31"))
-  )
+  earnings_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "B",     "2020-12-31",
+    "C",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   # nolint start
   # fmt: skip
-  cash_flow_data <- tibble::tibble(
-    ticker           = c("A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2020-12-31"))
-  )
+  cash_flow_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   # nolint start
   # fmt: skip
-  income_statement_data <- tibble::tibble(
-    ticker           = c("A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2020-12-31"))
-  )
+  income_statement_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   # nolint start
   # fmt: skip
-  balance_sheet_data <- tibble::tibble(
-    ticker           = c("A", "B"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2020-12-31"))
-  )
+  balance_sheet_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-12-31",
+    "B",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   statements <- list(
@@ -57,7 +66,10 @@ test_that("align_statement_tickers filters to common tickers", {
   result <- align_statement_tickers(statements)
 
   expect_type(result, "list")
-  expect_named(result, c("earnings", "cash_flow", "income_statement", "balance_sheet"))
+  expect_named(
+    result,
+    c("earnings", "cash_flow", "income_statement", "balance_sheet")
+  )
   expect_equal(nrow(result$earnings), 2)
   expect_equal(nrow(result$cash_flow), 2)
   expect_equal(unique(result$earnings$ticker), c("A", "B"))

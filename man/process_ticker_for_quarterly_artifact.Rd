@@ -19,7 +19,7 @@ process_ticker_for_quarterly_artifact(
 \arguments{
 \item{ticker}{character: Stock ticker symbol}
 
-\item{all_data}{list: Named list with all data types pre-loaded}
+\item{all_data}{list: Named list with all data types, each pre-split by ticker}
 
 \item{start_date}{Date: Start date for filtering financial data}
 

@@ -132,12 +132,45 @@ resource "aws_sfn_state_machine" "pipeline" {
 
   definition = jsonencode({
     Comment = "AV Pipeline: Phase 1 (Fetch) -> Phase 2 (Generate)"
-    StartAt = "Phase1Fetch"
+    StartAt = "ResolveFetchMode"
     States = {
+      # Default fetchMode/phase2Mode when the execution input omits them (manual
+      # runs). Weekly passes {fetchMode=full}; daily passes
+      # {fetchMode=bulk_interim, phase2Mode=price_only}.
+      ResolveFetchMode = {
+        Type = "Choice"
+        Choices = [{
+          Variable  = "$.fetchMode"
+          IsPresent = true
+          Next      = "ResolvePhase2Mode"
+        }]
+        Default = "DefaultFetchMode"
+      }
+      DefaultFetchMode = {
+        Type       = "Pass"
+        Result     = "full"
+        ResultPath = "$.fetchMode"
+        Next       = "ResolvePhase2Mode"
+      }
+      ResolvePhase2Mode = {
+        Type = "Choice"
+        Choices = [{
+          Variable  = "$.phase2Mode"
+          IsPresent = true
+          Next      = "Phase1Fetch"
+        }]
+        Default = "DefaultPhase2Mode"
+      }
+      DefaultPhase2Mode = {
+        Type       = "Pass"
+        Result     = "incremental"
+        ResultPath = "$.phase2Mode"
+        Next       = "Phase1Fetch"
+      }
       Phase1Fetch = {
         Type           = "Task"
         Resource       = "arn:aws:states:::ecs:runTask.sync"
-        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
+        TimeoutSeconds = 28800 # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
@@ -147,6 +180,15 @@ resource "aws_sfn_state_machine" "pipeline" {
               Subnets        = data.aws_subnets.default.ids
               AssignPublicIp = "ENABLED"
             }
+          }
+          Overrides = {
+            ContainerOverrides = [{
+              Name = "avpipeline"
+              Environment = [{
+                Name      = "FETCH_MODE"
+                "Value.$" = "$.fetchMode"
+              }]
+            }]
           }
         }
         ResultPath = "$.phase1Result"
@@ -166,7 +208,7 @@ resource "aws_sfn_state_machine" "pipeline" {
       Phase2Generate = {
         Type           = "Task"
         Resource       = "arn:aws:states:::ecs:runTask.sync"
-        TimeoutSeconds = 28800  # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
+        TimeoutSeconds = 28800 # 8 hours - buffer for large ETFs (IWV ~2500 tickers)
         Parameters = {
           LaunchType     = "FARGATE"
           Cluster        = aws_ecs_cluster.avpipeline.arn
@@ -176,6 +218,15 @@ resource "aws_sfn_state_machine" "pipeline" {
               Subnets        = data.aws_subnets.default.ids
               AssignPublicIp = "ENABLED"
             }
+          }
+          Overrides = {
+            ContainerOverrides = [{
+              Name = "avpipeline"
+              Environment = [{
+                Name      = "PHASE2_MODE"
+                "Value.$" = "$.phase2Mode"
+              }]
+            }]
           }
         }
         ResultPath = "$.phase2Result"

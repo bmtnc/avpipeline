@@ -21,8 +21,10 @@ s3_list_existing_tickers <- function(bucket_name, region = "us-east-1") {
     stderr = TRUE
   )
 
-  if (is_timeout_result(result) ||
-      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
+  if (
+    is_timeout_result(result) ||
+      (!is.null(attr(result, "status")) && attr(result, "status") != 0)
+  ) {
     return(character(0))
   }
 

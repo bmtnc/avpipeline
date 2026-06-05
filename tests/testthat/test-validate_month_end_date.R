@@ -1,4 +1,3 @@
-
 test_that("validates January 31 month end", {
   expect_silent(validate_month_end_date(as.Date("2020-01-31"), "test_date"))
 })
@@ -54,7 +53,10 @@ test_that("fails when date is numeric", {
 
 test_that("fails when date has multiple values", {
   expect_error(
-    validate_month_end_date(c(as.Date("2020-01-31"), as.Date("2020-02-29")), "test_date"),
+    validate_month_end_date(
+      c(as.Date("2020-01-31"), as.Date("2020-02-29")),
+      "test_date"
+    ),
     "^Input 'test_date' must be a single Date value\\. Received length: 2$"
   )
 })

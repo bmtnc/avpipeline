@@ -2,20 +2,22 @@
 % Please edit documentation in R/s3_load_all_raw_data.R
 \name{s3_load_all_raw_data}
 \alias{s3_load_all_raw_data}
-\title{Load All Raw Data from S3 Using Arrow Datasets}
+\title{Load All Raw Data from S3}
 \usage{
-s3_load_all_raw_data(bucket_name, region = "us-east-1")
+s3_load_all_raw_data(bucket_name, region = "us-east-1", data_types = NULL)
 }
 \arguments{
 \item{bucket_name}{character: S3 bucket name}
 
 \item{region}{character: AWS region (default: "us-east-1")}
+
+\item{data_types}{character: Subset of data types to load (default: NULL = all).
+When given, only those types are synced and read (e.g. "price").}
 }
 \value{
-list: Named list with all data types as tibbles
+list: Named list with the loaded data types as tibbles
 }
 \description{
-Loads all data types for all tickers using Arrow's S3 reading with
-parallel loading across data types.
+Syncs all raw data from S3 to local disk, then reads parquet files locally.
 }
 \keyword{internal}

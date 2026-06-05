@@ -118,10 +118,16 @@ test_that("calculate_next_estimated_report_date returns NA for NA input", {
 })
 
 test_that("calculate_median_report_delay calculates correctly", {
-  earnings_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30", "2024-09-30")),
-    reportedDate = as.Date(c("2024-05-01", "2024-08-01", "2024-11-01"))
-  )
+  # nolint start
+  # fmt: skip
+  earnings_data <- tibble::tribble(
+    ~fiscalDateEnding, ~reportedDate,
+    "2024-03-31",      "2024-05-01",
+    "2024-06-30",      "2024-08-01",
+    "2024-09-30",      "2024-11-01"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
   # Delays: 31, 32, 32 -> median = 32
 
   result <- calculate_median_report_delay(earnings_data)
@@ -140,10 +146,14 @@ test_that("calculate_median_report_delay returns NA for empty data", {
 })
 
 test_that("calculate_median_report_delay returns NA for insufficient data", {
-  earnings_data <- tibble::tibble(
-    fiscalDateEnding = as.Date("2024-09-30"),
-    reportedDate = as.Date("2024-11-01")
-  )
+  # nolint start
+  # fmt: skip
+  earnings_data <- tibble::tribble(
+    ~fiscalDateEnding, ~reportedDate,
+    "2024-09-30",      "2024-11-01"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   result <- calculate_median_report_delay(earnings_data)
 
@@ -162,7 +172,10 @@ test_that("determine_fetch_requirements always fetches price and splits", {
   ticker_tracking$quarterly_last_fetched_at <- as.POSIXct("2024-12-10")
   ticker_tracking$next_estimated_report_date <- as.Date("2025-03-01")
 
-  result <- determine_fetch_requirements(ticker_tracking, reference_date = as.Date("2024-12-15"))
+  result <- determine_fetch_requirements(
+    ticker_tracking,
+    reference_date = as.Date("2024-12-15")
+  )
 
   expect_true(result$price)
   expect_true(result$splits)
@@ -174,12 +187,18 @@ test_that("determine_fetch_requirements respects quarterly logic", {
 
   # Far from earnings - don't fetch
   ticker_tracking$next_estimated_report_date <- as.Date("2025-03-01")
-  result <- determine_fetch_requirements(ticker_tracking, reference_date = as.Date("2024-12-15"))
+  result <- determine_fetch_requirements(
+    ticker_tracking,
+    reference_date = as.Date("2024-12-15")
+  )
   expect_false(result$quarterly)
 
   # Near earnings - fetch
   ticker_tracking$next_estimated_report_date <- as.Date("2024-12-18")
-  result <- determine_fetch_requirements(ticker_tracking, reference_date = as.Date("2024-12-15"))
+  result <- determine_fetch_requirements(
+    ticker_tracking,
+    reference_date = as.Date("2024-12-15")
+  )
   expect_true(result$quarterly)
 })
 
@@ -193,16 +212,25 @@ test_that("determine_fetch_requirements validates inputs", {
   expect_error(determine_fetch_requirements(multi_row), "single-row data.frame")
 
   single_row <- create_default_ticker_tracking("AAPL")
-  expect_error(determine_fetch_requirements(single_row, reference_date = "2024-12-15"), "Date object")
+  expect_error(
+    determine_fetch_requirements(single_row, reference_date = "2024-12-15"),
+    "Date object"
+  )
 })
 
 test_that("update_earnings_prediction updates tracking correctly", {
   tracking <- create_default_ticker_tracking("AAPL")
 
-  earnings_data <- tibble::tibble(
-    fiscalDateEnding = as.Date(c("2024-03-31", "2024-06-30", "2024-09-30")),
-    reportedDate = as.Date(c("2024-05-01", "2024-08-01", "2024-11-01"))
-  )
+  # nolint start
+  # fmt: skip
+  earnings_data <- tibble::tribble(
+    ~fiscalDateEnding, ~reportedDate,
+    "2024-03-31",      "2024-05-01",
+    "2024-06-30",      "2024-08-01",
+    "2024-09-30",      "2024-11-01"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
   updated <- update_earnings_prediction(tracking, "AAPL", earnings_data)
 
@@ -229,9 +257,25 @@ test_that("update_earnings_prediction handles empty earnings data", {
 
 test_that("update_earnings_prediction validates inputs", {
   tracking <- create_empty_refresh_tracking()
-  earnings_data <- tibble::tibble(fiscalDateEnding = as.Date("2024-09-30"), reportedDate = as.Date("2024-11-01"))
+  # nolint start
+  # fmt: skip
+  earnings_data <- tibble::tribble(
+    ~fiscalDateEnding, ~reportedDate,
+    "2024-09-30",      "2024-11-01"
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, reportedDate), as.Date))
+  # nolint end
 
-  expect_error(update_earnings_prediction("not_df", "AAPL", earnings_data), "data.frame")
-  expect_error(update_earnings_prediction(tracking, 123, earnings_data), "character scalar")
-  expect_error(update_earnings_prediction(tracking, "AAPL", "not_df"), "data.frame")
+  expect_error(
+    update_earnings_prediction("not_df", "AAPL", earnings_data),
+    "data.frame"
+  )
+  expect_error(
+    update_earnings_prediction(tracking, 123, earnings_data),
+    "character scalar"
+  )
+  expect_error(
+    update_earnings_prediction(tracking, "AAPL", "not_df"),
+    "data.frame"
+  )
 })

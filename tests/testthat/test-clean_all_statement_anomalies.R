@@ -17,11 +17,12 @@ test_that("clean_all_statement_anomalies validates required names", {
 test_that("clean_all_statement_anomalies validates threshold parameter", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~metric1,
+    "A",     "2020-12-31",      100,
+    "A",     "2021-12-31",      150
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   statements <- list(
@@ -39,13 +40,12 @@ test_that("clean_all_statement_anomalies validates threshold parameter", {
 test_that("clean_all_statement_anomalies processes all statements", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A"),
-    fiscalDateEnding = as.Date(c("2020-12-31", "2021-12-31")),
-    reportedCurrency = c("USD", "USD"),
-    as_of_date       = as.Date(c("2021-01-15", "2022-01-15")),
-    metric1          = c(100, 150)
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding, ~reportedCurrency, ~as_of_date,  ~metric1,
+    "A",     "2020-12-31",      "USD",             "2021-01-15", 100,
+    "A",     "2021-12-31",      "USD",             "2022-01-15", 150
+  ) %>%
+    dplyr::mutate(dplyr::across(c(fiscalDateEnding, as_of_date), as.Date))
   # nolint end
 
   statements <- list(

@@ -27,6 +27,6 @@ s3_write_ticker_raw_data(
 logical: TRUE if upload successful
 }
 \description{
-Uploads a single data type parquet file for a ticker to S3.
+Writes a parquet file directly to S3 using Arrow's native S3 filesystem.
 }
 \keyword{internal}

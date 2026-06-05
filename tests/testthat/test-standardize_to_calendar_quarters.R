@@ -1,10 +1,14 @@
 test_that("standardize_to_calendar_quarters maps fiscal dates correctly", {
   # nolint start
   # fmt: skip
-  test_data <- tibble::tibble(
-    ticker           = c("A", "A", "A", "A"),
-    fiscalDateEnding = as.Date(c("2020-01-31", "2020-03-31", "2020-06-30", "2020-12-31"))
-  )
+  test_data <- tibble::tribble(
+    ~ticker, ~fiscalDateEnding,
+    "A",     "2020-01-31",
+    "A",     "2020-03-31",
+    "A",     "2020-06-30",
+    "A",     "2020-12-31"
+  ) %>%
+    dplyr::mutate(fiscalDateEnding = as.Date(fiscalDateEnding))
   # nolint end
 
   result <- standardize_to_calendar_quarters(test_data)

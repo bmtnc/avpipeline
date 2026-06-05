@@ -5,11 +5,22 @@ test_that("create_empty_refresh_tracking creates correct schema", {
   expect_equal(nrow(tracking), 0)
 
   expected_cols <- c(
-    "ticker", "price_last_fetched_at", "price_last_date", "price_has_full_history",
-    "splits_last_fetched_at", "quarterly_last_fetched_at", "overview_last_fetched_at",
-    "last_fiscal_date_ending", "last_reported_date",
-    "next_estimated_report_date", "median_report_delay_days", "last_error_message",
-    "is_active_ticker", "has_data_discrepancy", "last_version_date", "data_updated_at"
+    "ticker",
+    "price_last_fetched_at",
+    "price_last_date",
+    "price_has_full_history",
+    "splits_last_fetched_at",
+    "quarterly_last_fetched_at",
+    "overview_last_fetched_at",
+    "last_fiscal_date_ending",
+    "last_reported_date",
+    "next_estimated_report_date",
+    "median_report_delay_days",
+    "last_error_message",
+    "is_active_ticker",
+    "has_data_discrepancy",
+    "last_version_date",
+    "data_updated_at"
   )
   expect_equal(names(tracking), expected_cols)
 
@@ -74,10 +85,14 @@ test_that("update_ticker_tracking updates existing ticker", {
   tracking <- create_default_ticker_tracking("AAPL")
   now <- Sys.time()
 
-  updated <- update_ticker_tracking(tracking, "AAPL", list(
-    price_last_fetched_at = now,
-    is_active_ticker = FALSE
-  ))
+  updated <- update_ticker_tracking(
+    tracking,
+    "AAPL",
+    list(
+      price_last_fetched_at = now,
+      is_active_ticker = FALSE
+    )
+  )
 
   expect_equal(nrow(updated), 1)
   expect_true(abs(as.numeric(updated$price_last_fetched_at - now)) < 1)
@@ -88,9 +103,13 @@ test_that("update_ticker_tracking adds new ticker if not exists", {
   tracking <- create_default_ticker_tracking("AAPL")
   now <- Sys.time()
 
-  updated <- update_ticker_tracking(tracking, "MSFT", list(
-    price_last_fetched_at = now
-  ))
+  updated <- update_ticker_tracking(
+    tracking,
+    "MSFT",
+    list(
+      price_last_fetched_at = now
+    )
+  )
 
   expect_equal(nrow(updated), 2)
   expect_true("MSFT" %in% updated$ticker)
@@ -102,9 +121,18 @@ test_that("update_ticker_tracking adds new ticker if not exists", {
 test_that("update_ticker_tracking validates inputs", {
   tracking <- create_empty_refresh_tracking()
 
-  expect_error(update_ticker_tracking("not_df", "AAPL", list()), "Input data must be a data\\.frame\\. Received: character")
-  expect_error(update_ticker_tracking(tracking, 123, list()), "ticker must be a character scalar")
-  expect_error(update_ticker_tracking(tracking, "AAPL", "not_list"), "updates.*must be a list")
+  expect_error(
+    update_ticker_tracking("not_df", "AAPL", list()),
+    "Input data must be a data\\.frame\\. Received: character"
+  )
+  expect_error(
+    update_ticker_tracking(tracking, 123, list()),
+    "ticker must be a character scalar"
+  )
+  expect_error(
+    update_ticker_tracking(tracking, "AAPL", "not_list"),
+    "updates.*must be a list"
+  )
 })
 
 test_that("update_tracking_after_fetch updates price timestamp", {
@@ -124,7 +152,9 @@ test_that("update_tracking_after_fetch updates quarterly with dates", {
   reported_date <- as.Date("2024-11-01")
 
   updated <- update_tracking_after_fetch(
-    tracking, "AAPL", "quarterly",
+    tracking,
+    "AAPL",
+    "quarterly",
     fiscal_date_ending = fiscal_date,
     reported_date = reported_date
   )
@@ -138,12 +168,18 @@ test_that("update_tracking_after_fetch sets data_updated_at when data changed", 
   tracking <- create_default_ticker_tracking("AAPL")
 
   updated_no_change <- update_tracking_after_fetch(
-    tracking, "AAPL", "price", data_changed = FALSE
+    tracking,
+    "AAPL",
+    "price",
+    data_changed = FALSE
   )
   expect_true(is.na(updated_no_change$data_updated_at))
 
   updated_with_change <- update_tracking_after_fetch(
-    tracking, "AAPL", "price", data_changed = TRUE
+    tracking,
+    "AAPL",
+    "price",
+    data_changed = TRUE
   )
   expect_false(is.na(updated_with_change$data_updated_at))
 })
@@ -161,7 +197,11 @@ test_that("update_tracking_after_fetch updates overview timestamp", {
 test_that("update_tracking_after_error records error message", {
   tracking <- create_default_ticker_tracking("AAPL")
 
-  updated <- update_tracking_after_error(tracking, "AAPL", "API rate limit exceeded")
+  updated <- update_tracking_after_error(
+    tracking,
+    "AAPL",
+    "API rate limit exceeded"
+  )
 
   expect_equal(updated$last_error_message, "API rate limit exceeded")
 })
@@ -169,5 +209,8 @@ test_that("update_tracking_after_error records error message", {
 test_that("update_tracking_after_error validates inputs", {
   tracking <- create_empty_refresh_tracking()
 
-  expect_error(update_tracking_after_error(tracking, "AAPL", 123), "error_message")
+  expect_error(
+    update_tracking_after_error(tracking, "AAPL", 123),
+    "error_message"
+  )
 })

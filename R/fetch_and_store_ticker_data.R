@@ -29,7 +29,9 @@ fetch_and_store_ticker_data <- function(
     stop("fetch_and_store_ticker_data(): [fetch_requirements] must be a list")
   }
   if (!is.character(bucket_name) || length(bucket_name) != 1) {
-    stop("fetch_and_store_ticker_data(): [bucket_name] must be a character scalar")
+    stop(
+      "fetch_and_store_ticker_data(): [bucket_name] must be a character scalar"
+    )
   }
 
   results <- list()
@@ -37,22 +39,53 @@ fetch_and_store_ticker_data <- function(
   if (isTRUE(fetch_requirements$price)) {
     # Always fetch full price history to avoid data loss from compact overwrites
     results$price <- fetch_and_store_single_data_type(
-      ticker, "price", bucket_name, api_key, region, delay_seconds,
+      ticker,
+      "price",
+      bucket_name,
+      api_key,
+      region,
+      delay_seconds,
       outputsize = "full"
     )
   }
 
   if (isTRUE(fetch_requirements$splits)) {
     results$splits <- fetch_and_store_single_data_type(
-      ticker, "splits", bucket_name, api_key, region, delay_seconds
+      ticker,
+      "splits",
+      bucket_name,
+      api_key,
+      region,
+      delay_seconds
+    )
+  }
+
+  if (isTRUE(fetch_requirements$overview)) {
+    results$overview <- fetch_and_store_single_data_type(
+      ticker,
+      "overview",
+      bucket_name,
+      api_key,
+      region,
+      delay_seconds
     )
   }
 
   if (isTRUE(fetch_requirements$quarterly)) {
-    quarterly_types <- c("balance_sheet", "income_statement", "cash_flow", "earnings")
+    quarterly_types <- c(
+      "balance_sheet",
+      "income_statement",
+      "cash_flow",
+      "earnings"
+    )
     for (data_type in quarterly_types) {
       results[[data_type]] <- fetch_and_store_single_data_type(
-        ticker, data_type, bucket_name, api_key, region, delay_seconds
+        ticker,
+        data_type,
+        bucket_name,
+        api_key,
+        region,
+        delay_seconds
       )
     }
   }

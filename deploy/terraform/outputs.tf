@@ -54,3 +54,8 @@ output "eventbridge_rule_name" {
   description = "EventBridge schedule rule name"
   value       = aws_cloudwatch_event_rule.pipeline_schedule.name
 }
+
+output "github_deploy_role_arn" {
+  description = "IAM role ARN for the GitHub Actions deploy workflow (set as the AWS_DEPLOY_ROLE_ARN repo secret)"
+  value       = aws_iam_role.github_deploy.arn
+}

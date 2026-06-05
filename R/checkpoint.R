@@ -28,8 +28,10 @@ s3_read_checkpoint <- function(bucket_name, phase, region = "us-east-1") {
     stderr = TRUE
   )
 
-  if (is_timeout_result(result) ||
-      (!is.null(attr(result, "status")) && attr(result, "status") != 0)) {
+  if (
+    is_timeout_result(result) ||
+      (!is.null(attr(result, "status")) && attr(result, "status") != 0)
+  ) {
     return(create_empty_checkpoint())
   }
 
@@ -37,15 +39,22 @@ s3_read_checkpoint <- function(bucket_name, phase, region = "us-east-1") {
     return(create_empty_checkpoint())
   }
 
-  tryCatch({
-    checkpoint <- jsonlite::fromJSON(temp_file, simplifyVector = TRUE)
-    checkpoint$processed_tickers <- as.character(checkpoint$processed_tickers %||% character(0))
-    checkpoint$failed_tickers <- as.character(checkpoint$failed_tickers %||% character(0))
-    checkpoint
-  }, error = function(e) {
-    warning("Failed to parse checkpoint file: ", e$message)
-    create_empty_checkpoint()
-  })
+  tryCatch(
+    {
+      checkpoint <- jsonlite::fromJSON(temp_file, simplifyVector = TRUE)
+      checkpoint$processed_tickers <- as.character(
+        checkpoint$processed_tickers %||% character(0)
+      )
+      checkpoint$failed_tickers <- as.character(
+        checkpoint$failed_tickers %||% character(0)
+      )
+      checkpoint
+    },
+    error = function(e) {
+      warning("Failed to parse checkpoint file: ", e$message)
+      create_empty_checkpoint()
+    }
+  )
 }
 
 
@@ -60,7 +69,12 @@ s3_read_checkpoint <- function(bucket_name, phase, region = "us-east-1") {
 #'
 #' @return Logical. TRUE if successful
 #' @keywords internal
-s3_write_checkpoint <- function(checkpoint, bucket_name, phase, region = "us-east-1") {
+s3_write_checkpoint <- function(
+  checkpoint,
+  bucket_name,
+  phase,
+  region = "us-east-1"
+) {
   validate_character_scalar(bucket_name, name = "bucket_name")
   validate_character_scalar(phase, name = "phase")
   validate_character_scalar(region, name = "region")
@@ -89,7 +103,10 @@ s3_write_checkpoint <- function(checkpoint, bucket_name, phase, region = "us-eas
   }
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {
-    warning("Failed to write checkpoint to S3: ", paste(result, collapse = "\n"))
+    warning(
+      "Failed to write checkpoint to S3: ",
+      paste(result, collapse = "\n")
+    )
     return(FALSE)
   }
 
@@ -116,7 +133,7 @@ s3_clear_checkpoint <- function(bucket_name, phase, region = "us-east-1") {
   s3_key <- paste0("checkpoint/", phase, "_checkpoint.json")
   s3_uri <- paste0("s3://", bucket_name, "/", s3_key)
 
-  result <- system2_with_timeout(
+  system2_with_timeout(
     "aws",
     args = c("s3", "rm", s3_uri, "--region", region),
     timeout_seconds = 30,
@@ -156,7 +173,10 @@ create_empty_checkpoint <- function() {
 #' @keywords internal
 update_checkpoint <- function(checkpoint, ticker, success = TRUE) {
   if (success) {
-    checkpoint$processed_tickers <- unique(c(checkpoint$processed_tickers, ticker))
+    checkpoint$processed_tickers <- unique(c(
+      checkpoint$processed_tickers,
+      ticker
+    ))
   } else {
     checkpoint$failed_tickers <- unique(c(checkpoint$failed_tickers, ticker))
   }

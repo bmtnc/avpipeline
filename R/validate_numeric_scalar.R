@@ -12,12 +12,22 @@
 #'
 #' @return NULL (called for side effects)
 #' @export
-validate_numeric_scalar <- function(x, name = "Input", gt = NULL, gte = NULL,
-                                    lt = NULL, lte = NULL) {
+validate_numeric_scalar <- function(
+  x,
+  name = "Input",
+  gt = NULL,
+  gte = NULL,
+  lt = NULL,
+  lte = NULL
+) {
   if (!is.numeric(x) || length(x) != 1) {
     stop(paste0(
-      name, " must be a numeric scalar (length 1). ",
-      "Received: ", class(x)[1], " of length ", length(x)
+      name,
+      " must be a numeric scalar (length 1). ",
+      "Received: ",
+      class(x)[1],
+      " of length ",
+      length(x)
     ))
   }
   if (is.na(x)) {

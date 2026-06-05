@@ -1,6 +1,9 @@
 test_that("join_all_financial_statements validates statements parameter", {
   expect_error(
-    join_all_financial_statements("not a list", data.frame(ticker = "A", fiscalDateEnding = as.Date("2020-12-31"))),
+    join_all_financial_statements(
+      "not a list",
+      data.frame(ticker = "A", fiscalDateEnding = as.Date("2020-12-31"))
+    ),
     "^join_all_financial_statements\\(\\): \\[statements\\] must be a list, not character$"
   )
 })

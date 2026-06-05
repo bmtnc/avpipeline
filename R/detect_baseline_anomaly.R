@@ -8,31 +8,52 @@
 #' @param threshold Numeric threshold multiplier for MAD detection
 #' @return Logical value, TRUE if value is anomalous
 #' @export
-detect_baseline_anomaly <- function(value, baseline_median, baseline_mad, threshold) {
-
+detect_baseline_anomaly <- function(
+  value,
+  baseline_median,
+  baseline_mad,
+  threshold
+) {
   # Input validation (type and length checks only)
   if (!is.numeric(value) || length(value) != 1) {
-    stop(paste0("Argument 'value' must be single numeric value, received: ",
-                class(value)[1], " of length ", length(value)))
+    stop(paste0(
+      "Argument 'value' must be single numeric value, received: ",
+      class(value)[1],
+      " of length ",
+      length(value)
+    ))
   }
 
   if (!is.numeric(baseline_median) || length(baseline_median) != 1) {
-    stop(paste0("Argument 'baseline_median' must be single numeric value, received: ",
-                class(baseline_median)[1], " of length ", length(baseline_median)))
+    stop(paste0(
+      "Argument 'baseline_median' must be single numeric value, received: ",
+      class(baseline_median)[1],
+      " of length ",
+      length(baseline_median)
+    ))
   }
 
   if (!is.numeric(baseline_mad) || length(baseline_mad) != 1) {
-    stop(paste0("Argument 'baseline_mad' must be single numeric value, received: ",
-                class(baseline_mad)[1], " of length ", length(baseline_mad)))
+    stop(paste0(
+      "Argument 'baseline_mad' must be single numeric value, received: ",
+      class(baseline_mad)[1],
+      " of length ",
+      length(baseline_mad)
+    ))
   }
 
   validate_positive(threshold, name = "threshold")
 
   # Handle NA or zero MAD cases
-  if (is.na(value) || is.na(baseline_median) || is.na(baseline_mad) || baseline_mad <= 0) {
+  if (
+    is.na(value) ||
+      is.na(baseline_median) ||
+      is.na(baseline_mad) ||
+      baseline_mad <= 0
+  ) {
     return(FALSE)
   }
-  
+
   # Calculate anomaly
   abs(value - baseline_median) > threshold * baseline_mad
 }

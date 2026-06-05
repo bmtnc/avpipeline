@@ -13,12 +13,6 @@ get_api_key_from_parameter_store <- function(
   validate_character_scalar(parameter_name, name = "parameter_name")
   validate_character_scalar(region, name = "region")
 
-  cmd <- sprintf(
-    "aws ssm get-parameter --name %s --with-decryption --region %s --query Parameter.Value --output text",
-    shQuote(parameter_name),
-    shQuote(region)
-  )
-
   result <- system2_with_timeout(
     "aws",
     args = c(
@@ -40,7 +34,9 @@ get_api_key_from_parameter_store <- function(
   )
 
   if (is_timeout_result(result)) {
-    stop("get_api_key_from_parameter_store(): Parameter Store request timed out after 30 seconds")
+    stop(
+      "get_api_key_from_parameter_store(): Parameter Store request timed out after 30 seconds"
+    )
   }
 
   if (!is.null(attr(result, "status")) && attr(result, "status") != 0) {

@@ -11,12 +11,16 @@
 validate_date_type <- function(x, scalar = TRUE, name = "Input") {
   if (!inherits(x, "Date")) {
     stop(paste0(
-      name, " must be a Date object. Received: ", class(x)[1]
+      name,
+      " must be a Date object. Received: ",
+      class(x)[1]
     ))
   }
   if (scalar && length(x) != 1) {
     stop(paste0(
-      name, " must be a Date scalar (length 1). Received length: ", length(x)
+      name,
+      " must be a Date scalar (length 1). Received length: ",
+      length(x)
     ))
   }
 }

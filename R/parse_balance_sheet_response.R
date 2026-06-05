@@ -3,7 +3,7 @@
 #' Parses Alpha Vantage Balance Sheet API response into a standardized tibble format.
 #' Only returns quarterly data to avoid mixing annual and quarterly numbers.
 #'
-#' @param response Raw httr response object from Alpha Vantage API
+#' @param response httr2 response object from Alpha Vantage API
 #' @param ticker Character. The equity ticker for metadata
 #'
 #' @return A tibble with quarterly balance sheet data
@@ -11,7 +11,7 @@
 #' @export
 parse_balance_sheet_response <- function(response, ticker) {
   # Parse JSON response
-  content <- httr::content(response, "text", encoding = "UTF-8")
+  content <- httr2::resp_body_string(response)
   parsed_data <- jsonlite::fromJSON(content)
 
   # Check for API error messages
@@ -48,5 +48,5 @@ parse_balance_sheet_response <- function(response, ticker) {
     # Arrange by fiscal date (most recent first)
     dplyr::arrange(dplyr::desc(fiscalDateEnding))
 
-  return(result)
+  result
 }

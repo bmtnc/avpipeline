@@ -16,7 +16,7 @@ make_av_request(ticker, api_function, api_key = NULL, ...)
 \item{...}{Additional query parameters (outputsize, datatype, etc.)}
 }
 \value{
-Raw httr response object
+httr2 response object
 }
 \description{
 Makes HTTP requests to the Alpha Vantage API with retry logic.

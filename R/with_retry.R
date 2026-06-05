@@ -12,18 +12,19 @@
 #'
 #' @return Result of expr if successful
 #' @keywords internal
-with_retry <- function(expr,
-                       max_attempts = 3,
-                       initial_delay = 5,
-                       backoff_multiplier = 2,
-                       retryable_errors = "rate limit|timeout|connection|timed out") {
+with_retry <- function(
+  expr,
+  max_attempts = 3,
+  initial_delay = 5,
+  backoff_multiplier = 2,
+  retryable_errors = "rate limit|timeout|connection|timed out"
+) {
   validate_positive(max_attempts, name = "max_attempts")
   validate_positive(initial_delay, name = "initial_delay")
   validate_positive(backoff_multiplier, name = "backoff_multiplier")
 
   delay <- initial_delay
   last_error <- NULL
-
 
   for (attempt in seq_len(max_attempts)) {
     result <- tryCatch(
@@ -43,8 +44,13 @@ with_retry <- function(expr,
 
     if (attempt < max_attempts) {
       log_pipeline(
-        sprintf("Retryable error (attempt %d/%d): %s. Waiting %.0fs...",
-                attempt, max_attempts, result$message, delay),
+        sprintf(
+          "Retryable error (attempt %d/%d): %s. Waiting %.0fs...",
+          attempt,
+          max_attempts,
+          result$message,
+          delay
+        ),
         level = "WARN"
       )
       Sys.sleep(delay)
@@ -54,6 +60,7 @@ with_retry <- function(expr,
 
   stop(sprintf(
     "All %d retry attempts failed. Last error: %s",
-    max_attempts, last_error$message
+    max_attempts,
+    last_error$message
   ))
 }

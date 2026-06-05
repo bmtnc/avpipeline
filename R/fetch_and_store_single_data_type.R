@@ -23,7 +23,9 @@ fetch_and_store_single_data_type <- function(
   outputsize = NULL
 ) {
   if (!is.character(ticker) || length(ticker) != 1) {
-    stop("fetch_and_store_single_data_type(): [ticker] must be a character scalar")
+    stop(
+      "fetch_and_store_single_data_type(): [ticker] must be a character scalar"
+    )
   }
   if (!is.character(data_type) || length(data_type) != 1) {
     stop(
@@ -36,7 +38,15 @@ fetch_and_store_single_data_type <- function(
     )
   }
 
-  valid_data_types <- c("price", "splits", "balance_sheet", "income_statement", "cash_flow", "earnings")
+  valid_data_types <- c(
+    "price",
+    "splits",
+    "balance_sheet",
+    "income_statement",
+    "cash_flow",
+    "earnings",
+    "overview"
+  )
   if (!data_type %in% valid_data_types) {
     return(list(
       success = FALSE,
@@ -46,45 +56,54 @@ fetch_and_store_single_data_type <- function(
     ))
   }
 
-  tryCatch({
-    data <- switch(data_type,
-      "price" = fetch_price(ticker, api_key, outputsize = outputsize %||% "compact"),
-      "splits" = fetch_splits(ticker, api_key),
-      "balance_sheet" = fetch_balance_sheet(ticker, api_key),
-      "income_statement" = fetch_income_statement(ticker, api_key),
-      "cash_flow" = fetch_cash_flow(ticker, api_key),
-      "earnings" = fetch_earnings(ticker, api_key)
-    )
+  tryCatch(
+    {
+      data <- switch(
+        data_type,
+        "price" = fetch_price(
+          ticker,
+          api_key,
+          outputsize = outputsize %||% "compact"
+        ),
+        "splits" = fetch_splits(ticker, api_key),
+        "balance_sheet" = fetch_balance_sheet(ticker, api_key),
+        "income_statement" = fetch_income_statement(ticker, api_key),
+        "cash_flow" = fetch_cash_flow(ticker, api_key),
+        "earnings" = fetch_earnings(ticker, api_key),
+        "overview" = fetch_overview(ticker, api_key)
+      )
 
-    if (is.null(data) || nrow(data) == 0) {
-      return(list(
+      if (is.null(data) || nrow(data) == 0) {
+        return(list(
+          success = TRUE,
+          data = NULL,
+          error = NULL,
+          outputsize_used = outputsize
+        ))
+      }
+
+      if (create_version_snapshot) {
+        s3_write_version_snapshot(ticker, data_type, bucket_name, region)
+      }
+
+      s3_write_ticker_raw_data(data, ticker, data_type, bucket_name, region)
+
+      Sys.sleep(delay_seconds)
+
+      list(
         success = TRUE,
-        data = NULL,
+        data = data,
         error = NULL,
         outputsize_used = outputsize
-      ))
+      )
+    },
+    error = function(e) {
+      list(
+        success = FALSE,
+        data = NULL,
+        error = conditionMessage(e),
+        outputsize_used = outputsize
+      )
     }
-
-    if (create_version_snapshot) {
-      s3_write_version_snapshot(ticker, data_type, bucket_name, region)
-    }
-
-    s3_write_ticker_raw_data(data, ticker, data_type, bucket_name, region)
-
-    Sys.sleep(delay_seconds)
-
-    list(
-      success = TRUE,
-      data = data,
-      error = NULL,
-      outputsize_used = outputsize
-    )
-  }, error = function(e) {
-    list(
-      success = FALSE,
-      data = NULL,
-      error = conditionMessage(e),
-      outputsize_used = outputsize
-    )
-  })
+  )
 }
