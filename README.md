@@ -1,6 +1,8 @@
 # avpipeline
 
 <!-- badges: start -->
+[![R-CMD-check](https://github.com/bmtnc/avpipeline/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/bmtnc/avpipeline/actions/workflows/R-CMD-check.yaml)
+[![lint](https://github.com/bmtnc/avpipeline/actions/workflows/lint.yaml/badge.svg)](https://github.com/bmtnc/avpipeline/actions/workflows/lint.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-0.0.0.9000-blue.svg)](https://github.com/bmtnc/avpipeline)
 <!-- badges: end -->
