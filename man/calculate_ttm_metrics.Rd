@@ -12,5 +12,6 @@ calculate_ttm_metrics(data, flow_metrics)
 \item{flow_metrics}{Vector of flow-based column names (income statement + cash flow)}
 }
 \description{
-Calculate TTM metrics for flow-based financial metrics only
+Rolling 4-quarter sums are computed within a ticker's contiguous series run
+(series_run_id, when present) so TTM never spans a reporting gap.
 }

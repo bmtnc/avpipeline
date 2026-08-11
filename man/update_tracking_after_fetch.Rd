@@ -12,6 +12,7 @@ update_tracking_after_fetch(
   reported_date = NULL,
   price_last_date = NULL,
   price_has_full_history = NULL,
+  statements_lag_earnings = NULL,
   data_changed = FALSE
 )
 }
@@ -29,6 +30,9 @@ update_tracking_after_fetch(
 \item{price_last_date}{Date: Most recent date in price data (for price only)}
 
 \item{price_has_full_history}{logical: Whether full history was fetched (for price only)}
+
+\item{statements_lag_earnings}{logical: Whether statements trail earnings' latest
+fiscal quarter, stored as has_data_discrepancy (for quarterly only)}
 
 \item{data_changed}{logical: Whether data actually changed from previous fetch}
 }

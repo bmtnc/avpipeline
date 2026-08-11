@@ -9,7 +9,10 @@ should_fetch_quarterly_data(
   quarterly_last_fetched_at,
   reference_date = Sys.Date(),
   window_days = 5,
-  fallback_max_days = 90
+  fallback_max_days = 90,
+  statements_lag_earnings = FALSE,
+  last_reported_date = as.Date(NA),
+  lag_retry_max_days = 45
 )
 }
 \arguments{
@@ -22,6 +25,14 @@ should_fetch_quarterly_data(
 \item{window_days}{integer: Days before/after earnings to trigger fetch (default: 5)}
 
 \item{fallback_max_days}{integer: Force fetch if data older than this (default: 90)}
+
+\item{statements_lag_earnings}{logical: Whether the last fetch found statements
+trailing earnings' latest fiscal quarter (default: FALSE)}
+
+\item{last_reported_date}{Date: Most recent earnings report date (can be NA)}
+
+\item{lag_retry_max_days}{integer: Keep retrying lagged statements until this
+many days after the report (default: 45)}
 }
 \value{
 logical: TRUE if quarterly data should be fetched

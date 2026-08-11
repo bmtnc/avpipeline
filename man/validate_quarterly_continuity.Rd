@@ -10,8 +10,14 @@ validate_quarterly_continuity(financial_statements)
 \item{financial_statements}{tibble: Financial statements data}
 }
 \value{
-tibble: Financial statements with only continuous quarterly series
+tibble: Financial statements with series_run_id, gap_before, and
+has_discontinuous_series columns
 }
 \description{
-Orchestrates quarterly continuity validation across all tickers using split-apply-combine.
+Annotates quarterly series structure instead of filtering to one continuous
+chunk. Consecutive quarters (3 calendar months apart, month-end dates) share
+a \code{series_run_id}; a break starts a new run with \code{gap_before = TRUE}. All
+quarters are kept so a single missing quarter at the source cannot discard
+current data; TTM calculations group by run to avoid summing across gaps.
+Non-month-end dates are dropped.
 }
