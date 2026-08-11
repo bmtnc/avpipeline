@@ -332,10 +332,17 @@ if (n_to_fetch > 0) {
                   earnings_data
                 )
               }
+              statements_lag <- detect_statement_lag(
+                income_statement = ticker_results$income_statement$data,
+                balance_sheet = ticker_results$balance_sheet$data,
+                cash_flow = ticker_results$cash_flow$data,
+                earnings = earnings_data
+              )
               tracking <- update_tracking_after_fetch(
                 tracking,
                 ticker,
                 "quarterly",
+                statements_lag_earnings = statements_lag,
                 fiscal_date_ending = if (
                   !is.null(earnings_data) && nrow(earnings_data) > 0
                 ) {

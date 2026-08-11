@@ -9,6 +9,8 @@
 #' @param reported_date Date: Most recent reportedDate (for quarterly only)
 #' @param price_last_date Date: Most recent date in price data (for price only)
 #' @param price_has_full_history logical: Whether full history was fetched (for price only)
+#' @param statements_lag_earnings logical: Whether statements trail earnings' latest
+#'   fiscal quarter, stored as has_data_discrepancy (for quarterly only)
 #' @param data_changed logical: Whether data actually changed from previous fetch
 #' @return tibble: Updated tracking dataframe
 #' @keywords internal
@@ -20,6 +22,7 @@ update_tracking_after_fetch <- function(
   reported_date = NULL,
   price_last_date = NULL,
   price_has_full_history = NULL,
+  statements_lag_earnings = NULL,
   data_changed = FALSE
 ) {
   if (!is.character(data_type) || length(data_type) != 1) {
@@ -48,6 +51,9 @@ update_tracking_after_fetch <- function(
     }
     if (!is.null(reported_date)) {
       updates$last_reported_date <- reported_date
+    }
+    if (!is.null(statements_lag_earnings)) {
+      updates$has_data_discrepancy <- statements_lag_earnings
     }
   } else if (data_type == "overview") {
     updates$overview_last_fetched_at <- now

@@ -164,6 +164,35 @@ test_that("update_tracking_after_fetch updates quarterly with dates", {
   expect_equal(updated$last_reported_date, reported_date)
 })
 
+test_that("update_tracking_after_fetch records statement lag on quarterly fetch", {
+  tracking <- create_default_ticker_tracking("AAPL")
+
+  lagged <- update_tracking_after_fetch(
+    tracking,
+    "AAPL",
+    "quarterly",
+    statements_lag_earnings = TRUE
+  )
+  expect_true(lagged$has_data_discrepancy)
+
+  caught_up <- update_tracking_after_fetch(
+    lagged,
+    "AAPL",
+    "quarterly",
+    statements_lag_earnings = FALSE
+  )
+  expect_false(caught_up$has_data_discrepancy)
+})
+
+test_that("update_tracking_after_fetch leaves lag flag untouched when not supplied", {
+  tracking <- create_default_ticker_tracking("AAPL")
+  tracking$has_data_discrepancy <- TRUE
+
+  updated <- update_tracking_after_fetch(tracking, "AAPL", "price")
+
+  expect_true(updated$has_data_discrepancy)
+})
+
 test_that("update_tracking_after_fetch sets data_updated_at when data changed", {
   tracking <- create_default_ticker_tracking("AAPL")
 
