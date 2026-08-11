@@ -29,8 +29,11 @@ calculate_unified_ttm_per_share_metrics <- function(
     ttm_metrics
   )
 
-  # Forward fill financial data
+  # Forward fill financial data, then blank fills that outlive the reporting
+  # cadence so stale fundamentals never ride alongside current prices
   unified_data <- forward_fill_financial_data(unified_data)
+  financial_cols <- setdiff(names(ttm_metrics), c("ticker", "date"))
+  unified_data <- cap_forward_fill_staleness(unified_data, financial_cols)
 
   # Calculate per-share metrics
   ttm_flow_metrics <- paste0(flow_metrics, "_ttm")
