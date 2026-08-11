@@ -30,9 +30,22 @@ calculate_unified_ttm_per_share_metrics <- function(
   )
 
   # Forward fill financial data, then blank fills that outlive the reporting
-  # cadence so stale fundamentals never ride alongside current prices
+  # cadence so stale fundamentals never ride alongside current prices.
+  # Identity/classification columns don't decay and are never capped.
+  non_decaying_cols <- c(
+    "ticker",
+    "date",
+    "cik",
+    "exchange",
+    "currency",
+    "country",
+    "sector",
+    "industry",
+    "subsector",
+    "has_discontinuous_series"
+  )
   unified_data <- forward_fill_financial_data(unified_data)
-  financial_cols <- setdiff(names(ttm_metrics), c("ticker", "date"))
+  financial_cols <- setdiff(names(ttm_metrics), non_decaying_cols)
   unified_data <- cap_forward_fill_staleness(unified_data, financial_cols)
 
   # Calculate per-share metrics

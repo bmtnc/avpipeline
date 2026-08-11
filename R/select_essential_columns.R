@@ -32,10 +32,17 @@ select_essential_columns <- function(data) {
     "market_cap"
   )
 
+  continuity_cols <- c(
+    "series_run_id",
+    "gap_before",
+    "has_discontinuous_series"
+  )
+
   data %>%
     dplyr::select(
       dplyr::any_of(date_cols),
       dplyr::any_of(meta_cols),
+      dplyr::any_of(continuity_cols),
       dplyr::contains("per_share")
     )
 }

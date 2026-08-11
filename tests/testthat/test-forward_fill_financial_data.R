@@ -175,3 +175,29 @@ test_that("forward_fill_financial_data returns ungrouped data", {
   # Should not be grouped
   expect_false(dplyr::is_grouped_df(result))
 })
+
+test_that("fill respects series runs: post-gap NA TTM is not backfilled from a prior run", {
+  # Daily rows joined with two quarterly runs. Run 2's first quarterly row has
+  # NA TTM (fewer than 4 quarters in its run); run 1's value must not leak
+  # through it.
+  # nolint start
+  # fmt: skip
+  input_data <- tibble::tribble(
+    ~ticker, ~date,        ~series_run_id, ~totalRevenue_ttm,
+    "RH",    "2022-09-15", 1L,             3858081000,
+    "RH",    "2022-09-16", NA_integer_,    NA_real_,
+    "RH",    "2023-03-30", 2L,             NA_real_,
+    "RH",    "2023-03-31", NA_integer_,    NA_real_
+  ) %>%
+    dplyr::mutate(date = as.Date(date))
+  # nolint end
+
+  result <- forward_fill_financial_data(input_data)
+
+  # Gap-period row inherits the prior run and its value (staleness cap bounds it)
+  expect_equal(result$series_run_id, c(1L, 1L, 2L, 2L))
+  expect_equal(
+    result$totalRevenue_ttm,
+    c(3858081000, 3858081000, NA_real_, NA_real_)
+  )
+})

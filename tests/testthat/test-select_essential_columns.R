@@ -113,3 +113,24 @@ test_that("select_essential_columns handles empty data frame", {
   expect_true(is.data.frame(result))
   expect_equal(nrow(result), 0)
 })
+
+test_that("select_essential_columns keeps series continuity flags when present", {
+  data <- tibble::tibble(
+    ticker = "RH",
+    date = as.Date("2023-03-31"),
+    adjusted_close = 100,
+    totalRevenue_ttm_per_share = 5,
+    series_run_id = 2L,
+    gap_before = FALSE,
+    has_discontinuous_series = TRUE,
+    dropped_raw_metric = 1
+  )
+
+  result <- select_essential_columns(data)
+
+  expect_true(all(
+    c("series_run_id", "gap_before", "has_discontinuous_series") %in%
+      names(result)
+  ))
+  expect_false("dropped_raw_metric" %in% names(result))
+})
