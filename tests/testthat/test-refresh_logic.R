@@ -54,6 +54,47 @@ test_that("should_fetch_quarterly_data returns FALSE with no prediction but fres
   ))
 })
 
+test_that("should_fetch_quarterly_data retries while statements lag earnings", {
+  # Outside earnings window, fresh fetch — would be FALSE without the lag flag
+  expect_true(should_fetch_quarterly_data(
+    next_estimated_report_date = as.Date("2026-10-25"),
+    quarterly_last_fetched_at = as.POSIXct("2026-07-31"),
+    reference_date = as.Date("2026-08-11"),
+    statements_lag_earnings = TRUE,
+    last_reported_date = as.Date("2026-07-30")
+  ))
+})
+
+test_that("should_fetch_quarterly_data stops lag retries past the retry bound", {
+  expect_false(should_fetch_quarterly_data(
+    next_estimated_report_date = as.Date("2026-12-20"),
+    quarterly_last_fetched_at = as.POSIXct("2026-09-20"),
+    reference_date = as.Date("2026-09-25"),
+    statements_lag_earnings = TRUE,
+    last_reported_date = as.Date("2026-07-30")
+  ))
+})
+
+test_that("should_fetch_quarterly_data ignores lag flag with NA reported date", {
+  expect_false(should_fetch_quarterly_data(
+    next_estimated_report_date = as.Date("2026-10-25"),
+    quarterly_last_fetched_at = as.POSIXct("2026-07-31"),
+    reference_date = as.Date("2026-08-11"),
+    statements_lag_earnings = TRUE,
+    last_reported_date = as.Date(NA)
+  ))
+})
+
+test_that("should_fetch_quarterly_data unaffected by lag args when not lagged", {
+  expect_false(should_fetch_quarterly_data(
+    next_estimated_report_date = as.Date("2026-10-25"),
+    quarterly_last_fetched_at = as.POSIXct("2026-07-31"),
+    reference_date = as.Date("2026-08-11"),
+    statements_lag_earnings = FALSE,
+    last_reported_date = as.Date("2026-07-30")
+  ))
+})
+
 test_that("should_fetch_quarterly_data respects custom window_days", {
   # 7 days before earnings, default window (5) would say no
   expect_false(should_fetch_quarterly_data(
@@ -200,6 +241,27 @@ test_that("determine_fetch_requirements respects quarterly logic", {
     reference_date = as.Date("2024-12-15")
   )
   expect_true(result$quarterly)
+})
+
+test_that("determine_fetch_requirements fetches quarterly while statements lag", {
+  tracking <- create_default_ticker_tracking("AMZN")
+  tracking$quarterly_last_fetched_at <- as.POSIXct("2026-07-31")
+  tracking$next_estimated_report_date <- as.Date("2026-10-25")
+  tracking$last_reported_date <- as.Date("2026-07-30")
+  tracking$has_data_discrepancy <- TRUE
+
+  requirements <- determine_fetch_requirements(
+    tracking,
+    reference_date = as.Date("2026-08-11")
+  )
+  expect_true(requirements$quarterly)
+
+  tracking$has_data_discrepancy <- FALSE
+  requirements <- determine_fetch_requirements(
+    tracking,
+    reference_date = as.Date("2026-08-11")
+  )
+  expect_false(requirements$quarterly)
 })
 
 test_that("determine_fetch_requirements validates inputs", {

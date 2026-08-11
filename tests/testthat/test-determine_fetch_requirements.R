@@ -12,7 +12,9 @@ tracking <- function(last_fetched_days_ago = 20, next_report_in_days = 40) {
       as.POSIXct(NA)
     } else {
       as.POSIXct(ref - last_fetched_days_ago)
-    }
+    },
+    last_reported_date = as.Date(NA),
+    has_data_discrepancy = FALSE
   )
 }
 

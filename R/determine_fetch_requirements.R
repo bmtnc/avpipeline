@@ -51,7 +51,9 @@ determine_fetch_requirements <- function(
   fetch_quarterly <- should_fetch_quarterly_data(
     next_estimated_report_date = ticker_tracking$next_estimated_report_date,
     quarterly_last_fetched_at = ticker_tracking$quarterly_last_fetched_at,
-    reference_date = reference_date
+    reference_date = reference_date,
+    statements_lag_earnings = ticker_tracking$has_data_discrepancy,
+    last_reported_date = ticker_tracking$last_reported_date
   )
 
   if (fetch_mode == "quarterly_only") {
