@@ -15,6 +15,8 @@ tibble: Data frame with forward-filled financial metrics
 \description{
 Forward fills financial data by ticker group using tidyr::fill().
 This propagates the most recent financial statement values forward to
-subsequent dates until new financial data is reported.
+subsequent dates until new financial data is reported. When series_run_id
+is present, values fill within a run only — a post-gap quarter with NA TTM
+must stay NA rather than inherit the prior run's stale value.
 }
 \keyword{internal}

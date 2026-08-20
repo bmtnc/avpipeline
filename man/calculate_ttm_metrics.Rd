@@ -15,3 +15,10 @@ calculate_ttm_metrics(data, flow_metrics)
 Rolling 4-quarter sums are computed within a ticker's contiguous series run
 (series_run_id, when present) so TTM never spans a reporting gap.
 }
+\details{
+NAs propagate: a window missing any quarter's value yields NA, not the sum of
+the quarters that happen to be present. Coalescing absent values to 0 would
+silently understate the twelve-month total — a partially-reported window
+would look like a complete one. Absent means unknown here; a consumer that
+wants "absent = zero" for a specific metric must say so explicitly.
+}
