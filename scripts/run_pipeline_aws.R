@@ -92,14 +92,12 @@ phase2_duration <- round(
 message("")
 message("[3/3] Finalizing...")
 
-# Combine logs from both phases
-combined_log <- if (exists("phase2_log")) {
-  phase2_log
-} else if (exists("phase1_log")) {
-  phase1_log
-} else {
-  create_pipeline_log()
-}
+# Combine logs from both phases. The previous if/else-if picked ONE log, so the
+# fetch and generate blocks could never both be populated.
+combined_log <- dplyr::bind_rows(
+  if (exists("phase1_log")) phase1_log else create_pipeline_log(),
+  if (exists("phase2_log")) phase2_log else create_pipeline_log()
+)
 
 # Upload log to S3
 tryCatch(
@@ -117,91 +115,126 @@ total_duration <- round(
   2
 )
 
-# Calculate summary stats from log
-fetch_log <- combined_log[combined_log$phase == "fetch", ]
-generate_log <- combined_log[combined_log$phase == "generate", ]
-
-fetch_success <- sum(fetch_log$status == "success", na.rm = TRUE)
-fetch_errors <- sum(fetch_log$status == "error", na.rm = TRUE)
-fetch_skipped <- sum(fetch_log$status == "skipped", na.rm = TRUE)
-fetch_total <- fetch_success + fetch_errors + fetch_skipped
-
-generate_success <- sum(generate_log$status == "success", na.rm = TRUE)
-generate_errors <- sum(generate_log$status == "error", na.rm = TRUE)
-generate_skipped <- sum(generate_log$status == "skipped", na.rm = TRUE)
-generate_total <- generate_success + generate_errors + generate_skipped
-
-total_rows <- sum(generate_log$rows, na.rm = TRUE)
-
-etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
-fetch_mode <- Sys.getenv("FETCH_MODE", "full")
-
-s3_key <- generate_s3_artifact_key(date = Sys.Date())
-
-success_message <- paste0(
-  "TTM Pipeline completed!\n\n",
-  "Configuration:\n",
-  "  ETF: ",
-  etf_symbol,
-  "\n",
-  "  Mode: ",
-  fetch_mode,
-  "\n\n",
-  "Phase 1 (Fetch): ",
-  fetch_total,
-  " tickers\n",
-  "  Success: ",
-  fetch_success,
-  "\n",
-  "  Errors:  ",
-  fetch_errors,
-  "\n",
-  "  Skipped: ",
-  fetch_skipped,
-  "\n\n",
-  "Phase 2 (Generate): ",
-  generate_total,
-  " tickers\n",
-  "  Success: ",
-  generate_success,
-  "\n",
-  "  Errors:  ",
-  generate_errors,
-  "\n",
-  "  Skipped: ",
-  generate_skipped,
-  "\n",
-  "  Total rows: ",
-  format(total_rows, big.mark = ","),
-  "\n\n",
-  "Timing:\n",
-  "  Phase 1: ",
-  phase1_duration,
-  " min\n",
-  "  Phase 2: ",
-  phase2_duration,
-  " min\n",
-  "  Total:   ",
-  total_duration,
-  " min\n\n",
-  "Output: s3://",
-  S3_BUCKET,
-  "/",
-  s3_key
-)
-
+# Both phases have succeeded by this point, so a failure while BUILDING the
+# report must still notify. Without this wrapper a missing summary would abort
+# the script silently — no success mail, no failure mail — which is the exact
+# failure mode this reporting rework exists to remove.
 tryCatch(
   {
+    if (!exists("phase1_summary")) {
+      stop(
+        "run_phase1_fetch.R did not produce phase1_summary; ",
+        "cannot report Phase 1 results"
+      )
+    }
+    if (!exists("phase2_summary")) {
+      stop(
+        "run_phase2_generate.R did not produce phase2_summary; ",
+        "cannot report Phase 2 results"
+      )
+    }
+
+    success_message <- paste0(
+      "TTM Pipeline completed!\n\n",
+      "Configuration:\n",
+      "  ETF: ",
+      phase1_summary$etf,
+      "\n",
+      "  Fetch mode:   ",
+      phase1_summary$mode,
+      "\n",
+      "  Phase 2 mode: ",
+      phase2_summary$mode,
+      "\n\n",
+      "Phase 1 (Fetch): ",
+      phase1_summary$tickers,
+      " tickers\n",
+      "  Success: ",
+      phase1_summary$success,
+      "\n",
+      "  Errors:  ",
+      phase1_summary$errors,
+      "\n",
+      "  Skipped: ",
+      phase1_summary$skipped,
+      "\n\n",
+      "Phase 2 (Generate): ",
+      phase2_summary$tickers,
+      " tickers\n",
+      "  Success: ",
+      phase2_summary$success,
+      "\n",
+      "  Errors:  ",
+      phase2_summary$errors,
+      "\n",
+      "  Skipped: ",
+      phase2_summary$skipped,
+      "\n\n",
+      "Artifacts:\n",
+      "  Quarterly: ",
+      format(phase2_summary$quarterly_rows, big.mark = ","),
+      " rows\n             s3://",
+      S3_BUCKET,
+      "/",
+      phase2_summary$quarterly_s3_key,
+      "\n",
+      "  Price:     ",
+      format(phase2_summary$price_rows, big.mark = ","),
+      " rows\n             s3://",
+      S3_BUCKET,
+      "/",
+      phase2_summary$price_s3_key,
+      "\n\n",
+      "Timing:\n",
+      "  Phase 1: ",
+      phase1_duration,
+      " min\n",
+      "  Phase 2: ",
+      phase2_duration,
+      " min\n",
+      "  Total:   ",
+      total_duration,
+      " min"
+    )
+
+    total_errors <- phase1_summary$errors + phase2_summary$errors
+    subject_suffix <- if (total_errors > 0) {
+      paste0(" (", total_errors, " errors)")
+    } else {
+      ""
+    }
+
     send_pipeline_notification(
       topic_arn = SNS_TOPIC_ARN,
-      subject = paste0("Pipeline Success: ", format(Sys.Date(), "%Y-%m-%d")),
+      subject = paste0(
+        "Pipeline Success: ",
+        format(Sys.Date(), "%Y-%m-%d"),
+        subject_suffix
+      ),
       message = success_message,
       region = AWS_REGION
     )
     message("Notification sent")
   },
   error = function(e) {
-    warning("Failed to send notification: ", e$message)
+    error_msg <- paste0("Pipeline finalize failed: ", conditionMessage(e))
+    message(error_msg)
+
+    tryCatch(
+      {
+        send_pipeline_notification(
+          topic_arn = SNS_TOPIC_ARN,
+          subject = "Pipeline Failed: Finalize",
+          message = error_msg,
+          region = AWS_REGION
+        )
+      },
+      error = function(e2) {
+        warning("Failed to send error notification: ", e2$message)
+      }
+    )
+
+    stop(error_msg)
   }
 )
 

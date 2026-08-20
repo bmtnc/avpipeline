@@ -181,9 +181,15 @@ if (phase2_mode == "price_only") {
     nrow(quarterly_artifact)
   ))
 
-  # No tickers reprocessed in this mode; define summary counters for the footer.
+  # No tickers reprocessed in this mode; define every summary counter the
+  # footer and notification read, so a price-only run can't fail on an unbound
+  # name or silently report a stale count.
   n_tickers <- 0L
   success_count <- 0L
+  skip_count <- 0L
+  error_count <- 0L
+  failed_tickers <- character(0)
+  phase2_log <- create_pipeline_log()
 } else {
   # Determine tickers to process
   if (phase2_mode == "incremental" && reprocess_info$reason == "incremental") {
@@ -238,12 +244,19 @@ if (phase2_mode == "price_only") {
   ))
   process_start <- Sys.time()
 
+  # Workers are forked, so they cannot append to a shared log. Each returns its
+  # own outcome record and the parent assembles the log from them below.
   quarterly_results <- parallel::mclapply(
     tickers,
     function(ticker) {
+      ticker_start <- Sys.time()
+      ticker_duration <- function() {
+        as.numeric(difftime(Sys.time(), ticker_start, units = "secs"))
+      }
+
       tryCatch(
         {
-          process_ticker_for_quarterly_artifact(
+          ticker_data <- process_ticker_for_quarterly_artifact(
             ticker = ticker,
             all_data = all_data,
             start_date = start_date,
@@ -254,9 +267,26 @@ if (phase2_mode == "price_only") {
             end_threshold = end_threshold,
             min_obs = min_obs
           )
+          rows <- if (is.null(ticker_data)) 0L else nrow(ticker_data)
+
+          list(
+            ticker = ticker,
+            data = ticker_data,
+            status = if (rows > 0) "success" else "skipped",
+            rows = rows,
+            error_message = NA_character_,
+            duration_seconds = ticker_duration()
+          )
         },
         error = function(e) {
-          NULL
+          list(
+            ticker = ticker,
+            data = NULL,
+            status = "error",
+            rows = 0L,
+            error_message = conditionMessage(e),
+            duration_seconds = ticker_duration()
+          )
         }
       )
     },
@@ -265,13 +295,33 @@ if (phase2_mode == "price_only") {
 
   # Combine quarterly results from reprocessed tickers
   log_pipeline("Combining quarterly results...")
-  reprocessed_artifact <- dplyr::bind_rows(quarterly_results)
+  reprocessed_artifact <- dplyr::bind_rows(lapply(
+    quarterly_results,
+    function(x) if (is.list(x)) x$data else NULL
+  ))
 
-  # Count successes/skips
-  success_count <- sum(sapply(quarterly_results, function(x) {
-    !is.null(x) && nrow(x) > 0
-  }))
-  skip_count <- n_tickers - success_count
+  # Counts come straight off the worker records, independent of log assembly —
+  # if building the log tibble ever fails, the notification must still report
+  # the truth rather than degrade to zeros.
+  statuses <- vapply(
+    quarterly_results,
+    function(x) if (is.list(x) && !is.null(x$status)) x$status else "error",
+    character(1)
+  )
+  success_count <- sum(statuses == "success")
+  skip_count <- sum(statuses == "skipped")
+  error_count <- sum(statuses == "error")
+  failed_tickers <- tickers[statuses == "error"]
+
+  # The log is observational (S3 only): built after the artifact and degraded to
+  # empty on failure, so a reporting bug can never cost a completed run.
+  phase2_log <- tryCatch(
+    build_phase2_log(quarterly_results, tickers),
+    error = function(e) {
+      warning("Failed to build Phase 2 log: ", conditionMessage(e))
+      create_pipeline_log()
+    }
+  )
 
   process_duration <- as.numeric(difftime(
     Sys.time(),
@@ -279,11 +329,23 @@ if (phase2_mode == "price_only") {
     units = "secs"
   ))
   log_pipeline(sprintf(
-    "Quarterly processing complete: %d success, %d skipped in %.1f seconds",
+    paste0(
+      "Quarterly processing complete: %d success, %d skipped, %d errors ",
+      "in %.1f seconds"
+    ),
     success_count,
     skip_count,
+    error_count,
     process_duration
   ))
+
+  if (length(failed_tickers) > 0) {
+    log_pipeline(sprintf(
+      "Failed tickers (%d): %s",
+      length(failed_tickers),
+      paste(utils::head(failed_tickers, 20), collapse = ", ")
+    ))
+  }
 
   # ============================================================================
   # MERGE WITH PREVIOUS ARTIFACT (INCREMENTAL MODE)
@@ -416,8 +478,24 @@ log_phase_end(
   "PHASE 2: GENERATE TTM ARTIFACTS",
   total = n_tickers,
   successful = success_count,
-  failed = 0,
+  failed = error_count,
   duration_seconds = phase_duration
+)
+
+# Explicit contract for the AWS wrappers' notifications. Consumers must fail
+# loudly if this is absent rather than falling back to an empty log, which is
+# how Phase 2 silently reported 0/0/0 for every run after the mclapply refactor.
+phase2_summary <- list(
+  mode = phase2_mode,
+  tickers = n_tickers,
+  success = success_count,
+  skipped = skip_count,
+  errors = error_count,
+  failed_tickers = failed_tickers,
+  quarterly_rows = nrow(quarterly_artifact),
+  price_rows = nrow(price_artifact),
+  quarterly_s3_key = quarterly_s3_key,
+  price_s3_key = price_s3_key
 )
 
 log_pipeline(sprintf(

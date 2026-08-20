@@ -454,3 +454,21 @@ log_failed_tickers(failed_tickers)
 
 # Return log for use by run_pipeline_aws.R
 phase1_log <- pipeline_log
+
+# Explicit contract for the AWS wrappers' notifications, mirroring
+# phase2_summary. Consumers must fail loudly if this is absent.
+#
+# Counts are deduplicated by ticker: the batch-level error handler marks every
+# ticker in a failed batch, including ones already tallied individually earlier
+# in the same loop, so the raw counters can exceed n_tickers.
+phase1_failed_tickers <- unique(failed_tickers)
+
+phase1_summary <- list(
+  etf = etf_symbol,
+  mode = fetch_mode,
+  tickers = n_tickers,
+  success = success_count,
+  skipped = skip_count,
+  errors = length(phase1_failed_tickers),
+  failed_tickers = phase1_failed_tickers
+)

@@ -58,3 +58,12 @@ message(sprintf(
   length(unique(interim$date)),
   duration
 ))
+
+# Contract for run_phase1_aws.R's notification. Without this the daily run's
+# entire reason for existing — the bulk-quote price leg — is invisible in the
+# email, and a run that quoted zero tickers still reports unqualified success.
+interim_summary <- list(
+  rows = nrow(interim),
+  tickers = length(unique(interim$ticker)),
+  trading_days = length(unique(interim$date))
+)

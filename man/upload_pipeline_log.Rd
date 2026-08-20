@@ -4,7 +4,12 @@
 \alias{upload_pipeline_log}
 \title{Upload Pipeline Log to S3}
 \usage{
-upload_pipeline_log(log, bucket_name, region = "us-east-1")
+upload_pipeline_log(
+  log,
+  bucket_name,
+  region = "us-east-1",
+  filename = "processing_log.parquet"
+)
 }
 \arguments{
 \item{log}{tibble: Pipeline log dataframe}
@@ -12,11 +17,18 @@ upload_pipeline_log(log, bucket_name, region = "us-east-1")
 \item{bucket_name}{character: S3 bucket name}
 
 \item{region}{character: AWS region (default: "us-east-1")}
+
+\item{filename}{character: Object name within the dated log prefix
+(default: "processing_log.parquet")}
 }
 \value{
 logical: TRUE if successful
 }
 \description{
-Saves the pipeline log to S3.
+Saves the pipeline log to S3 under \code{logs/{date}/{filename}}.
+}
+\details{
+Phase 1 and Phase 2 run as separate ECS tasks, so they must not share a
+filename — whichever finished last would otherwise overwrite the other's log.
 }
 \keyword{internal}

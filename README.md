@@ -568,8 +568,6 @@ scripts/run_pipeline_aws.R
 │       │   ├── validate_positive → validate_numeric_scalar
 │       │   └── with_timeout
 │       └── is_timeout_result
-└── generate_s3_artifact_key
-    └── validate_date_type
 ```
 
 ### scripts/run_phase1_fetch.R
@@ -721,7 +719,6 @@ scripts/run_phase2_aws.R
 ├── source("run_phase2_generate.R") → (see above)
 ├── create_pipeline_log
 ├── upload_pipeline_log             → (see above)
-├── generate_s3_artifact_key        → (see above)
 └── send_pipeline_notification
 ```
 

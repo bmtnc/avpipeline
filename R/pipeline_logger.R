@@ -57,20 +57,36 @@ add_log_entry <- function(
 
 #' Upload Pipeline Log to S3
 #'
-#' Saves the pipeline log to S3.
+#' Saves the pipeline log to S3 under `logs/{date}/{filename}`.
+#'
+#' Phase 1 and Phase 2 run as separate ECS tasks, so they must not share a
+#' filename — whichever finished last would otherwise overwrite the other's log.
 #'
 #' @param log tibble: Pipeline log dataframe
 #' @param bucket_name character: S3 bucket name
 #' @param region character: AWS region (default: "us-east-1")
+#' @param filename character: Object name within the dated log prefix
+#'   (default: "processing_log.parquet")
 #' @return logical: TRUE if successful
 #' @keywords internal
-upload_pipeline_log <- function(log, bucket_name, region = "us-east-1") {
+upload_pipeline_log <- function(
+  log,
+  bucket_name,
+  region = "us-east-1",
+  filename = "processing_log.parquet"
+) {
+  validate_character_scalar(
+    filename,
+    allow_empty = FALSE,
+    name = "upload_pipeline_log(): [filename]"
+  )
+
   temp_file <- tempfile(fileext = ".parquet")
   on.exit(unlink(temp_file), add = TRUE)
 
   arrow::write_parquet(log, temp_file)
 
-  s3_key <- paste0("logs/", Sys.Date(), "/processing_log.parquet")
+  s3_key <- paste0("logs/", Sys.Date(), "/", filename)
   upload_artifact_to_s3(temp_file, bucket_name, s3_key, region)
 
   TRUE

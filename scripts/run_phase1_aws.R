@@ -28,6 +28,12 @@ if (SNS_TOPIC_ARN == "") {
 etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
 fetch_mode <- Sys.getenv("FETCH_MODE", "full")
 
+# Sourcing run_phase1_fetch.R rebinds etf_symbol/fetch_mode in the global env,
+# and bulk_interim rewrites FETCH_MODE before sourcing. Keep the mode that was
+# actually requested so the notification reports the scheduled run, not the
+# internal fetch it delegated to.
+requested_fetch_mode <- fetch_mode
+
 message("ETF: ", etf_symbol, " | Bucket: ", S3_BUCKET, " | Mode: ", fetch_mode)
 message("")
 
@@ -51,20 +57,136 @@ tryCatch(
       2
     )
 
+    if (!exists("phase1_summary")) {
+      stop(
+        "run_phase1_fetch.R did not produce phase1_summary; ",
+        "cannot report Phase 1 results"
+      )
+    }
+
     fetch_log <- if (exists("phase1_log")) phase1_log else create_pipeline_log()
-    fetch_success <- sum(fetch_log$status == "success", na.rm = TRUE)
-    fetch_errors <- sum(fetch_log$status == "error", na.rm = TRUE)
-    fetch_skipped <- sum(fetch_log$status == "skipped", na.rm = TRUE)
+
+    # Phase 1 previously computed this log and threw it away. Written under its
+    # own filename so the Phase 2 task can't overwrite it.
+    if (nrow(fetch_log) > 0) {
+      tryCatch(
+        {
+          upload_pipeline_log(
+            fetch_log,
+            S3_BUCKET,
+            AWS_REGION,
+            filename = "phase1_log.parquet"
+          )
+        },
+        error = function(e) {
+          warning("Failed to upload pipeline log: ", e$message)
+        }
+      )
+    } else {
+      message("Pipeline log is empty; skipping upload.")
+    }
+
+    # bulk_interim runs two legs; report the price leg explicitly so a run that
+    # quoted nothing can't hide behind the quarterly leg's success counts.
+    interim_block <- if (exists("interim_summary")) {
+      paste0(
+        "Interim prices (bulk quotes):\n",
+        "  Rows: ",
+        format(interim_summary$rows, big.mark = ","),
+        " across ",
+        interim_summary$tickers,
+        " tickers, ",
+        interim_summary$trading_days,
+        " trading day(s)\n",
+        if (interim_summary$rows == 0) {
+          "  WARNING: no interim quotes stored this run\n"
+        } else {
+          ""
+        },
+        "\n"
+      )
+    } else {
+      ""
+    }
+
+    failed_block <- if (length(phase1_summary$failed_tickers) > 0) {
+      paste0(
+        "Failed tickers (first 20):\n  ",
+        paste(
+          utils::head(phase1_summary$failed_tickers, 20),
+          collapse = ", "
+        ),
+        "\n\n"
+      )
+    } else {
+      ""
+    }
+
+    success_message <- paste0(
+      "TTM Pipeline Phase 1 completed!\n\n",
+      "Configuration:\n",
+      "  ETF:  ",
+      phase1_summary$etf,
+      "\n",
+      "  Mode: ",
+      requested_fetch_mode,
+      "\n\n",
+      "Results:\n",
+      "  Tickers processed: ",
+      phase1_summary$tickers,
+      "\n",
+      "  Success: ",
+      phase1_summary$success,
+      "\n",
+      "  Errors:  ",
+      phase1_summary$errors,
+      "\n",
+      "  Skipped: ",
+      phase1_summary$skipped,
+      "\n\n",
+      interim_block,
+      failed_block,
+      "Raw data: s3://",
+      S3_BUCKET,
+      "/raw/\n\n",
+      "Duration: ",
+      duration,
+      " min"
+    )
+
+    subject_suffix <- if (phase1_summary$errors > 0) {
+      paste0(" (", phase1_summary$errors, " errors)")
+    } else {
+      ""
+    }
+
+    tryCatch(
+      {
+        send_pipeline_notification(
+          topic_arn = SNS_TOPIC_ARN,
+          subject = paste0(
+            "Pipeline Success: Phase 1 ",
+            format(Sys.Date(), "%Y-%m-%d"),
+            subject_suffix
+          ),
+          message = success_message,
+          region = AWS_REGION
+        )
+      },
+      error = function(e) {
+        warning("Failed to send success notification: ", e$message)
+      }
+    )
 
     message("")
     message("=== PHASE 1 COMPLETE ===")
     message(
       "Success: ",
-      fetch_success,
+      phase1_summary$success,
       " | Errors: ",
-      fetch_errors,
+      phase1_summary$errors,
       " | Skipped: ",
-      fetch_skipped,
+      phase1_summary$skipped,
       " | Duration: ",
       duration,
       " min"

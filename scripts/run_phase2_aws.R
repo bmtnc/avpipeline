@@ -38,65 +38,109 @@ tryCatch(
       2
     )
 
+    # Fail loudly rather than falling back to an empty log. The old `exists()`
+    # fallback failed open to zeros, so the notification kept arriving and
+    # looked plausible while reporting nothing.
+    if (!exists("phase2_summary")) {
+      stop(
+        "run_phase2_generate.R did not produce phase2_summary; ",
+        "cannot report Phase 2 results"
+      )
+    }
+
     generate_log <- if (exists("phase2_log")) {
       phase2_log
     } else {
       create_pipeline_log()
     }
-    generate_success <- sum(generate_log$status == "success", na.rm = TRUE)
-    generate_errors <- sum(generate_log$status == "error", na.rm = TRUE)
-    generate_skipped <- sum(generate_log$status == "skipped", na.rm = TRUE)
-    total_rows <- sum(generate_log$rows, na.rm = TRUE)
 
-    # Upload pipeline log
-    tryCatch(
-      {
-        upload_pipeline_log(generate_log, S3_BUCKET, AWS_REGION)
-      },
-      error = function(e) {
-        warning("Failed to upload pipeline log: ", e$message)
-      }
-    )
+    # Skip the upload when empty (e.g. price-only runs) so it can't clobber a
+    # real log written earlier the same day.
+    if (nrow(generate_log) > 0) {
+      tryCatch(
+        {
+          upload_pipeline_log(
+            generate_log,
+            S3_BUCKET,
+            AWS_REGION,
+            filename = "phase2_log.parquet"
+          )
+        },
+        error = function(e) {
+          warning("Failed to upload pipeline log: ", e$message)
+        }
+      )
+    } else {
+      message("Pipeline log is empty; skipping upload.")
+    }
 
-    # Send success notification
-    etf_symbol <- Sys.getenv("ETF_SYMBOL", "QQQ")
-    s3_key <- generate_s3_artifact_key(date = Sys.Date())
+    failed_block <- if (length(phase2_summary$failed_tickers) > 0) {
+      paste0(
+        "Failed tickers (first 20):\n  ",
+        paste(
+          utils::head(phase2_summary$failed_tickers, 20),
+          collapse = ", "
+        ),
+        "\n\n"
+      )
+    } else {
+      ""
+    }
 
     success_message <- paste0(
       "TTM Pipeline Phase 2 completed!\n\n",
       "Configuration:\n",
-      "  ETF: ",
-      etf_symbol,
+      "  Mode: ",
+      phase2_summary$mode,
       "\n\n",
       "Results:\n",
+      "  Tickers processed: ",
+      phase2_summary$tickers,
+      "\n",
       "  Success: ",
-      generate_success,
+      phase2_summary$success,
       "\n",
       "  Errors:  ",
-      generate_errors,
+      phase2_summary$errors,
       "\n",
       "  Skipped: ",
-      generate_skipped,
+      phase2_summary$skipped,
+      "\n\n",
+      failed_block,
+      "Artifacts:\n",
+      "  Quarterly: ",
+      format(phase2_summary$quarterly_rows, big.mark = ","),
+      " rows\n             s3://",
+      S3_BUCKET,
+      "/",
+      phase2_summary$quarterly_s3_key,
       "\n",
-      "  Total rows: ",
-      format(total_rows, big.mark = ","),
+      "  Price:     ",
+      format(phase2_summary$price_rows, big.mark = ","),
+      " rows\n             s3://",
+      S3_BUCKET,
+      "/",
+      phase2_summary$price_s3_key,
       "\n\n",
       "Duration: ",
       duration,
-      " min\n\n",
-      "Output: s3://",
-      S3_BUCKET,
-      "/",
-      s3_key
+      " min"
     )
+
+    subject_suffix <- if (phase2_summary$errors > 0) {
+      paste0(" (", phase2_summary$errors, " errors)")
+    } else {
+      ""
+    }
 
     tryCatch(
       {
         send_pipeline_notification(
           topic_arn = SNS_TOPIC_ARN,
           subject = paste0(
-            "Pipeline Success: ",
-            format(Sys.Date(), "%Y-%m-%d")
+            "Pipeline Success: Phase 2 ",
+            format(Sys.Date(), "%Y-%m-%d"),
+            subject_suffix
           ),
           message = success_message,
           region = AWS_REGION
@@ -111,11 +155,11 @@ tryCatch(
     message("=== PHASE 2 COMPLETE ===")
     message(
       "Success: ",
-      generate_success,
+      phase2_summary$success,
       " | Errors: ",
-      generate_errors,
+      phase2_summary$errors,
       " | Skipped: ",
-      generate_skipped,
+      phase2_summary$skipped,
       " | Duration: ",
       duration,
       " min"
